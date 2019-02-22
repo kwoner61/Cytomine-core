@@ -3,7 +3,7 @@
     <span class="label label-success" style="min-height:20px;position: absolute;bottom: 0px;left: 5px;">Reviewed</span>
     <% } %>
     <a href='#tabs-image-<%= project %>-<%=  image  %>-<%= id %>'>
-        <img id='AnnotationThumbCrop-<%= id %>' class='img-rounded' src='<%=  smallCropURL  %>' alt='alt |<%=  name  %>|' style="max-height:<%= sizeImage %>px; max-width:<%= sizeImage %>px"/>
+        <img id='AnnotationThumbCrop-<%= id %>' class='img-rounded' src='<%=  smallCropURL  %>&point=true' alt='alt |<%=  name  %>|' style="max-height:<%= sizeImage %>px; max-width:<%= sizeImage %>px"/>
     </a>
 
 

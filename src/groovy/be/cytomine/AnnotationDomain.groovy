@@ -337,7 +337,7 @@ abstract class AnnotationDomain extends CytomineDomain implements Serializable {
             boundaries.format = "png"
         }
 
-        if(location instanceof com.vividsolutions.jts.geom.Point && !params.point.equals("false")) {
+        if(location instanceof com.vividsolutions.jts.geom.Point && params.point.equals("true")) {
             boundaries.point = true
         }
 
