@@ -157,9 +157,13 @@ class PropertyService extends ModelService {
         Command command = new AddCommand(user: currentUser, transaction: transaction)
         return executeCommand(command,null,json)
     }
-    @Override
-    protected def afterAdd(def domain, def response) {
+
+    def afterAdd(def domain, def response) {
         Property property = (Property) domain
+        addDefaultColor(property)
+    }
+
+    def addDefaultColor(Property property) {
         if(property.key.equals("ANNOTATION_GROUP_ID")){
             Long id = -1
             try {

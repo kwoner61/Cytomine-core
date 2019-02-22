@@ -60,6 +60,7 @@ class BootstrapOldVersionService {
     def mongo
     def noSQLCollectionService
     def executorService
+    def propertyService
 
 
     void execChangeForOldVersion() {
@@ -79,6 +80,18 @@ class BootstrapOldVersionService {
         }
 
         Version.setCurrentVersion(Long.parseLong(grailsApplication.metadata.'app.versionDate'))
+    }
+
+    void init20190131() {
+        log.info "20190131"
+
+        def properties = Property.findAllByKey("ANNOTATION_GROUP_ID")
+        properties.eachWithIndex { it, idx ->
+            if (idx % 100 == 0)
+                log.info "${idx}/${properties.size()}"
+            if (!Property.findByDomainIdentAndKey(it.domainIdent, "CUSTOM_ANNOTATION_DEFAULT_COLOR"))
+                propertyService.addDefaultColor(it)
+        }
     }
 
     void init20180904() {
