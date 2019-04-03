@@ -25,6 +25,7 @@ import be.cytomine.image.UploadedFile
 import be.cytomine.image.server.*
 import be.cytomine.middleware.AmqpQueue
 import be.cytomine.middleware.MessageBrokerServer
+import be.cytomine.middleware.ComsumerRetrieveQueueCom
 import be.cytomine.ontology.Property
 import be.cytomine.ontology.Relation
 import be.cytomine.ontology.RelationTerm
@@ -36,6 +37,8 @@ import be.cytomine.security.*
 import be.cytomine.social.PersistentImageConsultation
 import be.cytomine.social.PersistentProjectConnection
 import be.cytomine.utils.Configuration
+import com.rabbitmq.client.Channel
+import com.rabbitmq.client.Connection
 import grails.plugin.springsecurity.SpringSecurityUtils
 import grails.util.Environment
 import groovy.json.JsonBuilder
@@ -62,7 +65,7 @@ class BootstrapUtilsService {
     def processingServerService
     def configurationService
 
-    public def createUsers(def usersSamples) {
+     def createUsers(def usersSamples) {
 
         SecRole.findByAuthority("ROLE_USER") ?: new SecRole(authority: "ROLE_USER").save(flush: true)
         SecRole.findByAuthority("ROLE_ADMIN") ?: new SecRole(authority: "ROLE_ADMIN").save(flush: true)
@@ -120,7 +123,7 @@ class BootstrapUtilsService {
         return usersCreated
     }
 
-    public def createRelation() {
+     def createRelation() {
         def relationSamples = [
                 [name: RelationTerm.names.PARENT],
                 [name: RelationTerm.names.SYNONYM]
@@ -161,7 +164,7 @@ class BootstrapUtilsService {
         }
     }
 
-    public def createMimes(def mimeSamples) {
+     def createMimes(def mimeSamples) {
         mimeSamples.each {
             if(!Mime.findByMimeType(it.mimeType)) {
                 Mime mime = new Mime(extension : it.extension, mimeType: it.mimeType)
@@ -361,16 +364,16 @@ class BootstrapUtilsService {
     void convertMimeTypes(){
         SpringSecurityUtils.doWithAuth("admin", {
 
-            Mime oldTif = Mime.findByMimeType("image/tif");
-            Mime oldTiff = Mime.findByMimeType("image/tiff");
-            Mime newTiff = Mime.findByMimeType("image/pyrtiff");
+            Mime oldTif = Mime.findByMimeType("image/tif")
+            Mime oldTiff = Mime.findByMimeType("image/tiff")
+            Mime newTiff = Mime.findByMimeType("image/pyrtiff")
 
-            List<AbstractImage> abstractImages = AbstractImage.findAllByMimeInList([oldTif, oldTiff]);
+            List<AbstractImage> abstractImages = AbstractImage.findAllByMimeInList([oldTif, oldTiff])
             log.info "images to convert : "+abstractImages.size()
 
             abstractImages.each {
-                it.mime = newTiff;
-                it.save();
+                it.mime = newTiff
+                it.save()
             }
         })
     }
@@ -427,6 +430,22 @@ class BootstrapUtilsService {
             amqpQueueService.createAmqpQueueDefault(queueCommunication)
         }
 
+
+
+        if(!AmqpQueue.findByName("queueCommunicationRetrieve")){
+            AmqpQueue queueCommunicationRetrieve = new AmqpQueue(name: "queueCommunicationRetrieve", host: mbs.host, exchange: "exchangeCommunicationRetrieve")
+            queueCommunicationRetrieve.save(failOnError: true, flush: true)
+            amqpQueueService.createAmqpQueueDefault(queueCommunicationRetrieve)
+        }
+        else if(!amqpQueueService.checkRabbitQueueExists("queueCommunicationRetrieve",mbs)) {
+            AmqpQueue queueCommunicationRetrieve = amqpQueueService.read("queueCommunicationRetrieve")
+            amqpQueueService.createAmqpQueueDefault(queueCommunicationRetrieve)
+        }
+        Connection connection= rabbitConnectionService.getRabbitConnection(mbs)
+        Channel channel=connection.createChannel()
+        String queueName="queueCommunicationRetrieve"
+        channel.basicConsume(queueName, true, new ComsumerRetrieveQueueCom(channel))
+
         //Inserting a MessageBrokerServer for testing purpose
         if (Environment.getCurrent() == Environment.TEST) {
             rabbitConnectionService.getRabbitConnection(mbs)
@@ -466,7 +485,7 @@ class BootstrapUtilsService {
     def imageConsultationService
     void fillProjectConnections() {
         SpringSecurityUtils.doWithAuth("superadmin", {
-            Date before = new Date();
+            Date before = new Date()
 
             def connections = PersistentProjectConnection.findAllByTimeIsNullOrCountCreatedAnnotationsIsNullOrCountViewedImagesIsNull(sort: 'created', order: 'desc', max: Integer.MAX_VALUE)
             log.info "project connections to update " + connections.size()
@@ -474,7 +493,7 @@ class BootstrapUtilsService {
             def sql = new Sql(dataSource)
 
             for (PersistentProjectConnection projectConnection : connections) {
-                Date after = projectConnection.created;
+                Date after = projectConnection.created
 
                 // collect {it.created.getTime} is really slow. I just want the getTime of PersistentConnection
                 def db = mongo.getDB(noSQLCollectionService.getDatabaseName())
@@ -482,7 +501,7 @@ class BootstrapUtilsService {
                         [$match: [project: projectConnection.project, user: projectConnection.user, $and : [[created: [$gte: after]],[created: [$lte: before]]]]],
                         [$sort: [created: 1]],
                         [$project: [dateInMillis: [$subtract: ['$created', new Date(0L)]]]]
-                );
+                )
 
                 def continuousConnections = lastConnection.results().collect { it.dateInMillis }
 
@@ -495,7 +514,7 @@ class BootstrapUtilsService {
                 }
 
                 projectConnection.time = continuousConnectionIntervals.split{it < 30000}[0].sum()
-                if(projectConnection.time == null) projectConnection.time=0;
+                if(projectConnection.time == null) projectConnection.time=0
 
                 // count viewed images
                 projectConnection.countViewedImages = imageConsultationService.getImagesOfUsersByProjectBetween(projectConnection.user, projectConnection.project,after, before).size()
@@ -508,18 +527,18 @@ class BootstrapUtilsService {
                 String request = "SELECT COUNT(*) FROM user_annotation a WHERE a.project_id = ${projectConnection.project} AND a.user_id = ${projectConnection.user} AND a.created < '${before}' AND a.created > '${after}'"
 
                 sql.eachRow(request) {
-                    projectConnection.countCreatedAnnotations = it[0];
+                    projectConnection.countCreatedAnnotations = it[0]
                 }
 
                 projectConnection.save(flush : true, failOnError: true)
                 before = projectConnection.created
             }
             sql.close()
-        });
+        })
     }
     void fillImageConsultations() {
         SpringSecurityUtils.doWithAuth("superadmin", {
-            Date before = new Date();
+            Date before = new Date()
 
             def consultations = PersistentImageConsultation.findAllByTimeIsNullOrCountCreatedAnnotationsIsNull(sort: 'created', order: 'desc', max: Integer.MAX_VALUE)
             log.info "image consultations to update " + consultations.size()
@@ -527,7 +546,7 @@ class BootstrapUtilsService {
             def sql = new Sql(dataSource)
 
             for (PersistentImageConsultation consultation : consultations) {
-                Date after = consultation.created;
+                Date after = consultation.created
 
                 // collect {it.created.getTime} is really slow. I just want the getTime of PersistentConnection
                 def db = mongo.getDB(noSQLCollectionService.getDatabaseName())
@@ -535,7 +554,7 @@ class BootstrapUtilsService {
                         [$match: [project: consultation.project, user: consultation.user, image: consultation.image, $and : [[created: [$gte: after]],[created: [$lte: before]]]]],
                         [$sort: [created: 1]],
                         [$project: [dateInMillis: [$subtract: ['$created', new Date(0L)]]]]
-                );
+                )
 
                 def continuousConnections = positions.results().collect { it.dateInMillis }
 
@@ -548,7 +567,7 @@ class BootstrapUtilsService {
                 }
 
                 consultation.time = continuousConnectionIntervals.split{it < 30000}[0].sum()
-                if(consultation.time == null) consultation.time=0;
+                if(consultation.time == null) consultation.time=0
 
                 // count created annotations
                 String request = "SELECT COUNT(*) FROM user_annotation a WHERE " +
@@ -558,17 +577,17 @@ class BootstrapUtilsService {
                         "AND a.created < '${before}' AND a.created > '${after}'"
 
                 sql.eachRow(request) {
-                    consultation.countCreatedAnnotations = it[0];
+                    consultation.countCreatedAnnotations = it[0]
                 }
 
                 consultation.save(flush : true, failOnError: true)
                 before = consultation.created
             }
             sql.close()
-        });
+        })
     }
 
-    public void cleanUpGorm() {
+     void cleanUpGorm() {
         def session = sessionFactory.currentSession
         session.flush()
         session.clear()
