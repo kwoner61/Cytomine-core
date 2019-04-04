@@ -27,7 +27,6 @@ import be.cytomine.ontology.Property
 import be.cytomine.processing.ImageFilter
 import be.cytomine.processing.ImagingServer
 import be.cytomine.processing.ProcessingServer
-import be.cytomine.processing.ProcessingServerService
 import be.cytomine.project.Project
 import be.cytomine.security.SecRole
 import be.cytomine.security.SecUser
@@ -66,7 +65,7 @@ class BootstrapOldVersionService {
     def mongo
     def noSQLCollectionService
     def executorService
-
+    def ProcessingServerService
 
     void execChangeForOldVersion() {
         def methods = this.metaClass.methods*.name.sort().unique()
@@ -96,8 +95,7 @@ class BootstrapOldVersionService {
             String keyPath= Holders.getGrailsApplication().config.grails.serverSshKeysPath
             keyPath+="/"
             String hostName=psTmp.host
-            ProcessingServerService serviceTmp=new ProcessingServerService()
-            serviceTmp.createKPairSSH(keyPath,hostName)
+            ProcessingServerService.createKPairSSH(keyPath,hostName)
 
         }
     }
