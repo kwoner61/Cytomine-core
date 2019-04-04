@@ -22,17 +22,23 @@ import be.cytomine.image.server.Storage
 import be.cytomine.image.server.StorageAbstractImage
 import be.cytomine.image.UploadedFile
 import be.cytomine.middleware.AmqpQueue
+import be.cytomine.middleware.MessageBrokerServer
 import be.cytomine.ontology.Property
 import be.cytomine.processing.ImageFilter
 import be.cytomine.processing.ImagingServer
+import be.cytomine.processing.ProcessingServer
+import be.cytomine.processing.ProcessingServerService
 import be.cytomine.project.Project
 import be.cytomine.security.SecRole
 import be.cytomine.security.SecUser
 import be.cytomine.security.SecUserSecRole
 import be.cytomine.security.User
 import be.cytomine.utils.Version
+import com.jcraft.jsch.JSch
 import grails.converters.JSON
 import grails.plugin.springsecurity.SpringSecurityUtils
+import grails.util.Holders
+import groovy.json.JsonBuilder
 import groovy.sql.Sql
 import org.apache.commons.io.FilenameUtils
 
@@ -79,6 +85,21 @@ class BootstrapOldVersionService {
         }
 
         Version.setCurrentVersion(Long.parseLong(grailsApplication.metadata.'app.versionDate'))
+    }
+    void init20190403(){
+        log.info "20190403"
+
+        Collection<ProcessingServer> processingServerCollection=ProcessingServer.findAll()
+        for(int i=0;i<processingServerCollection.size();i++)
+        {
+            ProcessingServer psTmp=processingServerCollection.get(i)
+            String keyPath= Holders.getGrailsApplication().config.grails.serverSshKeysPath
+            keyPath+="/"
+            String hostName=psTmp.host
+            ProcessingServerService serviceTmp=new ProcessingServerService()
+            serviceTmp.createKPairSSH(keyPath,hostName)
+
+        }
     }
 
     void init20180904() {
