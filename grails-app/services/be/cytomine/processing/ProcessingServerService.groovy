@@ -113,7 +113,51 @@ class ProcessingServerService extends ModelService {
             jsonBuilder(message)
 
             amqpQueueService.publishMessage(AmqpQueue.findByName("queueCommunication"), jsonBuilder.toString())
+
+            //get the path and name for the SSH Keysfiles
+            String keyPath=Holders.getGrailsApplication().config.grails.serverSshKeysPath
+            keyPath+="/"
+            createKPairSSH(keyPath,(domain as ProcessingServer).host)
+
+
         }
+
+    }
+
+    def createKPairSSH(String keyPath,String hostname)
+    {
+        //this function will create a new ssh key pair. It will also check if a directory and the KPair already exist or not
+        boolean bool = false
+        keyPath+=hostname
+        try {
+            File f = new File(keyPath)
+            if(f.exists() && f.isDirectory())
+            {
+                //we'll check if the pair key is inside the folder
+                String path=keyPath+"/"+hostname
+                log.info("Directory $keyPath already exist! test if the files ${path} &  ${path}.pub exist")
+                String folder=path+".pub"
+                File fpub=new File(folder)
+                File fpri=new File(path)
+                if(!fpri.exists() || !fpub.exists())
+                {
+                    log.info("the pair is missing... we'll create a new one")
+                    KeyPair kpair = KeyPair.genKeyPair(new JSch(), KeyPair.RSA)
+                    kpair.writePrivateKey(path)
+                    kpair.writePublicKey(path + ".pub", "public key of $hostname")
+                }
+            }
+            else {
+                bool = f.mkdir()
+                log.info("Directory $keyPath created? $bool")
+                if (bool) {
+                    keyPath += "/" + hostname
+                    KeyPair kpair = KeyPair.genKeyPair(new JSch(), KeyPair.RSA)
+                    kpair.writePrivateKey(keyPath)
+                    kpair.writePublicKey(keyPath + ".pub", "public key of $hostname")
+                }
+            }
+        } catch(Exception e) {e.printStackTrace()}
     }
 
     def afterUpdate(Object domain, Object response) {
