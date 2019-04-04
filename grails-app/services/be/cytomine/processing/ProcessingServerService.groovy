@@ -24,6 +24,9 @@ import be.cytomine.middleware.MessageBrokerServer
 import be.cytomine.security.SecUser
 import be.cytomine.utils.ModelService
 import be.cytomine.utils.Task
+import com.jcraft.jsch.JSch
+import com.jcraft.jsch.KeyPair
+import grails.util.Holders
 import groovy.json.JsonBuilder
 import org.springframework.security.acls.domain.BasePermission
 
@@ -79,6 +82,18 @@ class ProcessingServerService extends ModelService {
         return executeCommand(c, domain, null)
     }
 
+
+    def getPublicKeyPathProcessingServer(Long id) throws CytomineException {
+        SecUser currentUser = cytomineService.getCurrentUser()
+        securityACLService.checkAdmin(currentUser)
+        ProcessingServer processingServer = ProcessingServer.findById(id)
+        
+        String keyPath=Holders.getGrailsApplication().config.grails.serverSshKeysPath
+        def keyPathToReturn = """${keyPath}/${processingServer.host}/${processingServer.host}.pub"""
+        return keyPathToReturn
+
+    }
+
     @Override
     def getStringParamsI18n(def domain) {
         return [domain.name]
@@ -87,7 +102,6 @@ class ProcessingServerService extends ModelService {
     @Override
     def afterAdd(Object domain, Object response) {
         aclUtilService.addPermission(domain, cytomineService.currentUser.username, BasePermission.ADMINISTRATION)
-
         String queueName = amqpQueueService.queuePrefixProcessingServer + ((domain as ProcessingServer).name).capitalize()
         if (!amqpQueueService.checkAmqpQueueDomainExists(queueName)) {
             // Creates the new queue
