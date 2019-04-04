@@ -287,9 +287,9 @@ class RestController {
     protected def downloadFile(String path, String name,String contentType) {
         InputStream contentStream
         try {
-            def file = new File(path)
+            File file = new File(path)
             response.setHeader "Content-disposition", "attachment; filename=$name"
-            response.setHeader("Content-Length", "file-size")
+            response.setHeader("Content-Length", String.valueOf(new Long(file.length())))
             response.setContentType(contentType)
             contentStream = file.newInputStream()
             response.getOutputStream() << contentStream
