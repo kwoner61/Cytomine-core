@@ -29,5 +29,4 @@ class ProcessingServerUrlMappings {
             action = [GET: "getPublicKey"]
         }
     }
-
 }
