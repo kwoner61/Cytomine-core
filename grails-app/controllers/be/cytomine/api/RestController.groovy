@@ -20,6 +20,7 @@ import be.cytomine.Exception.CytomineException
 import be.cytomine.test.HttpClient
 import be.cytomine.utils.Task
 import grails.converters.JSON
+import org.apache.commons.io.IOUtils
 import org.codehaus.groovy.grails.web.json.JSONArray
 
 import javax.imageio.ImageIO
@@ -275,6 +276,25 @@ class RestController {
         response.status = NOT_FOUND_CODE
         render(contentType: 'text/json') {
             errors(message: className + " not found with id " + filter1 + " : " + id1 + ",  " + filter2 + " : " + id2 + " and " + filter3 + " : " + id3)
+        }
+    }
+
+    protected  def responseText(String text)
+    {
+        response.getOutputStream() << text
+        response.getOutputStream().flush()
+    }
+    protected def downloadFile(String path, String name,String contentType) {
+        InputStream contentStream
+        try {
+            def file = new File(path)
+            response.setHeader "Content-disposition", "attachment; filename=$name"
+            response.setHeader("Content-Length", "file-size")
+            response.setContentType(contentType)
+            contentStream = file.newInputStream()
+            response.getOutputStream() << contentStream
+        } finally {
+            IOUtils.closeQuietly(contentStream)
         }
     }
 

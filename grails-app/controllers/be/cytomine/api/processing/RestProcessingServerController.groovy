@@ -48,6 +48,22 @@ class RestProcessingServerController extends RestController {
         }
     }
 
+    @RestApiMethod(description = "Get the public key of a specific processing server")
+    @RestApiParams(params = [
+            @RestApiParam(name = "id", type = "long", paramType = RestApiParamType.PATH, description = "The processing server id")
+    ])
+    def getPublicKey(){
+        ProcessingServer processingServer = processingServerService.read(params.long('id'))
+        if (processingServer) {
+            String name= processingServer.host+".pub"
+            downloadFile(processingServerService.getPublicKeyPathProcessingServer(params.long('id')),name,"text/plain")
+        }
+        else {
+            responseNotFound("ProcessingServer", params.id)
+        }
+
+    }
+
     @RestApiMethod(description = "Add a new processing server to Cytomine")
     def add() {
         add(processingServerService, request.JSON)
