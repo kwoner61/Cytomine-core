@@ -19,7 +19,10 @@ package be.cytomine.processing
 import be.cytomine.Exception.MiddlewareException
 import be.cytomine.Exception.WrongArgumentException
 import be.cytomine.middleware.AmqpQueue
+
 import be.cytomine.middleware.MessageBrokerServer
+import be.cytomine.security.PermissionService
+import be.cytomine.security.User
 import be.cytomine.security.UserJob
 import grails.converters.JSON
 import grails.util.Holders
@@ -134,29 +137,39 @@ class JobRuntimeService {
     }
 
     def execute(Job job, UserJob userJob, ProcessingServer processingServer = null) {
+        //we'll send the request on the communicationQueue
+
         initJob(job, userJob)
 
         if (!job.software.executable())
             throw new MiddlewareException("No command found for this job, the execution is aborted !")
 
-        ProcessingServer currentProcessingServer = processingServer == null ? job.software.defaultProcessingServer : processingServer
-
-        job.processingServer = currentProcessingServer
+        JSONObject jsonObject = new JSONObject()
+        //TODO modify this. It's a non-sense to put a processingserver here. Because it will change on the SR
+        if(processingServer==null)
+        {
+            jsonObject.put("automaticChoiceOfServerEnabled",true)
+            ProcessingServer currentProcessingServer = job.software.defaultProcessingServer
+            job.processingServer=currentProcessingServer
+        }
+        else
+        {
+            jsonObject.put("automaticChoiceOfServerEnabled",false)
+            ProcessingServer currentProcessingServer = processingServer
+            job.processingServer=processingServer
+        }
         job.save(failOnError: true)
 
-        String queueName = amqpQueueService.queuePrefixProcessingServer + currentProcessingServer.name.capitalize()
-
+        String queueName = "queueCommunication"
         MessageBrokerServer messageBrokerServer = MessageBrokerServer.findByName("MessageBrokerServer")
         if (!amqpQueueService.checkRabbitQueueExists(queueName, messageBrokerServer))
             throw new MiddlewareException("The amqp queue doesn't exist, the execution is aborded !")
 
-        JSONObject jsonObject = new JSONObject()
-        jsonObject.put("requestType", "execute")
+        jsonObject.put("requestType", "checkAllLoad")
         jsonObject.put("jobId", job.id)
         jsonObject.put("command", getCommandJobWithArgs(job))
         jsonObject.put("pullingCommand", job.software.pullingCommand)
         jsonObject.put("serverParameters", getServerParameters(job))
-
         log.info("JOB REQUEST : ${jsonObject}")
 
         amqpQueueService.publishMessage(amqpQueueService.read(queueName), jsonObject.toString())
