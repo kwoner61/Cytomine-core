@@ -19,6 +19,7 @@ package be.cytomine.api.processing
 import be.cytomine.api.RestController
 import be.cytomine.processing.ProcessingServer
 import grails.converters.JSON
+import org.json.simple.JSONObject
 import org.restapidoc.annotation.RestApiMethod
 import org.restapidoc.annotation.RestApiObject
 import org.restapidoc.annotation.RestApiParam
@@ -62,6 +63,22 @@ class RestProcessingServerController extends RestController {
             responseNotFound("ProcessingServer", params.id)
         }
 
+    }
+
+    @RestApiMethod(description = "Get the load of a processing server")
+    @RestApiParams(params = [
+            @RestApiParam(name = "id", type = "long", paramType = RestApiParamType.PATH, description = "The processing server id")
+    ])
+    def getLoadProcessingServer(){
+        ProcessingServer processingServer = processingServerService.read(params.long('id'))
+        if (processingServer) {
+            def jsonToDisplay=processingServerService.getLoadOfProcessingServer(processingServer)
+            JSONObject returnJS= new JSONObject(jsonToDisplay)
+            responseSuccess(returnJS)
+        }
+        else {
+            responseNotFound("ProcessingServer", params.id)
+        }
     }
 
     @RestApiMethod(description = "Add a new processing server to Cytomine")

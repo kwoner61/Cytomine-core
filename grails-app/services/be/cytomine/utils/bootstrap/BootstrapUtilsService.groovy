@@ -441,10 +441,6 @@ class BootstrapUtilsService {
             AmqpQueue queueCommunicationRetrieve = amqpQueueService.read("queueCommunicationRetrieve")
             amqpQueueService.createAmqpQueueDefault(queueCommunicationRetrieve)
         }
-        Connection connection= rabbitConnectionService.getRabbitConnection(mbs)
-        Channel channel=connection.createChannel()
-        String queueName="queueCommunicationRetrieve"
-        channel.basicConsume(queueName, true, new ComsumerRetrieveQueueCom(channel))
 
         //Inserting a MessageBrokerServer for testing purpose
         if (Environment.getCurrent() == Environment.TEST) {

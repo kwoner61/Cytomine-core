@@ -26,8 +26,13 @@ import be.cytomine.utils.ModelService
 import be.cytomine.utils.Task
 import com.jcraft.jsch.JSch
 import com.jcraft.jsch.KeyPair
+import com.rabbitmq.client.Channel
+import com.rabbitmq.client.Connection
+import com.rabbitmq.client.GetResponse
 import grails.util.Holders
 import groovy.json.JsonBuilder
+import groovy.json.JsonSlurper
+import org.json.JSONObject
 import org.springframework.security.acls.domain.BasePermission
 
 import static org.springframework.security.acls.domain.BasePermission.WRITE
@@ -92,6 +97,47 @@ class ProcessingServerService extends ModelService {
         def keyPathToReturn = """${keyPath}/${processingServer.host}/${processingServer.host}.pub"""
         return keyPathToReturn
 
+    }
+
+    def getLoadOfProcessingServer(ProcessingServer processingServer)throws CytomineException{
+        SecUser currentUser = cytomineService.getCurrentUser()
+        securityACLService.checkAdmin(currentUser)
+
+        //we'll send a loadRequest to the softwareRouter
+        JsonSlurper jsonSlurper = new JsonSlurper()
+        JSONObject jsonObject = new JSONObject()
+        jsonObject.put("requestType", "checkLoadOnePS")
+        jsonObject.put("processingServerID", processingServer.id)
+        log.info("REQUEST : ${jsonObject}")
+
+        //creation de la queue de retrieve
+        Connection connection=grailsApplication.mainContext.rabbitConnectionService.getRabbitConnection(MessageBrokerServer.first())
+
+        Channel channel=connection.createChannel()
+        String queueName="queueCommunicationRetrieve"
+
+        amqpQueueService.publishMessage(AmqpQueue.findByName("queueCommunication"), jsonObject.toString())
+
+        while(true) {
+            GetResponse response = channel.basicGet(queueName, true)
+
+            if(response != null) {
+                String message = new String(response.getBody(), "UTF-8")
+                long deliveryTag = response.getEnvelope().getDeliveryTag()
+
+                // positively acknowledge a single delivery, the message willbe discarded
+                channel.basicAck(deliveryTag, false)
+                def mapMessage = jsonSlurper.parseText(message)
+                switch (mapMessage["requestType"]) {
+
+                    case "responseCheckLoadForOnePS":
+                        return mapMessage
+
+                        break
+                }
+
+            }
+        }
     }
 
     @Override

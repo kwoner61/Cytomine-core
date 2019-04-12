@@ -28,5 +28,9 @@ class ProcessingServerUrlMappings {
         "/api/processing_server/$id/publickey"(controller: "restProcessingServer") {
             action = [GET: "getPublicKey"]
         }
+
+        "/api/processing_server/load/$id.$format"(controller: "restProcessingServer") {
+            action = [GET: "getLoadProcessingServer"]
+        }
     }
 }
