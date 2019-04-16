@@ -129,8 +129,6 @@ class ProcessingServerService extends ModelService {
                 String message = new String(response.getBody(), "UTF-8")
                 long deliveryTag = response.getEnvelope().getDeliveryTag()
 
-                // positively acknowledge a single delivery, the message willbe discarded
-                channel.basicAck(deliveryTag, false)
                 def mapMessage = jsonSlurper.parseText(message)
                 switch (mapMessage["requestType"]) {
 
