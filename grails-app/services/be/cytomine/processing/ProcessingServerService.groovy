@@ -118,7 +118,11 @@ class ProcessingServerService extends ModelService {
 
         amqpQueueService.publishMessage(AmqpQueue.findByName("queueCommunication"), jsonObject.toString())
 
-        while(true) {
+
+        TimeoutForAPIRequestService timeout= new TimeoutForAPIRequestService(2,10000)
+        timeout.startCounterTimeout()
+        while(timeout.counterSleep<timeout.limitCounter) {
+            timeout.info()
             GetResponse response = channel.basicGet(queueName, true)
 
             if(response != null) {
@@ -131,13 +135,27 @@ class ProcessingServerService extends ModelService {
                 switch (mapMessage["requestType"]) {
 
                     case "responseCheckLoadForOnePS":
-                        return mapMessage
-
+                        // positively acknowledge a single delivery, the message will be discarded
+                        channel.basicAck(deliveryTag, false)
+                        JSONObject returnMsg = new JSONObject(mapMessage)
+                        returnMsg.put("response","nok")
+                        return returnMsg
+                    default:
+                        timeout.incrementCounter()
+                        timeout.sleep()
                         break
                 }
-
+            }
+            else
+            {
+                timeout.incrementCounter()
+                timeout.sleep()
             }
         }
+        log.info("Timeout reached! ")
+        JSONObject mapMessage = new JSONObject()
+        mapMessage.put("response","nok")
+        return mapMessage
     }
 
     @Override
