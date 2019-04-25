@@ -169,7 +169,6 @@ class JobRuntimeService {
 
     def execute(Job job, UserJob userJob, ProcessingServer processingServer = null) {
         //we'll send the request on the communicationQueue
-
         initJob(job, userJob)
 
         if (!job.software.executable())
@@ -201,8 +200,8 @@ class JobRuntimeService {
         jsonObject.put("command", getCommandJobWithArgs(job))
         jsonObject.put("pullingCommand", job.software.pullingCommand)
         jsonObject.put("serverParameters", getServerParameters(job))
-        log.info("JOB REQUEST : ${jsonObject}")
 
+        log.info("Execute request: ${jsonObject}")
         amqpQueueService.publishMessage(amqpQueueService.read(queueName), jsonObject.toString())
     }
 

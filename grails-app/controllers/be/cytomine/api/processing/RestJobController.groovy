@@ -156,9 +156,9 @@ class RestJobController extends RestController {
             {
                 listJobs.add(i,new Job().findWhere(id: new Long(data.getAt(i))))
             }
+            jobRuntimeService.executeAllJobs(listJobs)
+            return responseSuccess(listJobs)
         }
-        jobRuntimeService.executeAllJobs(listJobs)
-
     }
 
     @RestApiMethod(description="execute all the job from a list", listing = true)
@@ -187,6 +187,7 @@ class RestJobController extends RestController {
                 jobRuntimeService.executeAux(listJobs)
             }
         }
+        return responseSuccess(listJobs)
 
     }
 
@@ -297,7 +298,7 @@ class RestJobController extends RestController {
     ])
     @RestApiResponseObject(objectIdentifier = "[message:x]")
     def deleteAllJobData() {
-        Job job = jobService.read(params.long('id'));
+        Job job = jobService.read(params.long('id'))
 
 
         if (!job) {

@@ -119,7 +119,7 @@ class ProcessingServerService extends ModelService {
         amqpQueueService.publishMessage(AmqpQueue.findByName("queueCommunication"), jsonObject.toString())
 
 
-        TimeoutForAPIRequestService timeout= new TimeoutForAPIRequestService(2,10000)
+        TimeoutForAPIRequestService timeout= new TimeoutForAPIRequestService(20,4000)
         timeout.startCounterTimeout()
         while(timeout.counterSleep<timeout.limitCounter) {
             timeout.info()

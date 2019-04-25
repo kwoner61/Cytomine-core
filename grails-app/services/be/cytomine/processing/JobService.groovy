@@ -95,7 +95,6 @@ class JobService extends ModelService {
 
         //Start transaction
         Transaction transaction = transactionService.start()
-
         synchronized (this.getClass()) {
 
             Job job = new Job()

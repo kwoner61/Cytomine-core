@@ -75,9 +75,6 @@ class RestProcessingServerController extends RestController {
             def jsonToDisplay=processingServerService.getLoadOfProcessingServer(processingServer)
             JSONObject js=new JSONObject(jsonToDisplay)
             responseSuccess(js)
-
-
-
         }
         else {
             responseNotFound("ProcessingServer", params.id)
