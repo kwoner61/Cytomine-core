@@ -39,6 +39,8 @@ class SoftwareProjectService extends ModelService{
     def modelService
     def securityACLService
 
+    def jobRuntimeService
+    def jobService
     def currentDomain() {
         return SoftwareProject
     }

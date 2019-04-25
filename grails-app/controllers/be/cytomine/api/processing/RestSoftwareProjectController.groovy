@@ -35,6 +35,7 @@ class RestSoftwareProjectController extends RestController{
 
     def softwareProjectService
     def projectService
+    def jobRuntimeService
 
     /**
      * List all software project links

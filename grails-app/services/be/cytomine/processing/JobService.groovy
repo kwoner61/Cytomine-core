@@ -41,7 +41,9 @@ class JobService extends ModelService {
     def jobParameterService
     def springSecurityService
     def backgroundService
+    def userJobService
     def jobDataService
+    def jobService
     def secUserService
     def annotationListingService
     def dataSource
