@@ -81,6 +81,18 @@ class RestSoftwareProjectController extends RestController{
         add(softwareProjectService, request.JSON)
     }
 
+    @RestApiMethod(description="")
+    @RestApiParams(params=[
+            @RestApiParam(name="id", type="long", paramType = RestApiParamType.PATH, description = "The software project id")
+    ])
+    def executeAllWorkflows()
+    {
+        Project project = projectService.read(params.long('id'))
+        if (project) {
+            def response = softwareProjectService.executeAllWorkflows(project)
+        }
+    }
+
     /**
      * Delete the software for the project
      */

@@ -23,8 +23,10 @@ import be.cytomine.command.DeleteCommand
 import be.cytomine.command.Transaction
 import be.cytomine.project.Project
 import be.cytomine.security.SecUser
+import be.cytomine.security.UserJob
 import be.cytomine.utils.ModelService
 import be.cytomine.utils.Task
+import org.json.simple.JSONObject
 
 import static org.springframework.security.acls.domain.BasePermission.READ
 
@@ -52,6 +54,39 @@ class SoftwareProjectService extends ModelService{
     def list() {
         securityACLService.checkAdmin(cytomineService.currentUser)
         SoftwareProject.list()
+    }
+
+    def executeAllWorkflows(Project project){
+
+        securityACLService.checkAdmin(cytomineService.currentUser)
+
+        List<SoftwareProject> listSoftwareProject =SoftwareProject.findAllByProject(project)
+        ArrayList<Job> listJobs=new ArrayList<Job>()
+        for(int i=0;i<listSoftwareProject.size();i++)
+        {
+            SoftwareProject sp=SoftwareProject.findById(listSoftwareProject.get(i).id)
+            Software softTmp=new Software().findWhere(id:sp.softwareId)
+            //we check if it's deprecated or not. If not, we'll create a job
+            if(softTmp.deprecated==false)
+            {
+               log.info("the software isn't deprecated")
+
+                //create a json for the new job
+                ArrayList<SoftwareParameter> params=new ArrayList<SoftwareParameter>()
+                JSONObject jsonObject = new JSONObject()
+                jsonObject.put("software", softTmp.id)
+                jsonObject.put("project", project.id)
+                jsonObject.put("params", params)
+
+                def jobId=jobService.addJson(jsonObject)
+                log.info("new job created! $jobId")
+
+                Job job=new Job().findWhere(id: jobId)
+                listJobs.add(i,job)
+            }
+
+        }
+        jobRuntimeService.executeAux(listJobs)
     }
 
     def list(Project project) {

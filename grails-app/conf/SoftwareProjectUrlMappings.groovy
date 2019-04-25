@@ -31,5 +31,9 @@ class SoftwareProjectUrlMappings {
             action = [GET: "softwareInfoForProject"]
         }
 
+        "/api/project/$id/job/execute.$format" (controller : "restSoftwareProject") {
+            action = [POST: "executeAllWorkflows", GET: "executeAllWorkflows"]
+        }
+
     }
 }
