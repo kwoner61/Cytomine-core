@@ -136,6 +136,37 @@ class JobRuntimeService {
         }
     }
 
+    def executeAux(ArrayList<Job> listJobs)
+    {
+            for(int i=0;i< listJobs.size();i++)
+            {
+                try
+                {
+                    Job jobTmp=new Job().findWhere(id:listJobs.get(i).id)
+                    UserJob userJobTmp = new UserJob().findWhere(job: jobTmp)
+                    this.execute(jobTmp,userJobTmp)
+                }
+                catch(Exception ex)
+                {
+                    log.info("error during the execution of the job")
+                }
+            }
+    }
+
+
+    def executeAllJobs(ArrayList<Job> listJobs)
+    {
+        for(int i=0;i< listJobs.size();i++)
+        {
+            Job jobTmp=new Job().findWhere(id:listJobs.get(i).id)
+            UserJob userJobTmp = new UserJob().findWhere(job: jobTmp)
+            this.execute(jobTmp,userJobTmp)
+        }
+    }
+
+
+
+
     def execute(Job job, UserJob userJob, ProcessingServer processingServer = null) {
         //we'll send the request on the communicationQueue
 

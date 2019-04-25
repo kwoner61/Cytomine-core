@@ -83,6 +83,60 @@ class JobService extends ModelService {
         }
     }
 
+
+    def addJson(JSONObject Json)
+    {
+        JSONObject js=new JSONObject(Json)
+
+        Project project=Project.findById(js.get("project"))
+        securityACLService.check(project.id,Project, READ)
+        securityACLService.checkisNotReadOnly(project.id,Project)
+        SecUser currentUser = cytomineService.getCurrentUser()
+
+        //Start transaction
+        Transaction transaction = transactionService.start()
+
+        synchronized (this.getClass()) {
+
+            Job job = new Job()
+            job.setSoftware(Software.findById(new Long(js.get("software"))))
+            job.setProject(Project.findById(new Long(js.get("project"))))
+            jobService.saveDomain(job)
+
+            UserJob userJobTmp = new UserJob()
+            userJobTmp.setJob(job)
+
+            userJobTmp.setUser(currentUser)
+            userJobTmp.setPassword(currentUser.password)
+            userJobTmp.setUsername(currentUser.username)
+
+            userJobService.saveDomain(userJobTmp)
+
+            ArrayList<SoftwareParameter> params = js.get("params");
+            if (params) {
+                params.each { param ->
+                    log.info "add param = " + param
+                    jobParameterService.addJobParameter(job,param.softwareParameter,param.value, currentUser, transaction)
+                }
+            }
+            else
+            {
+                SoftwareParameterService sps=new SoftwareParameterService()
+                Software softTmp=Software.findById(new Long(js.get("software")))
+
+                ArrayList<SoftwareParameter> paramList = new ArrayList<SoftwareParameter>()
+                paramList=sps.list(softTmp)
+                log.info("${paramList.size()}")
+                for(int i=0;i<paramList.size();i++)
+                {
+                    jobParameterService.addJobParameter(job.id,paramList.get(i).id,paramList.get(i).defaultValue, currentUser, transaction)
+                }
+            }
+            return job.id
+        }
+    }
+
+
     /**
      * Add the new domain with JSON data
      * @param json New domain data

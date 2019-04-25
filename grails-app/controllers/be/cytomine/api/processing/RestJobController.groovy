@@ -141,6 +141,56 @@ class RestJobController extends RestController {
         delete(jobService, JSON.parse("{id : $params.id}"),null)
     }
 
+    @RestApiMethod(description="execute all the job from a list", listing = true)
+    @RestApiParams(params=[])
+    def executeAll()
+    {
+        //we need to do that first because the list of params will be like: jobs= 54304,54304,54304,54304
+        List<Job> listOfJobParam=params.getList("jobs")
+        ArrayList<Job> listJobs= new ArrayList<Job>()
+        if(listOfJobParam.size()==1)
+        {
+            String toSplit=listOfJobParam.get(0)
+            String[] data = toSplit.split(",")
+            for(int i=0;i< data.size();i++)
+            {
+                listJobs.add(i,new Job().findWhere(id: new Long(data.getAt(i))))
+            }
+        }
+        jobRuntimeService.executeAllJobs(listJobs)
+
+    }
+
+    @RestApiMethod(description="execute all the job from a list", listing = true)
+    @RestApiParams(params=[@RestApiParam(name="id", type="long", paramType = RestApiParamType.PATH,description = "The job id")])
+    def executeAux()
+    {
+        ArrayList<Job> listJobs= new ArrayList<Job>()
+        if(params.getList("jobs").size()>0)
+        {
+            List<Job> listOfJobParam=params.getList("jobs")
+
+            String toSplit=listOfJobParam.get(0)
+            String[] data = toSplit.split(",")
+            for(int i=0;i< data.size();i++) {
+                listJobs.add(i, new Job().findWhere(id: new Long(data.getAt(i))))
+            }
+            jobRuntimeService.executeAux(listJobs)
+        }
+        else
+        {
+            if(params.getProperty("id")!=null)
+            {
+                long jobId = params.long("id")
+                Job jobTmp=new Job().findWhere(id:jobId)
+                listJobs.add(0,jobTmp)
+                jobRuntimeService.executeAux(listJobs)
+            }
+        }
+
+    }
+
+
     @RestApiMethod(description = "Execute a job, launch the software")
     @RestApiParams(params = [
         @RestApiParam(name = "id", type = "long", paramType = RestApiParamType.PATH, description = "The job id")
