@@ -118,7 +118,7 @@ var AnnotationPopupPanel = SideBarPanel.extend({
         if (window.app.isUndefined(annotation.get("nbComments"))) {
             annotation.set({"nbComments": 0});
         }
-        annotation.set({"smallCropURL": annotation.get("smallCropURL")+"&time="+Date.now()});
+        annotation.set({"smallCropURL": annotation.get("smallCropURL")+"&point=true&time="+Date.now()});
 
         annotation.set('area', Math.round(annotation.get('area')));
         annotation.set('perimeter', Math.round(annotation.get('perimeter')));
