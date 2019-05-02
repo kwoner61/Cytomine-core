@@ -289,7 +289,7 @@ class RestController {
         try {
             File file = new File(path)
             response.setHeader "Content-disposition", "attachment; filename=$name"
-            response.setHeader("Content-Length", String.valueOf(new Long(file.length())))
+            response.setHeader("Content-Length", file.length().toString() )
             response.setContentType(contentType)
             contentStream = file.newInputStream()
             response.getOutputStream() << contentStream
