@@ -80,8 +80,8 @@ var AnnotationThumbView = Backbone.View.extend({
             }
 
             if(self.reviewMode) {
-                annotation.set('cropURL',annotation.get('cropURL')+"?draw=true");
-                annotation.set('smallCropURL',annotation.get('smallCropURL')+"&draw=true");
+                annotation.set('cropURL',annotation.get('cropURL')+"?draw=true&point=true");
+                annotation.set('smallCropURL',annotation.get('smallCropURL')+"&draw=true&point=true");
             }
 
             annotation.set({

@@ -262,7 +262,6 @@ abstract class AnnotationDomain extends CytomineDomain implements Serializable {
 
 
     def getCentroid() {
-        if (location.area < 1) return null
         def centroid = location.getCentroid()
         def response = [:]
         response.x = centroid.x
@@ -337,7 +336,7 @@ abstract class AnnotationDomain extends CytomineDomain implements Serializable {
             boundaries.format = "png"
         }
 
-        if(location instanceof com.vividsolutions.jts.geom.Point && !params.point.equals("false")) {
+        if(location instanceof com.vividsolutions.jts.geom.Point && params.point.equals("true")) {
             boundaries.point = true
         }
 

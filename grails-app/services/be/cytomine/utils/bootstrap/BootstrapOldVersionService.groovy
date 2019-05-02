@@ -66,6 +66,7 @@ class BootstrapOldVersionService {
     def noSQLCollectionService
     def executorService
     def ProcessingServerService
+    def propertyService
 
     void execChangeForOldVersion() {
         def methods = this.metaClass.methods*.name.sort().unique()
@@ -97,6 +98,18 @@ class BootstrapOldVersionService {
             String hostName=psTmp.host
             ProcessingServerService.createKPairSSH(keyPath,hostName)
 
+        }
+    }
+
+    void init20190131() {
+        log.info "20190131"
+
+        def properties = Property.findAllByKey("ANNOTATION_GROUP_ID")
+        properties.eachWithIndex { it, idx ->
+            if (idx % 100 == 0)
+                log.info "${idx}/${properties.size()}"
+            if (!Property.findByDomainIdentAndKey(it.domainIdent, "CUSTOM_ANNOTATION_DEFAULT_COLOR"))
+                propertyService.addDefaultColor(it)
         }
     }
 
