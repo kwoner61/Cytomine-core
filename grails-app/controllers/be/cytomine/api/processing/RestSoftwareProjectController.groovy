@@ -17,7 +17,11 @@ package be.cytomine.api.processing
 */
 
 import be.cytomine.api.RestController
+import be.cytomine.processing.Job
+import be.cytomine.processing.JobRuntimeService
+import be.cytomine.processing.ProcessingServerService
 import be.cytomine.processing.SoftwareProject
+import be.cytomine.processing.SoftwareProjectService
 import be.cytomine.project.Project
 import grails.converters.JSON
 import org.restapidoc.annotation.RestApi
@@ -91,6 +95,10 @@ class RestSoftwareProjectController extends RestController{
         Project project = projectService.read(params.long('id'))
         if (project) {
             def response = softwareProjectService.executeAllWorkflows(project)
+        }
+        else
+        {
+            responseNotFound("Project", params.id)
         }
     }
 
