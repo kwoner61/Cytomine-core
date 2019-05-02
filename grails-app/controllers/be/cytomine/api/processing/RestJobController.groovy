@@ -163,7 +163,7 @@ class RestJobController extends RestController {
 
     @RestApiMethod(description="execute all the job from a list", listing = true)
     @RestApiParams(params=[@RestApiParam(name="id", type="long", paramType = RestApiParamType.PATH,description = "The job id")])
-    def executeAux()
+    def executeJobs()
     {
         ArrayList<Job> listJobs= new ArrayList<Job>()
         if(params.getList("jobs").size()>0)
@@ -175,7 +175,7 @@ class RestJobController extends RestController {
             for(int i=0;i< data.size();i++) {
                 listJobs.add(i, new Job().findWhere(id: new Long(data.getAt(i))))
             }
-            jobRuntimeService.executeAux(listJobs)
+            jobRuntimeService.executeJobs(listJobs)
         }
         else
         {
@@ -184,7 +184,7 @@ class RestJobController extends RestController {
                 long jobId = params.long("id")
                 Job jobTmp=new Job().findWhere(id:jobId)
                 listJobs.add(0,jobTmp)
-                jobRuntimeService.executeAux(listJobs)
+                jobRuntimeService.executeJobs(listJobs)
             }
         }
         return responseSuccess(listJobs)

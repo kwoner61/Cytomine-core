@@ -136,7 +136,7 @@ class JobRuntimeService {
         }
     }
 
-    def executeAux(ArrayList<Job> listJobs)
+    def executeJobs(ArrayList<Job> listJobs)
     {
             for(int i=0;i< listJobs.size();i++)
             {
