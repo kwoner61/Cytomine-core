@@ -29,7 +29,7 @@ class ProcessingServerUrlMappings {
             action = [GET: "getPublicKey"]
         }
 
-        "/api/processing_server/load/$id.$format"(controller: "restProcessingServer") {
+        "/api/processing_server/$id/load.$format"(controller: "restProcessingServer") {
             action = [GET: "getLoadProcessingServer"]
         }
     }
