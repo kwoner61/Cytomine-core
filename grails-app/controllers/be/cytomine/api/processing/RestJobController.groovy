@@ -148,7 +148,7 @@ class RestJobController extends RestController {
         //we need to do that first because the list of params will be like: jobs= 54304,54304,54304,54304
         List<Job> listOfJobParam=params.getList("jobs")
         ArrayList<Job> listJobs= new ArrayList<Job>()
-        if(listOfJobParam.size()==1)
+        if(listOfJobParam.size()>0)
         {
             String toSplit=listOfJobParam.get(0)
             String[] data = toSplit.split(",")
