@@ -32,5 +32,9 @@ class ProcessingServerUrlMappings {
         "/api/processing_server/$id/load.$format"(controller: "restProcessingServer") {
             action = [GET: "getLoadProcessingServer"]
         }
+
+        "/api/processing_server/loadOfAllProcessingServer.$format"(controller: "restProcessingServer") {
+            action = [GET: "getLoadOfAllProcessingServer"]
+        }
     }
 }

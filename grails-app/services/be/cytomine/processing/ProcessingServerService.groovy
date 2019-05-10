@@ -62,6 +62,13 @@ class ProcessingServerService extends ModelService {
         return ProcessingServer.read(id)
     }
 
+    def readMany(def ids) {
+        SecUser currentUser = cytomineService.getCurrentUser()
+        securityACLService.checkUser(currentUser)
+        def ProcessingServers=ProcessingServer.findAllByIdInList(ids)
+        return ProcessingServers
+    }
+
     def list() {
         SecUser currentUser = cytomineService.getCurrentUser()
         securityACLService.checkUser(currentUser)
@@ -99,6 +106,59 @@ class ProcessingServerService extends ModelService {
 
     }
 
+    def getLoadOfAllProcessingServer()throws CytomineException
+    {
+        SecUser currentUser = cytomineService.getCurrentUser()
+        securityACLService.checkAdmin(currentUser)
+
+        JsonSlurper jsonSlurper = new JsonSlurper()
+        JSONObject jsonObject = new JSONObject()
+        jsonObject.put("requestType", "checkLoadOfAllPs")
+        log.info("REQUEST : ${jsonObject}")
+        //creation de la queue de retrieve
+        Connection connection=grailsApplication.mainContext.rabbitConnectionService.getRabbitConnection(MessageBrokerServer.first())
+
+        Channel channel=connection.createChannel()
+        String queueName="queueCommunicationRetrieve"
+
+        amqpQueueService.publishMessage(AmqpQueue.findByName("queueCommunication"), jsonObject.toString())
+
+        TimeoutForAPIRequestService timeout= new TimeoutForAPIRequestService(20,4000)
+        timeout.startCounterTimeout()
+        while(timeout.counterSleep<timeout.limitCounter) {
+            timeout.info()
+            GetResponse response = channel.basicGet(queueName, true)
+
+            if(response != null) {
+                String message = new String(response.getBody(), "UTF-8")
+                long deliveryTag = response.getEnvelope().getDeliveryTag()
+                log.info("Response: $message")
+                def mapMessage = jsonSlurper.parseText(message)
+                switch (mapMessage["requestType"]) {
+
+                    case "responseCheckLoadsForAllPS":
+                        // positively acknowledge a single delivery, the message will be discarded
+                        channel.basicAck(deliveryTag, false)
+                        return mapMessage
+                    default:
+                        timeout.incrementCounter()
+                        timeout.sleep()
+                        break
+                }
+            }
+            else
+            {
+                timeout.incrementCounter()
+                timeout.sleep()
+            }
+        }
+        log.info("Timeout reached! ")
+        JSONObject mapMessage = new JSONObject()
+        mapMessage.put("response","nok")
+        return mapMessage
+    }
+
+
     def getLoadOfProcessingServer(ProcessingServer processingServer)throws CytomineException{
         SecUser currentUser = cytomineService.getCurrentUser()
         securityACLService.checkAdmin(currentUser)
@@ -135,9 +195,7 @@ class ProcessingServerService extends ModelService {
                     case "responseCheckLoadForOnePS":
                         // positively acknowledge a single delivery, the message will be discarded
                         channel.basicAck(deliveryTag, false)
-                        JSONObject returnMsg = new JSONObject(mapMessage)
-                        returnMsg.put("response","nok")
-                        return returnMsg
+                        return mapMessage
                     default:
                         timeout.incrementCounter()
                         timeout.sleep()
