@@ -31,6 +31,9 @@ class JobUrlMappings {
         "/api/job/$id/execute.$format" (controller : "restJob") {
             action = [POST: "executeJobs", GET : "executeJobs"]
         }
+        "/api/job/execute.$format" (controller : "restJob") {
+            action = [POST: "executeJobs", GET : "executeJobs"]
+        }
 
         "/api/job/$job_id/processing_server/$processing_server_id/execute.$format" (controller: "restJob") {
             action = [POST: "executeWithProcessingServer", GET: "executeWithProcessingServer"]
