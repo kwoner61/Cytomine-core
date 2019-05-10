@@ -26,7 +26,10 @@ import be.cytomine.sql.AlgoAnnotationListing
 import be.cytomine.sql.ReviewedAnnotationListing
 import be.cytomine.utils.ModelService
 import be.cytomine.utils.Task
+import com.google.gson.JsonParser
 import groovy.sql.Sql
+import org.codehaus.groovy.grails.web.json.JSONElement
+import org.json.simple.JSONObject
 
 import java.text.SimpleDateFormat
 
@@ -49,7 +52,7 @@ class JobService extends ModelService {
     def dataSource
     def currentRoleServiceProxy
     def securityACLService
-
+    def projectService
     def currentDomain() {
         return Job
     }
@@ -62,6 +65,27 @@ class JobService extends ModelService {
         job
     }
 
+    def readMany(def ids) {
+
+        ArrayList<Job> jobs=new ArrayList<Job>()
+        for(int i=0;i<ids.size();i++)
+        {
+            Job job=new Job().findWhere(id:ids.get(i))
+            if(job)
+            {
+                try
+                {
+                    securityACLService.check(job,READ)
+                    jobs.add(job)
+                }
+                catch (Exception ex)
+                {
+                    log.info("Exception: ${ex.printStackTrace()}")
+                }
+            }
+        }
+        return jobs
+    }
     /**
      * List max job for a project and a software
      * Light flag allow to get a light list with only main job properties
