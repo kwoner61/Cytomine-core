@@ -91,7 +91,6 @@ class BootStrap {
         log.info "#############################################################################"
         log.info "#############################################################################"
         log.info "#############################################################################"
-
         [
             "Environment" : Environment.getCurrent().name,
             "Client": grailsApplication.config.grails.client,
@@ -190,6 +189,18 @@ class BootStrap {
         bootstrapUtilsService.initProcessingServerQueues()
 
         fixPlugins()
+        if (Environment.getCurrent() == Environment.DEVELOPMENT) {
+            log.info("The environment is a development environment...")
+            log.info("Check if Slurm container and Software router container are UP or DOWN")
+            //execute the script that will check if slurm container and sr container are up or not.
+            def start=grailsApplication.config.grails.config.locationsCheckContainer.first().minus("file:")
+
+            def proc = "bash $start".execute()
+            def b = new StringBuffer()
+            proc.consumeProcessErrorStream(b)
+            println proc.text
+            println b.toString()
+        }
     }
 
     private void mockServicesForTests(){

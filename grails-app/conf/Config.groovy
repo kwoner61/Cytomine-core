@@ -19,6 +19,7 @@ import grails.converters.JSON
 /******************************************************************************
  * EXTERNAL configuration
  ******************************************************************************/
+grails.config.locationsCheckContainer= [""]
 grails.config.locations = [""]
 environments {
     production {
@@ -27,9 +28,12 @@ environments {
     development {
         // Update the file path so that it matches the generated configuration file in your bootstrap
         grails.config.locations = ["file:${userHome}/Cytomine-ULiege/Cytomine-bootstrap/configs/core/cytomineconfig.groovy"]
+        grails.config.locationsCheckContainer=  ["file:${userHome}/Cytomine-ULiege/Cytomine-bootstrap/start.sh"]
     }
 }
+
 println "External configuration file : ${grails.config.locations}"
+println "External locationsCheckContainer file : ${grails.config.locationsCheckContainer}"
 File configFile = new File(grails.config.locations.first().minus("file:") as String)
 println "Found configuration file ? ${configFile.exists()}"
 
