@@ -138,19 +138,19 @@ class JobRuntimeService {
 
     def executeJobs(ArrayList<Job> listJobs)
     {
-            for(int i=0;i< listJobs.size();i++)
+        for(int i=0;i< listJobs.size();i++)
+        {
+            try
             {
-                try
-                {
-                    Job jobTmp=new Job().findWhere(id:listJobs.get(i).id)
-                    UserJob userJobTmp = new UserJob().findWhere(job: jobTmp)
-                    this.execute(jobTmp,userJobTmp)
-                }
-                catch(Exception ex)
-                {
-                    log.info("error during the execution of the job")
-                }
+                Job jobTmp=new Job().findWhere(id:listJobs.get(i).id)
+                UserJob userJobTmp = new UserJob().findWhere(job: jobTmp)
+                this.execute(jobTmp,userJobTmp)
             }
+            catch(Exception ex)
+            {
+                log.info("Error: ${ex.printStackTrace()}")
+            }
+        }
     }
 
 
@@ -158,9 +158,17 @@ class JobRuntimeService {
     {
         for(int i=0;i< listJobs.size();i++)
         {
-            Job jobTmp=new Job().findWhere(id:listJobs.get(i).id)
-            UserJob userJobTmp = new UserJob().findWhere(job: jobTmp)
-            this.execute(jobTmp,userJobTmp)
+            try
+            {
+                Job jobTmp=new Job().findWhere(id:listJobs.get(i).id)
+                UserJob userJobTmp = new UserJob().findWhere(job: jobTmp)
+                this.execute(jobTmp,userJobTmp)
+
+            }
+            catch(Exception ex)
+            {
+                log.info("Error: ${ex.printStackTrace()}")
+            }
         }
     }
 
@@ -195,7 +203,7 @@ class JobRuntimeService {
         if (!amqpQueueService.checkRabbitQueueExists(queueName, messageBrokerServer))
             throw new MiddlewareException("The amqp queue doesn't exist, the execution is aborded !")
 
-        jsonObject.put("requestType", "checkAllLoad")
+        jsonObject.put("requestType", "checkLoadsAndExecute")
         jsonObject.put("jobId", job.id)
         jsonObject.put("command", getCommandJobWithArgs(job))
         jsonObject.put("pullingCommand", job.software.pullingCommand)
