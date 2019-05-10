@@ -92,13 +92,21 @@ class RestSoftwareProjectController extends RestController{
     ])
     def executeAllWorkflows()
     {
-        Project project = projectService.read(params.long('id'))
-        if (project) {
-            def response = softwareProjectService.executeAllWorkflows(project)
-        }
-        else
+        try
         {
-            responseNotFound("Project", params.id)
+            Project project = projectService.read(params.long('id'))
+            if (project) {
+                def response = softwareProjectService.executeAllWorkflows(project)
+                return responseSuccess(response)
+            }
+            else
+            {
+                responseNotFound("Project", params.id)
+            }
+        }
+        catch (Exception ex)
+        {
+            log.info("Error: ${ex.printStackTrace()}")
         }
     }
 
