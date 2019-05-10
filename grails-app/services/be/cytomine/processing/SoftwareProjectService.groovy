@@ -89,6 +89,7 @@ class SoftwareProjectService extends ModelService{
 
         }
         jobRuntimeService.executeJobs(listJobs)
+        return listJobs
     }
 
     def list(Project project) {
