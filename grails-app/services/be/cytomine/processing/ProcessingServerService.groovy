@@ -96,6 +96,7 @@ class ProcessingServerService extends ModelService {
 
 
     def getPublicKeyPathProcessingServer(Long id) throws CytomineException {
+
         SecUser currentUser = cytomineService.getCurrentUser()
         securityACLService.checkAdmin(currentUser)
         ProcessingServer processingServer = ProcessingServer.findById(id)
@@ -108,110 +109,124 @@ class ProcessingServerService extends ModelService {
 
     def getLoadOfAllProcessingServer()throws CytomineException
     {
-        SecUser currentUser = cytomineService.getCurrentUser()
-        securityACLService.checkAdmin(currentUser)
+        try
+        {
+            SecUser currentUser = cytomineService.getCurrentUser()
+            securityACLService.checkAdmin(currentUser)
 
-        JsonSlurper jsonSlurper = new JsonSlurper()
-        JSONObject jsonObject = new JSONObject()
-        jsonObject.put("requestType", "checkLoadOfAllPs")
-        log.info("REQUEST : ${jsonObject}")
-        //creation de la queue de retrieve
-        Connection connection=grailsApplication.mainContext.rabbitConnectionService.getRabbitConnection(MessageBrokerServer.first())
+            JsonSlurper jsonSlurper = new JsonSlurper()
+            JSONObject jsonObject = new JSONObject()
+            jsonObject.put("requestType", "checkLoadOfAllPs")
+            log.info("REQUEST : ${jsonObject}")
+            //creation de la queue de retrieve
+            Connection connection=grailsApplication.mainContext.rabbitConnectionService.getRabbitConnection(MessageBrokerServer.first())
 
-        Channel channel=connection.createChannel()
-        String queueName="queueCommunicationRetrieve"
+            Channel channel=connection.createChannel()
+            String queueName="queueCommunicationRetrieve"
 
-        amqpQueueService.publishMessage(AmqpQueue.findByName("queueCommunication"), jsonObject.toString())
+            amqpQueueService.publishMessage(AmqpQueue.findByName("queueCommunication"), jsonObject.toString())
 
-        TimeoutForAPIRequestService timeout= new TimeoutForAPIRequestService(20,4000)
-        timeout.startCounterTimeout()
-        while(timeout.counterSleep<timeout.limitCounter) {
-            timeout.info()
-            GetResponse response = channel.basicGet(queueName, true)
+            TimeoutForAPIRequestService timeout= new TimeoutForAPIRequestService(20,4000)
+            timeout.startCounterTimeout()
+            while(timeout.counterSleep<timeout.limitCounter) {
+                timeout.info()
+                GetResponse response = channel.basicGet(queueName, true)
 
-            if(response != null) {
-                String message = new String(response.getBody(), "UTF-8")
-                long deliveryTag = response.getEnvelope().getDeliveryTag()
-                log.info("Response: $message")
-                def mapMessage = jsonSlurper.parseText(message)
-                switch (mapMessage["requestType"]) {
+                if(response != null) {
+                    String message = new String(response.getBody(), "UTF-8")
+                    long deliveryTag = response.getEnvelope().getDeliveryTag()
+                    log.info("Response: $message")
+                    def mapMessage = jsonSlurper.parseText(message)
+                    switch (mapMessage["requestType"]) {
 
-                    case "responseCheckLoadsForAllPS":
-                        // positively acknowledge a single delivery, the message will be discarded
-                        channel.basicAck(deliveryTag, false)
-                        return mapMessage
-                    default:
-                        timeout.incrementCounter()
-                        timeout.sleep()
-                        break
+                        case "responseCheckLoadsForAllPS":
+                            // positively acknowledge a single delivery, the message will be discarded
+                            channel.basicAck(deliveryTag, false)
+                            return mapMessage
+                        default:
+                            timeout.incrementCounter()
+                            timeout.sleep()
+                            break
+                    }
+                }
+                else
+                {
+                    timeout.incrementCounter()
+                    timeout.sleep()
                 }
             }
-            else
-            {
-                timeout.incrementCounter()
-                timeout.sleep()
-            }
+            log.info("Timeout reached! ")
+            JSONObject mapMessage = new JSONObject()
+            mapMessage.put("response","nok")
+            return mapMessage
         }
-        log.info("Timeout reached! ")
-        JSONObject mapMessage = new JSONObject()
-        mapMessage.put("response","nok")
-        return mapMessage
+        catch(Exception ex)
+        {
+            log.info("Error: ${ex.printStackTrace()}")
+        }
     }
 
 
     def getLoadOfProcessingServer(ProcessingServer processingServer)throws CytomineException{
-        SecUser currentUser = cytomineService.getCurrentUser()
-        securityACLService.checkAdmin(currentUser)
+        try
+        {
+            SecUser currentUser = cytomineService.getCurrentUser()
+            securityACLService.checkAdmin(currentUser)
 
-        //we'll send a loadRequest to the softwareRouter
-        JsonSlurper jsonSlurper = new JsonSlurper()
-        JSONObject jsonObject = new JSONObject()
-        jsonObject.put("requestType", "checkLoadOnePS")
-        jsonObject.put("processingServerID", processingServer.id)
-        log.info("REQUEST : ${jsonObject}")
+            //we'll send a loadRequest to the softwareRouter
+            JsonSlurper jsonSlurper = new JsonSlurper()
+            JSONObject jsonObject = new JSONObject()
+            jsonObject.put("requestType", "checkLoadOnePS")
+            jsonObject.put("processingServerID", processingServer.id)
+            log.info("REQUEST : ${jsonObject}")
 
-        //creation de la queue de retrieve
-        Connection connection=grailsApplication.mainContext.rabbitConnectionService.getRabbitConnection(MessageBrokerServer.first())
+            //creation de la queue de retrieve
+            Connection connection=grailsApplication.mainContext.rabbitConnectionService.getRabbitConnection(MessageBrokerServer.first())
 
-        Channel channel=connection.createChannel()
-        String queueName="queueCommunicationRetrieve"
+            Channel channel=connection.createChannel()
+            String queueName="queueCommunicationRetrieve"
 
-        amqpQueueService.publishMessage(AmqpQueue.findByName("queueCommunication"), jsonObject.toString())
+            amqpQueueService.publishMessage(AmqpQueue.findByName("queueCommunication"), jsonObject.toString())
 
 
-        TimeoutForAPIRequestService timeout= new TimeoutForAPIRequestService(20,4000)
-        timeout.startCounterTimeout()
-        while(timeout.counterSleep<timeout.limitCounter) {
-            timeout.info()
-            GetResponse response = channel.basicGet(queueName, true)
+            TimeoutForAPIRequestService timeout= new TimeoutForAPIRequestService(20,4000)
+            timeout.startCounterTimeout()
+            while(timeout.counterSleep<timeout.limitCounter) {
+                timeout.info()
+                GetResponse response = channel.basicGet(queueName, true)
 
-            if(response != null) {
-                String message = new String(response.getBody(), "UTF-8")
-                long deliveryTag = response.getEnvelope().getDeliveryTag()
+                if(response != null) {
+                    String message = new String(response.getBody(), "UTF-8")
+                    long deliveryTag = response.getEnvelope().getDeliveryTag()
 
-                def mapMessage = jsonSlurper.parseText(message)
-                switch (mapMessage["requestType"]) {
+                    def mapMessage = jsonSlurper.parseText(message)
+                    switch (mapMessage["requestType"]) {
 
-                    case "responseCheckLoadForOnePS":
-                        // positively acknowledge a single delivery, the message will be discarded
-                        channel.basicAck(deliveryTag, false)
-                        return mapMessage
-                    default:
-                        timeout.incrementCounter()
-                        timeout.sleep()
-                        break
+                        case "responseCheckLoadForOnePS":
+                            // positively acknowledge a single delivery, the message will be discarded
+                            channel.basicAck(deliveryTag, false)
+                            return mapMessage
+                        default:
+                            timeout.incrementCounter()
+                            timeout.sleep()
+                            break
+                    }
+                }
+                else
+                {
+                    timeout.incrementCounter()
+                    timeout.sleep()
                 }
             }
-            else
-            {
-                timeout.incrementCounter()
-                timeout.sleep()
-            }
+            log.info("Timeout reached! ")
+            JSONObject mapMessage = new JSONObject()
+            mapMessage.put("response","nok")
+            return mapMessage
         }
-        log.info("Timeout reached! ")
-        JSONObject mapMessage = new JSONObject()
-        mapMessage.put("response","nok")
-        return mapMessage
+        catch(Exception ex)
+        {
+            log.info("Error: ${ex.printStackTrace()}")
+        }
     }
 
     @Override
@@ -282,7 +297,7 @@ class ProcessingServerService extends ModelService {
                 }
             }
             else {
-                bool = f.mkdir()
+                bool = f.mkdirs()
                 log.info("Directory $keyPath created? $bool")
                 if (bool) {
                     keyPath += "/" + hostname
