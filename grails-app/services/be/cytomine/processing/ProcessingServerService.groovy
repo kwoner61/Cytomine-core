@@ -24,7 +24,15 @@ import be.cytomine.middleware.MessageBrokerServer
 import be.cytomine.security.SecUser
 import be.cytomine.utils.ModelService
 import be.cytomine.utils.Task
+import com.jcraft.jsch.JSch
+import com.jcraft.jsch.KeyPair
+import com.rabbitmq.client.Channel
+import com.rabbitmq.client.Connection
+import com.rabbitmq.client.GetResponse
+import grails.util.Holders
 import groovy.json.JsonBuilder
+import groovy.json.JsonSlurper
+import org.json.JSONObject
 import org.springframework.security.acls.domain.BasePermission
 
 import static org.springframework.security.acls.domain.BasePermission.WRITE
@@ -54,6 +62,13 @@ class ProcessingServerService extends ModelService {
         return ProcessingServer.read(id)
     }
 
+    def readMany(def ids) {
+        SecUser currentUser = cytomineService.getCurrentUser()
+        securityACLService.checkUser(currentUser)
+        def ProcessingServers=ProcessingServer.findAllByIdInList(ids)
+        return ProcessingServers
+    }
+
     def list() {
         SecUser currentUser = cytomineService.getCurrentUser()
         securityACLService.checkUser(currentUser)
@@ -79,6 +94,141 @@ class ProcessingServerService extends ModelService {
         return executeCommand(c, domain, null)
     }
 
+
+    def getPublicKeyPathProcessingServer(Long id) throws CytomineException {
+
+        SecUser currentUser = cytomineService.getCurrentUser()
+        securityACLService.checkAdmin(currentUser)
+        ProcessingServer processingServer = ProcessingServer.findById(id)
+        
+        String keyPath=Holders.getGrailsApplication().config.grails.serverSshKeysPath
+        def keyPathToReturn = """${keyPath}/${processingServer.host}/${processingServer.host}.pub"""
+        return keyPathToReturn
+
+    }
+
+    def getLoadOfAllProcessingServer()throws CytomineException
+    {
+        try
+        {
+            SecUser currentUser = cytomineService.getCurrentUser()
+            securityACLService.checkAdmin(currentUser)
+
+            JsonSlurper jsonSlurper = new JsonSlurper()
+            JSONObject jsonObject = new JSONObject()
+            jsonObject.put("requestType", "checkLoadOfAllPs")
+            log.info("REQUEST : ${jsonObject}")
+            //creation de la queue de retrieve
+            Connection connection=grailsApplication.mainContext.rabbitConnectionService.getRabbitConnection(MessageBrokerServer.first())
+
+            Channel channel=connection.createChannel()
+            String queueName="queueCommunicationRetrieve"
+
+            amqpQueueService.publishMessage(AmqpQueue.findByName("queueCommunication"), jsonObject.toString())
+
+            TimeoutForAPIRequestService timeout= new TimeoutForAPIRequestService(20,4000)
+            timeout.startCounterTimeout()
+            while(timeout.counterSleep<timeout.limitCounter) {
+                timeout.info()
+                GetResponse response = channel.basicGet(queueName, true)
+
+                if(response != null) {
+                    String message = new String(response.getBody(), "UTF-8")
+                    long deliveryTag = response.getEnvelope().getDeliveryTag()
+                    log.info("Response: $message")
+                    def mapMessage = jsonSlurper.parseText(message)
+                    switch (mapMessage["requestType"]) {
+
+                        case "responseCheckLoadsForAllPS":
+                            // positively acknowledge a single delivery, the message will be discarded
+                            channel.basicAck(deliveryTag, false)
+                            return mapMessage
+                        default:
+                            timeout.incrementCounter()
+                            timeout.sleep()
+                            break
+                    }
+                }
+                else
+                {
+                    timeout.incrementCounter()
+                    timeout.sleep()
+                }
+            }
+            log.info("Timeout reached! ")
+            JSONObject mapMessage = new JSONObject()
+            mapMessage.put("response","nok")
+            return mapMessage
+        }
+        catch(Exception ex)
+        {
+            log.info("Error: ${ex.printStackTrace()}")
+        }
+    }
+
+
+    def getLoadOfProcessingServer(ProcessingServer processingServer)throws CytomineException{
+        try
+        {
+            SecUser currentUser = cytomineService.getCurrentUser()
+            securityACLService.checkAdmin(currentUser)
+
+            //we'll send a loadRequest to the softwareRouter
+            JsonSlurper jsonSlurper = new JsonSlurper()
+            JSONObject jsonObject = new JSONObject()
+            jsonObject.put("requestType", "checkLoadOnePS")
+            jsonObject.put("processingServerID", processingServer.id)
+            log.info("REQUEST : ${jsonObject}")
+
+            //creation de la queue de retrieve
+            Connection connection=grailsApplication.mainContext.rabbitConnectionService.getRabbitConnection(MessageBrokerServer.first())
+
+            Channel channel=connection.createChannel()
+            String queueName="queueCommunicationRetrieve"
+
+            amqpQueueService.publishMessage(AmqpQueue.findByName("queueCommunication"), jsonObject.toString())
+
+
+            TimeoutForAPIRequestService timeout= new TimeoutForAPIRequestService(20,4000)
+            timeout.startCounterTimeout()
+            while(timeout.counterSleep<timeout.limitCounter) {
+                timeout.info()
+                GetResponse response = channel.basicGet(queueName, true)
+
+                if(response != null) {
+                    String message = new String(response.getBody(), "UTF-8")
+                    long deliveryTag = response.getEnvelope().getDeliveryTag()
+
+                    def mapMessage = jsonSlurper.parseText(message)
+                    switch (mapMessage["requestType"]) {
+
+                        case "responseCheckLoadForOnePS":
+                            // positively acknowledge a single delivery, the message will be discarded
+                            channel.basicAck(deliveryTag, false)
+                            return mapMessage
+                        default:
+                            timeout.incrementCounter()
+                            timeout.sleep()
+                            break
+                    }
+                }
+                else
+                {
+                    timeout.incrementCounter()
+                    timeout.sleep()
+                }
+            }
+            log.info("Timeout reached! ")
+            JSONObject mapMessage = new JSONObject()
+            mapMessage.put("response","nok")
+            return mapMessage
+        }
+        catch(Exception ex)
+        {
+            log.info("Error: ${ex.printStackTrace()}")
+        }
+    }
+
     @Override
     def getStringParamsI18n(def domain) {
         return [domain.name]
@@ -87,7 +237,6 @@ class ProcessingServerService extends ModelService {
     @Override
     def afterAdd(Object domain, Object response) {
         aclUtilService.addPermission(domain, cytomineService.currentUser.username, BasePermission.ADMINISTRATION)
-
         String queueName = amqpQueueService.queuePrefixProcessingServer + ((domain as ProcessingServer).name).capitalize()
         if (!amqpQueueService.checkAmqpQueueDomainExists(queueName)) {
             // Creates the new queue
@@ -113,7 +262,51 @@ class ProcessingServerService extends ModelService {
             jsonBuilder(message)
 
             amqpQueueService.publishMessage(AmqpQueue.findByName("queueCommunication"), jsonBuilder.toString())
+
+            //get the path and name for the SSH Keysfiles
+            String keyPath=Holders.getGrailsApplication().config.grails.serverSshKeysPath
+            keyPath+="/"
+            createKPairSSH(keyPath,(domain as ProcessingServer).host)
+
+
         }
+
+    }
+
+    def createKPairSSH(String keyPath,String hostname)
+    {
+        //this function will create a new ssh key pair. It will also check if a directory and the KPair already exist or not
+        boolean bool = false
+        keyPath+=hostname
+        try {
+            File f = new File(keyPath)
+            if(f.exists() && f.isDirectory())
+            {
+                //we'll check if the pair key is inside the folder
+                String path=keyPath+"/"+hostname
+                log.info("Directory $keyPath already exist! test if the files ${path} &  ${path}.pub exist")
+                String folder=path+".pub"
+                File fpub=new File(folder)
+                File fpri=new File(path)
+                if(!fpri.exists() || !fpub.exists())
+                {
+                    log.info("the pair is missing... we'll create a new one")
+                    KeyPair kpair = KeyPair.genKeyPair(new JSch(), KeyPair.RSA)
+                    kpair.writePrivateKey(path)
+                    kpair.writePublicKey(path + ".pub", "public key of $hostname")
+                }
+            }
+            else {
+                bool = f.mkdirs()
+                log.info("Directory $keyPath created? $bool")
+                if (bool) {
+                    keyPath += "/" + hostname
+                    KeyPair kpair = KeyPair.genKeyPair(new JSch(), KeyPair.RSA)
+                    kpair.writePrivateKey(keyPath)
+                    kpair.writePublicKey(keyPath + ".pub", "public key of $hostname")
+                }
+            }
+        } catch(Exception e) {e.printStackTrace()}
     }
 
     def afterUpdate(Object domain, Object response) {

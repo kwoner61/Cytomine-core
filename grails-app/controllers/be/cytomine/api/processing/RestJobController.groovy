@@ -141,20 +141,92 @@ class RestJobController extends RestController {
         delete(jobService, JSON.parse("{id : $params.id}"),null)
     }
 
+    @RestApiMethod(description="execute all the job from a list", listing = true)
+    @RestApiParams(params=[])
+    def executeAll()
+    {
+        try
+        {
+            ArrayList<Job> listJobs=new ArrayList<Job>()
+            def idJobs = params.jobs ? params.jobs.split(',').collect { Long.parseLong(it)} : null
+            if (idJobs) {
+                listJobs = jobService.readMany(idJobs)
+                jobRuntimeService.executeAllJobs(listJobs)
+            }
+            else
+            {
+                listJobs = Software.list()
+            }
+            return responseSuccess(listJobs)
+        }
+        catch (Exception ex)
+        {
+            log.info("Error: ${ex.printStackTrace()}")
+        }
+
+    }
+
+    @RestApiMethod(description="execute all the job from a list OR from an id", listing = true)
+    @RestApiParams(params=[@RestApiParam(name="id", type="long", paramType = RestApiParamType.PATH,description = "The job id")])
+    def executeJobs()
+    {
+        try
+        {
+            ArrayList<Job> listJobs=new ArrayList<Job>()
+            def idJobs = params.jobs ? params.jobs.split(',').collect { Long.parseLong(it)} : null
+            if (idJobs) {
+                listJobs = jobService.readMany(idJobs)
+                jobRuntimeService.executeAllJobs(listJobs)
+            } else
+            {
+
+                if(params.getProperty("id")!=null)
+                {
+                    long jobId = params.long("id")
+
+                    Job jobTmp=jobService.read(jobId)
+                    listJobs.add(0,jobTmp)
+                    jobRuntimeService.executeJobs(listJobs)
+                }
+                else
+                {
+                    listJobs = Software.list()
+                }
+            }
+
+            return responseSuccess(listJobs)
+        }
+        catch (Exception ex)
+        {
+            log.info("Error: ${ex.printStackTrace()}")
+        }
+
+    }
+
+
     @RestApiMethod(description = "Execute a job, launch the software")
     @RestApiParams(params = [
         @RestApiParam(name = "id", type = "long", paramType = RestApiParamType.PATH, description = "The job id")
     ])
     def execute() {
-        long jobId = params.long("id")
-        Job job = Job.read(jobId)
 
-        securityACLService.check(job.container(), READ)
-        UserJob userJob = UserJob.findByJob(job)
+        try
+        {
+            long jobId = params.long("id")
+            Job job = Job.read(jobId)
 
-        jobRuntimeService.execute(job, userJob)
+            securityACLService.check(job.container(), READ)
+            UserJob userJob = UserJob.findByJob(job)
 
-        return responseSuccess(job)
+            jobRuntimeService.execute(job, userJob)
+
+            return responseSuccess(job)
+        }
+        catch (Exception ex)
+        {
+            log.info("Error: ${ex.printStackTrace()}")
+        }
+
     }
 
     @RestApiMethod(description = "Execute a job with a given processing server")
@@ -163,18 +235,26 @@ class RestJobController extends RestController {
         @RestApiParam(name = "processingServerId", type = "long", paramType = RestApiParamType.PATH, description = "The processing server id")
     ])
     def executeWithProcessingServer() {
-        long jobId = params.long("jobId")
-        Job job = Job.read(jobId)
 
-        long processingServerId = params.long("processingServerId")
-        ProcessingServer processingServer = ProcessingServer.read(processingServerId)
+        try
+        {
+            long jobId = params.long("jobId")
+            Job job = Job.read(jobId)
 
-        securityACLService.check(job.container(), READ)
-        UserJob userJob = UserJob.findByJob(job)
+            long processingServerId = params.long("processingServerId")
+            ProcessingServer processingServer = ProcessingServer.read(processingServerId)
 
-        jobRuntimeService.execute(job, userJob, processingServer)
+            securityACLService.check(job.container(), READ)
+            UserJob userJob = UserJob.findByJob(job)
 
-        return responseSuccess(job)
+            jobRuntimeService.execute(job, userJob, processingServer)
+
+            return responseSuccess(job)
+        }
+        catch (Exception ex)
+        {
+            log.info("Error: ${ex.printStackTrace()}")
+        }
     }
 
     @RestApiMethod(description = "Kill a job")
@@ -247,7 +327,7 @@ class RestJobController extends RestController {
     ])
     @RestApiResponseObject(objectIdentifier = "[message:x]")
     def deleteAllJobData() {
-        Job job = jobService.read(params.long('id'));
+        Job job = jobService.read(params.long('id'))
 
 
         if (!job) {

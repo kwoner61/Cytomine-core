@@ -98,15 +98,15 @@ class ProcessingServer extends CytomineDomain {
     static ProcessingServer insertDataIntoDomain(def json, def domain = new ProcessingServer()) {
         domain.id = JSONUtils.getJSONAttrLong(json, 'id', null)
         domain.name = JSONUtils.getJSONAttrStr(json, 'name', true)
-        domain.host = JSONUtils.getJSONAttrStr(json, 'host', true)
+        domain.host =JSONUtils.getJSONAttrStr(json, 'host', true)
         domain.username = JSONUtils.getJSONAttrStr(json, 'username', true)
         domain.port = JSONUtils.getJSONAttrInteger(json, 'port', null)
         domain.type = JSONUtils.getJSONAttrStr(json, 'type', true)
         domain.processingMethodName = JSONUtils.getJSONAttrStr(json, 'processingMethodName', true)
         domain.amqpQueue = JSONUtils.getJSONAttrDomain(json, 'amqpQueue', new AmqpQueue(), false)
-        domain.type = JSONUtils.getJSONAttrStr(json, 'persistentDirectory', false)
-        domain.type = JSONUtils.getJSONAttrStr(json, 'workingDirectory', false)
-        domain.type = JSONUtils.getJSONAttrInteger(json, 'index', 10)
+        domain.persistentDirectory = JSONUtils.getJSONAttrStr(json, 'persistentDirectory', false)
+        domain.workingDirectory = JSONUtils.getJSONAttrStr(json, 'workingDirectory', false)
+        domain.index = JSONUtils.getJSONAttrInteger(json, 'index', 10)
         return domain
     }
 

@@ -26,7 +26,10 @@ import be.cytomine.sql.AlgoAnnotationListing
 import be.cytomine.sql.ReviewedAnnotationListing
 import be.cytomine.utils.ModelService
 import be.cytomine.utils.Task
+import com.google.gson.JsonParser
 import groovy.sql.Sql
+import org.codehaus.groovy.grails.web.json.JSONElement
+import org.json.simple.JSONObject
 
 import java.text.SimpleDateFormat
 
@@ -41,13 +44,15 @@ class JobService extends ModelService {
     def jobParameterService
     def springSecurityService
     def backgroundService
+    def userJobService
     def jobDataService
+    def jobService
     def secUserService
     def annotationListingService
     def dataSource
     def currentRoleServiceProxy
     def securityACLService
-
+    def projectService
     def currentDomain() {
         return Job
     }
@@ -60,6 +65,27 @@ class JobService extends ModelService {
         job
     }
 
+    def readMany(def ids) {
+
+        ArrayList<Job> jobs=new ArrayList<Job>()
+        for(int i=0;i<ids.size();i++)
+        {
+            Job job=new Job().findWhere(id:ids.get(i))
+            if(job)
+            {
+                try
+                {
+                    securityACLService.check(job,READ)
+                    jobs.add(job)
+                }
+                catch (Exception ex)
+                {
+                    log.info("Exception: ${ex.printStackTrace()}")
+                }
+            }
+        }
+        return jobs
+    }
     /**
      * List max job for a project and a software
      * Light flag allow to get a light list with only main job properties
@@ -82,6 +108,59 @@ class JobService extends ModelService {
             getJOBResponseList(jobs)
         }
     }
+
+
+    def addJson(JSONObject Json)
+    {
+        JSONObject js=new JSONObject(Json)
+
+        Project project=Project.findById(js.get("project"))
+        securityACLService.check(project.id,Project, READ)
+        securityACLService.checkisNotReadOnly(project.id,Project)
+        SecUser currentUser = cytomineService.getCurrentUser()
+
+        //Start transaction
+        Transaction transaction = transactionService.start()
+        synchronized (this.getClass()) {
+
+            Job job = new Job()
+            job.setSoftware(Software.findById(new Long(js.get("software"))))
+            job.setProject(Project.findById(new Long(js.get("project"))))
+            jobService.saveDomain(job)
+
+            UserJob userJobTmp = new UserJob()
+            userJobTmp.setJob(job)
+
+            userJobTmp.setUser(currentUser)
+            userJobTmp.setPassword(currentUser.password)
+            userJobTmp.setUsername(currentUser.username)
+
+            userJobService.saveDomain(userJobTmp)
+
+            ArrayList<SoftwareParameter> params = js.get("params");
+            if (params) {
+                params.each { param ->
+                    log.info "add param = " + param
+                    jobParameterService.addJobParameter(job,param.softwareParameter,param.value, currentUser, transaction)
+                }
+            }
+            else
+            {
+                SoftwareParameterService sps=new SoftwareParameterService()
+                Software softTmp=Software.findById(new Long(js.get("software")))
+
+                ArrayList<SoftwareParameter> paramList = new ArrayList<SoftwareParameter>()
+                paramList=sps.list(softTmp)
+                log.info("${paramList.size()}")
+                for(int i=0;i<paramList.size();i++)
+                {
+                    jobParameterService.addJobParameter(job.id,paramList.get(i).id,paramList.get(i).defaultValue, currentUser, transaction)
+                }
+            }
+            return job.id
+        }
+    }
+
 
     /**
      * Add the new domain with JSON data

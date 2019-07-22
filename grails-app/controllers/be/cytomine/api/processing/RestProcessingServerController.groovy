@@ -19,6 +19,7 @@ package be.cytomine.api.processing
 import be.cytomine.api.RestController
 import be.cytomine.processing.ProcessingServer
 import grails.converters.JSON
+import org.json.simple.JSONObject
 import org.restapidoc.annotation.RestApiMethod
 import org.restapidoc.annotation.RestApiObject
 import org.restapidoc.annotation.RestApiParam
@@ -45,6 +46,67 @@ class RestProcessingServerController extends RestController {
             responseSuccess(processingServer)
         } else {
             responseNotFound("ProcessingServer", params.id)
+        }
+    }
+
+    @RestApiMethod(description = "Get the public key of a specific processing server")
+    @RestApiParams(params = [
+            @RestApiParam(name = "id", type = "long", paramType = RestApiParamType.PATH, description = "The processing server id")
+    ])
+    def getPublicKey(){
+        try
+        {
+            ProcessingServer processingServer = processingServerService.read(params.long('id'))
+            if (processingServer) {
+                String name= processingServer.host+".pub"
+                downloadFile(processingServerService.getPublicKeyPathProcessingServer(params.long('id')),name,"text/plain")
+            }
+            else {
+                responseNotFound("ProcessingServer", params.id)
+            }
+        }
+        catch (Exception ex)
+        {
+            log.info("Error: ${ex.printStackTrace()}")
+        }
+
+    }
+
+    @RestApiMethod(description = "Get the load of a processing server")
+    @RestApiParams(params = [
+            @RestApiParam(name = "id", type = "long", paramType = RestApiParamType.PATH, description = "The processing server id")
+    ])
+    def getLoadProcessingServer(){
+        try
+        {
+            ProcessingServer processingServer = processingServerService.read(params.long('id'))
+            if (processingServer) {
+                def jsonToDisplay=processingServerService.getLoadOfProcessingServer(processingServer)
+                JSONObject js=new JSONObject(jsonToDisplay)
+                responseSuccess(js)
+            }
+            else {
+                responseNotFound("ProcessingServer", params.id)
+            }
+        }
+        catch (Exception ex)
+        {
+            log.info("Error: ${ex.printStackTrace()}")
+        }
+    }
+
+    @RestApiMethod(description = "Get the load of all processing server")
+    def getLoadOfAllProcessingServer(){
+        try
+        {
+            def jsonToDisplay=processingServerService.getLoadOfAllProcessingServer()
+            JSONObject js=new JSONObject(jsonToDisplay)
+            if(js)
+                responseSuccess(js)
+        }
+        catch (Exception ex)
+        {
+            log.info("Error: ${ex.printStackTrace()}")
         }
     }
 

@@ -21,12 +21,19 @@ import be.cytomine.command.AddCommand
 import be.cytomine.command.Command
 import be.cytomine.command.DeleteCommand
 import be.cytomine.command.EditCommand
+import be.cytomine.command.TimeoutForAPIRequestService
 import be.cytomine.command.Transaction
 import be.cytomine.middleware.AmqpQueue
+import be.cytomine.middleware.MessageBrokerServer
 import be.cytomine.security.SecUser
 import be.cytomine.utils.ModelService
 import be.cytomine.utils.Task
+import com.rabbitmq.client.Channel
+import com.rabbitmq.client.Connection
+import com.rabbitmq.client.GetResponse
 import groovy.json.JsonBuilder
+import groovy.json.JsonSlurper
+import org.json.simple.JSONObject
 
 class SoftwareUserRepositoryService extends ModelService {
 
@@ -127,11 +134,51 @@ class SoftwareUserRepositoryService extends ModelService {
 
     def refreshRepositories() {
         def message = [requestType: "refreshRepositories"]
-
+        JsonSlurper jsonSlurper = new JsonSlurper()
         JsonBuilder jsonBuilder = new JsonBuilder()
         jsonBuilder(message)
 
+        Connection connection=grailsApplication.mainContext.rabbitConnectionService.getRabbitConnection(MessageBrokerServer.first())
+
+        Channel channel=connection.createChannel()
+        String queueName="queueCommunicationRetrieve"
         amqpQueueService.publishMessage(AmqpQueue.findByName("queueCommunication"), jsonBuilder.toString())
+
+        TimeoutForAPIRequestService timeout= new TimeoutForAPIRequestService(2,10000)
+        timeout.startCounterTimeout()
+        while(timeout.counterSleep<timeout.limitCounter) {
+            timeout.info()
+            GetResponse response = channel.basicGet(queueName, true)
+
+            if(response != null) {
+                String msg = new String(response.getBody(), "UTF-8")
+                long deliveryTag = response.getEnvelope().getDeliveryTag()
+
+                def mapMessage = jsonSlurper.parseText(msg)
+                switch (mapMessage["requestType"]) {
+
+                    case "responseRefreshAllRepositories":
+                        // positively acknowledge a single delivery, the message will be discarded
+                        channel.basicAck(deliveryTag, false)
+                        JSONObject returnMsg = new JSONObject(mapMessage)
+                        return returnMsg
+                        break
+                    default:
+                        timeout.incrementCounter()
+                        timeout.sleep()
+                        break
+                }
+
+            }
+            else
+            {
+                timeout.incrementCounter()
+                timeout.sleep()
+            }
+        }
+        JSONObject mapMessage = new JSONObject()
+        mapMessage.put("response","nok")
+        return mapMessage
     }
 
 }

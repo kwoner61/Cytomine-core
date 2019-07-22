@@ -24,6 +24,17 @@ class ProcessingServerUrlMappings {
         "/api/processing_server/$id.$format"(controller: "restProcessingServer") {
             action = [GET: "show", PUT: "update", DELETE: "delete"]
         }
-    }
 
+        "/api/processing_server/$id/publickey"(controller: "restProcessingServer") {
+            action = [GET: "getPublicKey"]
+        }
+
+        "/api/processing_server/$id/load.$format"(controller: "restProcessingServer") {
+            action = [GET: "getLoadProcessingServer"]
+        }
+
+        "/api/processing_server/loadOfAllProcessingServer.$format"(controller: "restProcessingServer") {
+            action = [GET: "getLoadOfAllProcessingServer"]
+        }
+    }
 }
