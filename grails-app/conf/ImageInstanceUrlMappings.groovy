@@ -44,9 +44,6 @@ class ImageInstanceUrlMappings {
             action = [GET:"previous"]
         }
 
-        "/api/user/$user/imageinstance/light.$format"(controller: "restImageInstance"){
-            action = [GET:"listByUser"]
-        }
         "/api/project/$project/imageinstance.$format"(controller: "restImageInstance"){
             action = [GET:"listByProject"]
         }
