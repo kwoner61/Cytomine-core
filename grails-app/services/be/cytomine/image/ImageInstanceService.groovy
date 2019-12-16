@@ -308,7 +308,7 @@ class ImageInstanceService extends ModelService {
 
         String sortedProperty = ReflectionUtils.findField(ImageInstance, sortColumn) ? "${imageInstanceAlias}." + sortColumn : null
         if(!sortedProperty) sortedProperty = ReflectionUtils.findField(AbstractImage, sortColumn) ? abstractImageAlias + "." + sortColumn : null
-        if(!sortedProperty) sortedProperty = ReflectionUtils.findField(Mime, sortColumn) ? mimeAlias + "." + sortColumn : null
+        if(!sortedProperty) sortedProperty = ReflectionUtils.findField(UploadedFile, sortColumn) ? mimeAlias + "." + sortColumn : null
         if(!sortedProperty) throw new CytomineMethodNotYetImplementedException("ImageInstance list sorted by $sortDirection is not implemented")
         sortedProperty = fieldNameToSQL(sortedProperty)
 
@@ -366,7 +366,7 @@ class ImageInstanceService extends ModelService {
         }
         if (joinMime) {
             select += ", ${mimeAlias}.* "
-            from += "JOIN mime $mimeAlias ON ${mimeAlias}.id = ${abstractImageAlias}.mime_id "
+            from += "JOIN uploaded_file $mimeAlias ON ${mimeAlias}.id = ${abstractImageAlias}.uploaded_file_id "
         }
         search = ""
 
@@ -861,7 +861,7 @@ class ImageInstanceService extends ModelService {
 
         String abstractImageAlias = "ai"
         validParameters.addAll(getDomainAssociatedSearchParameters(AbstractImage, searchParameters).collect {[operator:it.operator, property:abstractImageAlias+"."+it.property, value:it.value]})
-        validParameters.addAll(getDomainAssociatedSearchParameters(Mime, searchParameters).collect {[operator:it.operator, property:"mime."+it.property, value:it.value]})
+        validParameters.addAll(getDomainAssociatedSearchParameters(UploadedFile, searchParameters).collect {[operator:it.operator, property:"mime."+it.property, value:it.value]})
 
         loop:for (def parameter : searchParameters){
             String property

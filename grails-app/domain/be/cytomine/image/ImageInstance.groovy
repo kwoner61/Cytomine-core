@@ -121,6 +121,9 @@ class ImageInstance extends CytomineDomain implements Serializable {
         sort "id"
         tablePerHierarchy true
         cache true
+        physicalSizeX column: "physical_size_x"
+        physicalSizeY column: "physical_size_y"
+        physicalSizeZ column: "physical_size_z"
     }
 
     /**

@@ -111,6 +111,27 @@ class BootstrapOldVersionService {
         Version.setCurrentVersion(Long.parseLong(grailsApplication.metadata.'app.versionDate'), grailsApplication.metadata.'app.version')
     }
 
+    def initv2_1_0() {
+        if (checkSqlColumnExistence("physical_sizex", "abstract_image")) {
+            new Sql(dataSource).executeUpdate("UPDATE abstract_image SET physical_size_x = physical_sizex;")
+            new Sql(dataSource).executeUpdate("UPDATE abstract_image SET physical_size_y = physical_sizey;")
+            new Sql(dataSource).executeUpdate("UPDATE abstract_image SET physical_size_z = physical_sizez;")
+            new Sql(dataSource).executeUpdate("ALTER TABLE abstract_image DROP COLUMN physical_sizex;")
+            new Sql(dataSource).executeUpdate("ALTER TABLE abstract_image DROP COLUMN physical_sizey;")
+            new Sql(dataSource).executeUpdate("ALTER TABLE abstract_image DROP COLUMN physical_sizez;")
+        }
+
+        if (checkSqlColumnExistence("physical_sizex", "image_instance")) {
+            new Sql(dataSource).executeUpdate("UPDATE image_instance SET physical_size_x = physical_sizex;")
+            new Sql(dataSource).executeUpdate("UPDATE image_instance SET physical_size_y = physical_sizey;")
+            new Sql(dataSource).executeUpdate("UPDATE image_instance SET physical_size_z = physical_sizez;")
+            new Sql(dataSource).executeUpdate("ALTER TABLE image_instance DROP COLUMN physical_sizex CASCADE;")
+            new Sql(dataSource).executeUpdate("ALTER TABLE image_instance DROP COLUMN physical_sizey CASCADE;")
+            new Sql(dataSource).executeUpdate("ALTER TABLE image_instance DROP COLUMN physical_sizez CASCADE;")
+        }
+
+    }
+
     def initv2_0_0() {
         new Sql(dataSource).executeUpdate("UPDATE sec_user SET is_developer = FALSE WHERE is_developer IS NULL;")
         new Sql(dataSource).executeUpdate("ALTER TABLE sec_user ALTER COLUMN is_developer SET DEFAULT FALSE;")

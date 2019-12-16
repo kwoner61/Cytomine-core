@@ -589,9 +589,9 @@ class RestImageInstanceController extends RestController {
         bounds.put("width", [min : abstractImages.min{it.width}?.width, max : abstractImages.max{it.width}?.width])
         bounds.put("height", [min : abstractImages.min{it.height}?.height, max : abstractImages.max{it.height}?.height])
         bounds.put("magnification", [list : images.collect{it.magnification}.unique(), min : bounds["magnification"]?.min, max : bounds["magnification"]?.max])
-        bounds.put("resolution", [list : images.collect{it.resolution}.unique(), min : bounds["resolution"]?.min, max : bounds["resolution"]?.max])
-        bounds.put("format", [list : abstractImages.collect{it.mime?.extension}.unique()])
-        bounds.put("mimeType", [list : abstractImages.collect{it.mime?.mimeType}.unique()])
+        bounds.put("resolution", [list : images.collect{it.physicalSizeX}.unique(), min : bounds["resolution"]?.min, max : bounds["resolution"]?.max])
+        bounds.put("format", [list : abstractImages.collect{it?.uploadedFile?.contentType}.unique()])
+        bounds.put("mimeType", [list : abstractImages.collect{it?.uploadedFile?.contentType}.unique()])
 
         responseSuccess(bounds)
     }

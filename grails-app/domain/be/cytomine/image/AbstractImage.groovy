@@ -99,6 +99,9 @@ class AbstractImage extends CytomineDomain implements Serializable {
         id generator: "assigned"
         sort "id"
         cache(true)
+        physicalSizeX column: "physical_size_x"
+        physicalSizeY column: "physical_size_y"
+        physicalSizeZ column: "physical_size_z"
     }
 
     static constraints = {
