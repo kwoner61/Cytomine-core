@@ -162,7 +162,7 @@ class SecUserService extends ModelService {
         if(multiSearch) {
             String value = ((String) multiSearch.values).toLowerCase()
             value = "%$value%"
-            where += " and (u.firstname ILIKE :name OR u.lastname ILIKE :name OR u.email ILIKE :name) "
+            where += " and (u.firstname ILIKE :name OR u.lastname ILIKE :name OR u.email ILIKE :name OR u.username ILIKE :name) "
             mapParams.put("name", value)
         }
         if(extended.withRoles){
