@@ -81,8 +81,8 @@ class RestImageInstanceController extends RestController {
 
     @RestApiMethod(description="Get all image instance available for the current user", listing = true)
     def listByUser() {
-        String sortColumn = params.sortColumn ? params.sortColumn : "created"
-        String sortDirection = params.sortDirection ? params.sortDirection : "desc"
+        String sortColumn = params.sort ? params.sort : "created"
+        String sortDirection = params.order ? params.order : "desc"
         SecUser user = secUserService.read(params.long('user'))
         def result = imageInstanceService.list(user, sortColumn, sortDirection, searchParameters, params.long('max'), params.long('offset'))
         responseSuccess([collection : result.data, size : result.total])

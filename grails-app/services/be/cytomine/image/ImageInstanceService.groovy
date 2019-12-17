@@ -107,10 +107,12 @@ class ImageInstanceService extends ModelService {
         if (sortColumn.equals("numberOfAnnotations")) sortColumn = "countImageAnnotations"
         if (sortColumn.equals("numberOfJobAnnotations")) sortColumn = "countImageJobAnnotations"
         if (sortColumn.equals("numberOfReviewedAnnotations")) sortColumn = "countImageReviewedAnnotations"
+        if (sortColumn.equals("name")) sortColumn = "instanceFilename"
 
         String sortedProperty = ReflectionUtils.findField(ImageInstance, sortColumn) ? "${imageInstanceAlias}." + sortColumn : null
         if (!sortedProperty) sortedProperty = ReflectionUtils.findField(AbstractImage, sortColumn) ? abstractImageAlias + "." + sortColumn : null
         if (!sortedProperty) throw new CytomineMethodNotYetImplementedException("ImageInstance list sorted by $sortDirection is not implemented")
+        sortedProperty = fieldNameToSQL(sortedProperty)
 
         def validatedSearchParameters = getDomainAssociatedSearchParameters(searchParameters, false)
 
@@ -203,8 +205,11 @@ class ImageInstanceService extends ModelService {
             map['created'] = map['created'].getTime()
             map['deleted'] = map['deleted']?.getTime()
             map['updated'] = map['updated']?.getTime()
+            map['reviewStart'] = map['reviewStart']?.getTime()
+            map['reviewStop'] = map['reviewStop']?.getTime()
             map['baseImage'] = map['baseImageId']
             map['project'] = map['projectId']
+            map['reviewUser'] = map['reviewUserId']
 
             //TODO improve perf !
             def line = ImageInstance.getDataFromDomain(ImageInstance.insertDataIntoDomain(map))
