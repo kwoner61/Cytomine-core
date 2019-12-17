@@ -389,6 +389,28 @@ class RestController {
         }
         return searchParameters
     }
+
+    final protected def getSearchParameters(def allowedParameters){
+        def searchParameters = []
+        for(def param : params){
+            if (param.key ==~ /.+\[.+\]/) {
+                String[] tmp = param.key.split('\\[')
+                String operator = tmp[1].substring(0,tmp[1].length()-1)
+                String field = tmp[0]
+
+                def allowedParameter = allowedParameters.find { it.field = field }
+                if (allowedParameter?.allowedOperators?.contains(operator)) {
+                    String value = param.value
+                    if (operator == SEARCH_PARAM_LIKE || operator == SEARCH_PARAM_ILIKE)
+                        value = "%$value%"
+
+                    def sqlOperator = (operator == SEARCH_PARAM_EQUALS) ? "=" : operator
+                    searchParameters << [operator: operator, field: field, value: value, sqlOperator: sqlOperator]
+                }
+            }
+        }
+        return searchParameters
+    }
     /**
      * Substract the collection with offset (min) and max
      * @param collection Full collection
