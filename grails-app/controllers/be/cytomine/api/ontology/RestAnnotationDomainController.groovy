@@ -132,12 +132,16 @@ class RestAnnotationDomainController extends RestController {
 
             @RestApiParam(name="track", type="long", paramType = RestApiParamType.QUERY, description = "(Optional) Get only annotation for this track id"),
             @RestApiParam(name="tracks", type="list", paramType = RestApiParamType.QUERY, description = "(Optional) Get only annotation for these tracks id"),
-            @RestApiParam(name="tags", type="list", paramType = RestApiParamType.QUERY, description = "(Optional) Get only annotation associated with these tags"),
-        @RestApiParam(name="noTrack", type="boolean", paramType = RestApiParamType.QUERY, description = "(Optional) Also get annotation with no track"),
+            @RestApiParam(name="noTrack", type="boolean", paramType = RestApiParamType.QUERY, description = "(Optional) Also get annotation with no track"),
             @RestApiParam(name="multipleTrack", type="long", paramType = RestApiParamType.QUERY, description = "(Optional) Only get annotation with multiple tracks"),
             @RestApiParam(name="afterSlice", type="long", paramType = RestApiParamType.QUERY, description = "(Optional) Only to be used with track(s), return only annotation in the track(s) after the given slice"),
             @RestApiParam(name="beforeSlice", type="long", paramType = RestApiParamType.QUERY, description = "(Optional) Only to be used with track(s), return only annotation in the track(s) before the given slice"),
             @RestApiParam(name="sliceDirection", type="long", paramType = RestApiParamType.QUERY, description = "Only to be used with beforeSlice, afterSlice or aroundSlide and mandatory in this case. Give the dimension to follow in the image. Accepted values: C,Z,T"),
+
+
+            @RestApiParam(name="tags", type="list", paramType = RestApiParamType.QUERY, description = "(Optional) Get only annotation associated with these tags"),
+            @RestApiParam(name="tag", type="long", paramType = RestApiParamType.QUERY, description = "(Optional) Get only annotation associated with this tag"),
+            @RestApiParam(name="noTag", type="boolean", paramType = RestApiParamType.QUERY, description = "(Optional) Also get annotation with no tag"),
 
             @RestApiParam(name="suggestedTerm", type="long", paramType = RestApiParamType.QUERY, description = "(Optional) Get only annotation suggested by for this term by a job"),
             @RestApiParam(name="suggestedTerms", type="long", paramType = RestApiParamType.QUERY, description = "(Optional) Get only annotation suggested by for these terms by a job"),
@@ -447,6 +451,7 @@ class RestAnnotationDomainController extends RestController {
         }
 
         // Tags
+        al.tag = params.getLong('tag')
         def tags = params.get('tags')
         if(tags) {
             al.tags = params.get('tags').replace("_",",").split(",").collect{Long.parseLong(it)}

@@ -80,6 +80,7 @@ abstract class AnnotationListing {
 
     def reviewUsers
 
+    def tag = null
     def tags = null
 
     def afterThan = null
@@ -222,6 +223,7 @@ abstract class AnnotationListing {
                         getSliceConst() +
                         getSlicesConst() +
 
+                        getTagConst() +
                         getTagsConst() +
 
                         getTermConst() +
@@ -354,16 +356,6 @@ abstract class AnnotationListing {
 
     }
 
-    def getTagsConst() {
-        if (tags && noTag) {
-            return "AND (tda.tag_id IN (${tags.join(',')}) OR tda.tag_id IS NULL)\n"
-        } else if (tags) {
-            return "AND tda.tag_id IN (${tags.join(',')})\n"
-        } else {
-            return ""
-        }
-    }
-
     def getImageConst() {
         if (image) {
             def image = ImageInstance.read(image)
@@ -494,6 +486,27 @@ abstract class AnnotationListing {
             return ""
         }
     }
+
+    def getTagConst() {
+        if (tag && noTag) {
+            return "AND (tda.tag_id = ${tag} OR tda.tag_id IS NULL)\n"
+        } else if (tag) {
+            return "AND tda.tag_id = ${tag}\n"
+        } else {
+            return ""
+        }
+    }
+
+    def getTagsConst() {
+        if (tags && noTag) {
+            return "AND (tda.tag_id IN (${tags.join(',')}) OR tda.tag_id IS NULL)\n"
+        } else if (tags) {
+            return "AND tda.tag_id IN (${tags.join(',')})\n"
+        } else {
+            return ""
+        }
+    }
+
 
     def getBeforeOrAfterSliceConst() {
         if ((track || tracks) && (beforeSlice || afterSlice)) {
@@ -703,7 +716,9 @@ class UserAnnotationListing extends AnnotationListing {
         def where = "WHERE true\n"
 
 
-        if(tags) from += " LEFT OUTER JOIN tag_domain_association tda ON a.id = tda.domain_ident AND tda.domain_class_name = '${getDomainClass()}' "
+        if(tags) {
+            from += " LEFT OUTER JOIN tag_domain_association tda ON a.id = tda.domain_ident AND tda.domain_class_name = '${getDomainClass()}' "
+        }
         if (multipleTerm) {
             from += "LEFT OUTER JOIN annotation_term at ON a.id = at.user_annotation_id "
             from += "LEFT OUTER JOIN annotation_term at2 ON a.id = at2.user_annotation_id "
