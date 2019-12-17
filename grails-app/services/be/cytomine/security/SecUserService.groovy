@@ -407,6 +407,7 @@ class SecUserService extends ModelService {
                 "and secUser.class = 'be.cytomine.security.User' "
         String groupBy = ""
         String order = ""
+        String having = ""
 
         if(multiSearch) {
             String value = ((String) multiSearch.values).toLowerCase()
@@ -419,7 +420,13 @@ class SecUserService extends ModelService {
 
             where += " and secUser.id in ("+getAllOnlineUserIds(project).join(",")+") "
         }
-        if(projectRoleSearch && projectRoleSearch.values == "manager") where +=" and aclEntry.mask = 16 "
+
+        if (withProjectRole && projectRoleSearch) {
+            def roles = (projectRoleSearch?.values instanceof String) ? [projectRoleSearch?.values] : projectRoleSearch?.values
+            having += " HAVING MAX(CASE WHEN r.id IS NOT NULL THEN 'representative' " +
+                    "WHEN aclEntry.mask = 16 THEN 'manager' " +
+                    "ELSE 'contributor' END) IN (" + roles.collect { it -> "'$it'"}?.join(',') + ")"
+        }
 
         //for (def t : searchParameters) {
             // TODO parameters to HQL constraints
@@ -442,7 +449,7 @@ class SecUserService extends ModelService {
         }
         order = "order by $sortColumn $sortDirection "
 
-        String request = select + from + where + groupBy + order
+        String request = select + from + where + groupBy + having + order
 
         def users = User.executeQuery(request, [offset:offset, max:max])
 
