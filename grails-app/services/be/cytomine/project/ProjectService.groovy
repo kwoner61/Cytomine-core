@@ -216,7 +216,7 @@ class ProjectService extends ModelService {
             where = "WHERE aclSid.sid like '"+user.username+"' and p.deleted is null "
         }
         else {
-            select = "SELECT  p.* "
+            select = "SELECT DISTINCT(p.id), p.* "
             from = "FROM project p "
             where = "WHERE p.deleted is null "
         }
