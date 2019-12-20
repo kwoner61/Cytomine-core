@@ -299,7 +299,7 @@ class ImageServerService extends ModelService {
         parameters = filterParameters(parameters)
         def url = makeGetUrl(uri, server, parameters)
         def http = new HTTPBuilder(server)
-        if ((url.size() < GET_URL_MAX_LENGTH && !httpMethod) || httpMethod == "GET") {
+        if ((url.size() < GET_URL_MAX_LENGTH && httpMethod == null) || httpMethod == "GET") {
             (byte[]) http.get(path: uri, requestContentType: ContentType.URLENC, query: parameters) { response ->
                 HttpEntity entity = response.getEntity()
                 if (entity != null) {

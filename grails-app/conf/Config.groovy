@@ -473,3 +473,5 @@ grails.instanceHostSupportMail = "support@cytomine.coop"
 grails.instanceHostPhoneNumber = null
 
 grails.defaultLanguage = "ENGLISH"
+
+grails.useHTTPInternally = true

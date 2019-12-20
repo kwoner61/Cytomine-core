@@ -18,6 +18,7 @@ package be.cytomine.middleware
 
 import be.cytomine.CytomineDomain
 import be.cytomine.utils.JSONUtils
+import grails.util.Holders
 import org.restapidoc.annotation.RestApiObject
 import org.restapidoc.annotation.RestApiObjectField
 
@@ -76,6 +77,6 @@ class ImageServer extends CytomineDomain {
     }
 
     String getInternalUrl() {
-        return this.url.replace("https", "http")
+        return (Holders.config.grails.useHTTPInternally) ? this.url.replace("https", "http") : this.url;
     }
 }
