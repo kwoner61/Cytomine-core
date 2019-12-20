@@ -18,7 +18,9 @@ package be.cytomine.ontology
 
 import be.cytomine.Exception.WrongArgumentException
 import be.cytomine.api.UrlApi
+import be.cytomine.sql.AlgoAnnotationListing
 import be.cytomine.sql.AnnotationListing
+import be.cytomine.sql.UserAnnotationListing
 import be.cytomine.utils.GisUtils
 import be.cytomine.utils.ModelService
 import groovy.sql.Sql
@@ -124,10 +126,10 @@ class AnnotationListingService extends ModelService {
                     item['userByTerm'] = (it.term ? [[id: it.annotationTerms, term: it.term, user: [it.userTerm]]] : [])
                 }
 
-                if (al.columnToPrint.contains('track')) {
+                if (al.columnToPrint.contains('track') && (al instanceof UserAnnotationListing || al instanceof AlgoAnnotationListing)) {
                     trackAsked = true
-                    item['track'] = (it.track ? [it.track] : [])
-                    item['annotationTrack'] = (it.track ? [[id: it.annotationTracks, track: it.track]] : [])
+                    item['track'] = (it?.track ? [it.track] : [])
+                    item['annotationTrack'] = (it?.track ? [[id: it.annotationTracks, track: it.track]] : [])
                 }
 
                 if(al.columnToPrint.contains('gis')) {
