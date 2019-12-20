@@ -111,7 +111,7 @@ class BootstrapOldVersionService {
         Version.setCurrentVersion(Long.parseLong(grailsApplication.metadata.'app.versionDate'), grailsApplication.metadata.'app.version')
     }
 
-    def initv2_1_0() {
+    def initv2_0_1() {
         if (checkSqlColumnExistence("physical_sizex", "abstract_image")) {
             new Sql(dataSource).executeUpdate("UPDATE abstract_image SET physical_size_x = physical_sizex;")
             new Sql(dataSource).executeUpdate("UPDATE abstract_image SET physical_size_y = physical_sizey;")
@@ -135,7 +135,7 @@ class BootstrapOldVersionService {
     def initv2_0_0() {
         new Sql(dataSource).executeUpdate("UPDATE sec_user SET is_developer = FALSE WHERE is_developer IS NULL;")
         new Sql(dataSource).executeUpdate("ALTER TABLE sec_user ALTER COLUMN is_developer SET DEFAULT FALSE;")
-        new Sql(dataSource).executeUpdate("ALTER TABLE sec_user ALTER COLUMN is_developer SET NOT NULL;")
+//        new Sql(dataSource).executeUpdate("ALTER TABLE sec_user ALTER COLUMN is_developer SET NOT NULL;")
     }
 
 //    void initv1_3_2() {
@@ -480,13 +480,14 @@ class BootstrapOldVersionService {
         }
 
         log.info "Clean uploaded_file by deleting all not finished uploads"
-        try {
-            sql.executeUpdate("delete from abstract_slice a where uploaded_file_id in (select id from uploaded_file where status < 100);")
-            sql.executeUpdate("delete from abstract_image a where uploaded_file_id in (select id from uploaded_file where status < 100);")
-        }
-        catch(Exception e) {
-            log.error("Error during uploaded_file cleaning: ${e}")
-        }
+//        try {
+//            def sql2 = new Sql(dataSource)
+//            sql2.executeUpdate("delete from abstract_slice a where uploaded_file_id in (select id from uploaded_file where status < 100);")
+//            sql2.executeUpdate("delete from abstract_image a where uploaded_file_id in (select id from uploaded_file where status < 100);")
+//        }
+//        catch(Exception e) {
+//            log.error("Error during uploaded_file cleaning: ${e}")
+//        }
 
         log.info("Recompute project and image counters")
         sql.executeUpdate("UPDATE project p SET " +
@@ -500,19 +501,19 @@ class BootstrapOldVersionService {
                 "count_image_job_annotations = (select count(*) from algo_annotation aa where aa.deleted is null and aa.image_id = ii.id), " +
                 "count_image_reviewed_annotations = (select count(*) from reviewed_annotation ra where ra.deleted is null and ra.image_id = ii.id);")
 
-        log.info("Delete old attached file thumbs")
-        sql.executeUpdate("delete from attached_file where domain_class_name = 'be.cytomine.image.AbstractImage' and name = 'thumb';")
+//        log.info("Delete old attached file thumbs")
+//        sql.executeUpdate("delete from attached_file where domain_class_name = 'be.cytomine.image.AbstractImage' and name = 'thumb';")
 
-        log.info("Update reference of attached files that are used in description (only for project)")
-        sql.executeUpdate("update attached_file set domain_class_name = 'be.cytomine.utils.Description', " +
-                "domain_ident = description.id " +
-                "from description " +
-                "where attached_file.domain_ident = description.domain_ident " +
-                "and attached_file.domain_class_name = 'be.cytomine.project.Project';")
-
-        log.info("Update attached files names of job logs to be displayed in webUI")
-        sql.executeUpdate("update attached_file set filename = 'log.out', name = 'log.out' " +
-                "where domain_class_name = 'be.cytomine.processing.Job' and filename like '%.out';")
+//        log.info("Update reference of attached files that are used in description (only for project)")
+//        sql.executeUpdate("update attached_file set domain_class_name = 'be.cytomine.utils.Description', " +
+//                "domain_ident = description.id " +
+//                "from description " +
+//                "where attached_file.domain_ident = description.domain_ident " +
+//                "and attached_file.domain_class_name = 'be.cytomine.project.Project';")
+//
+//        log.info("Update attached files names of job logs to be displayed in webUI")
+//        sql.executeUpdate("update attached_file set filename = 'log.out', name = 'log.out' " +
+//                "where domain_class_name = 'be.cytomine.processing.Job' and filename like '%.out';")
 
         sql.close()
     }

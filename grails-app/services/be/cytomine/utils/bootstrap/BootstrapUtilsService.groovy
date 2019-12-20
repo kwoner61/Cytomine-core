@@ -81,7 +81,7 @@ class BootstrapUtilsService {
                     password: item.password,
                     language: User.Language.valueOf(Holders.getGrailsApplication().config.grails.defaultLanguage),
                     enabled: true,
-                    isDelopper: false,
+                    isDeveloper: false,
                     origin: "BOOTSTRAP")
             user.generateKeys()
 
