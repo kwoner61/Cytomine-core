@@ -65,6 +65,7 @@ class RestImageInstanceController extends RestController {
     def imageGroupService
     def imageServerService
     def statsService
+    def sampleHistogramService
 
     @RestApiMethod(description="Get an image instance")
     @RestApiParams(params=[
@@ -317,6 +318,28 @@ class RestImageInstanceController extends RestController {
 //            response([success: false, errors: e.msg], e.code)
 //        }
 //    }
+
+
+    @RestApiMethod(description = "Compute histogram for the whole image")
+    @RestApiParams(params=[
+            @RestApiParam(name="id", type="long", paramType = RestApiParamType.PATH, description = "The image id")
+    ])
+    @RestApiResponseObject(objectIdentifier = "empty")
+    def extractHistogram() {
+        ImageInstance imageInstance = imageInstanceService.read(params.long("id"))
+        sampleHistogramService.extractHistogram(imageInstance.baseImage)
+        responseSuccess([:])
+    }
+
+    @RestApiMethod(description = "Get histogram statistics for the whole image")
+    @RestApiParams(params=[
+            @RestApiParam(name="id", type="long", paramType = RestApiParamType.PATH, description = "The image id")
+    ])
+    @RestApiResponseObject(objectIdentifier = "empty")
+    def showHistogramStats() {
+        ImageInstance imageInstance = imageInstanceService.read(params.long("id"))
+        responseSuccess(sampleHistogramService.histogramStats(imageInstance.baseImage))
+    }
 
     @RestApiMethod(description="Get a small image (thumb) for a specific image", extensions=["png", "jpg"])
     @RestApiParams(params=[

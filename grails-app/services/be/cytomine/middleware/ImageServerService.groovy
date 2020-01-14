@@ -66,6 +66,13 @@ class ImageServerService extends ModelService {
         return JSON.parse(new URL(makeGetUrl("/image/properties.json", server, parameters)).text)
     }
 
+    def sampleHistograms(AbstractSlice slice) {
+        def (server, parameters) = imsParametersFromAbstractSlice(slice)
+        parameters.samplePerPixel = slice?.image?.samplePerPixel
+        parameters.bitPerSample = slice?.image?.bitPerSample
+        return JSON.parse(new URL(makeGetUrl("/slice/histogram.json", server, parameters)).text)
+    }
+
     def profile(AbstractImage image) {
         def (server, parameters) = imsParametersFromAbstractImage(image)
         parameters.abstractImage = image.id

@@ -316,5 +316,6 @@
         <SOURCES />
       </library>
     </orderEntry>
+    <orderEntry type="library" name="current" level="application" />
   </component>
 </module>
