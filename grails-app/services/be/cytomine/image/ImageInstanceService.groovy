@@ -141,11 +141,6 @@ class ImageInstanceService extends ModelService {
         select = "SELECT distinct $imageInstanceAlias.* "
         from = "FROM user_image $imageInstanceAlias "
         where = "WHERE user_image_id = ${user.id} "
-
-        if (joinAI) {
-            select += ", ${abstractImageAlias}.* "
-            from += "JOIN abstract_image $abstractImageAlias ON ${abstractImageAlias}.id = ${imageInstanceAlias}.base_image_id "
-        }
         search = ""
 
         if (sqlSearchConditions.imageInstance) {
@@ -171,12 +166,27 @@ class ImageInstanceService extends ModelService {
             } else if (nameSearch.operator == "equals") {
                 operation = "=="
             }
-            where += "AND ( (NOT project_blind AND instance_filename $operation :name) OR (project_blind AND NOT user_project_manager AND base_image_id::text $operation :name) OR (project_blind AND user_project_manager AND (base_image_id::text $operation :name OR instance_filename $operation :name)))"
+            search += "AND ( (NOT project_blind AND ${imageInstanceAlias}.instance_filename $operation :name) OR (project_blind AND NOT user_project_manager AND base_image_id::text $operation :name) OR (project_blind AND user_project_manager AND (base_image_id::text $operation :name OR ${imageInstanceAlias}.instance_filename $operation :name)))"
+        }
+
+        if (search.contains("${imageInstanceAlias}.instance_filename") || sortedProperty.contains("${imageInstanceAlias}.instance_filename")) {
+            joinAI = true
+            search = search.replaceAll("${imageInstanceAlias}.instance_filename", "COALESCE(${imageInstanceAlias}.instance_filename, ${abstractImageAlias}.original_filename)");
+        }
+
+        if (sortedProperty.contains("${imageInstanceAlias}.instance_filename")) {
+            joinAI = true
+            sortedProperty = sortedProperty.replaceAll("${imageInstanceAlias}.instance_filename", "COALESCE(${imageInstanceAlias}.instance_filename, ${abstractImageAlias}.original_filename)");
+            select += ", COALESCE(${imageInstanceAlias}.instance_filename, ${abstractImageAlias}.original_filename) "
         }
 
         sort = " ORDER BY " + sortedProperty
         sort += (sortDirection.equals("desc")) ? " DESC " : " ASC "
 
+        if (joinAI) {
+            select += ", ${abstractImageAlias}.* "
+            from += "JOIN abstract_image $abstractImageAlias ON ${abstractImageAlias}.id = ${imageInstanceAlias}.base_image_id "
+        }
 
         request = select + from + where + search + sort
         if (max > 0) request += " LIMIT $max"
@@ -364,15 +374,6 @@ class ImageInstanceService extends ModelService {
         select = "SELECT distinct $imageInstanceAlias.* "
         from = "FROM image_instance $imageInstanceAlias "
         where = "WHERE ${imageInstanceAlias}.project_id = ${project.id} AND ${imageInstanceAlias}.parent_id IS NULL AND ${imageInstanceAlias}.deleted IS NULL "
-
-        if (joinAI) {
-            select += ", ${abstractImageAlias}.* "
-            from += "JOIN abstract_image $abstractImageAlias ON ${abstractImageAlias}.id = ${imageInstanceAlias}.base_image_id "
-        }
-        if (joinMime) {
-            select += ", ${mimeAlias}.* "
-            from += "JOIN uploaded_file $mimeAlias ON ${mimeAlias}.id = ${abstractImageAlias}.uploaded_file_id "
-        }
         search = ""
 
         if (sqlSearchConditions.imageInstance) {
@@ -402,10 +403,28 @@ class ImageInstanceService extends ModelService {
             search += abstractImageAlias+".id::text ILIKE :name "
         }
 
+        if (search.contains("${imageInstanceAlias}.instance_filename") || sortedProperty.contains("${imageInstanceAlias}.instance_filename")) {
+            joinAI = true
+            search = search.replaceAll("${imageInstanceAlias}.instance_filename", "COALESCE(${imageInstanceAlias}.instance_filename, ${abstractImageAlias}.original_filename)");
+        }
+
+        if (sortedProperty.contains("${imageInstanceAlias}.instance_filename")) {
+            joinAI = true
+            sortedProperty = sortedProperty.replaceAll("${imageInstanceAlias}.instance_filename", "COALESCE(${imageInstanceAlias}.instance_filename, ${abstractImageAlias}.original_filename)");
+            select += ", COALESCE(${imageInstanceAlias}.instance_filename, ${abstractImageAlias}.original_filename) "
+        }
 
         sort = " ORDER BY " + sortedProperty
         sort += (sortDirection.equals("desc")) ? " DESC " : " ASC "
 
+        if (joinAI) {
+            select += ", ${abstractImageAlias}.* "
+            from += "JOIN abstract_image $abstractImageAlias ON ${abstractImageAlias}.id = ${imageInstanceAlias}.base_image_id "
+        }
+        if (joinMime) {
+            select += ", ${mimeAlias}.* "
+            from += "JOIN uploaded_file $mimeAlias ON ${mimeAlias}.id = ${abstractImageAlias}.uploaded_file_id "
+        }
 
         request = select + from + where + search + sort
         if (max > 0) request += " LIMIT $max"
