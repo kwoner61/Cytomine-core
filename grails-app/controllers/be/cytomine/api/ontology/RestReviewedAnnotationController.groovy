@@ -259,7 +259,7 @@ class RestReviewedAnnotationController extends RestController {
             if(basedAnnotation.image.reviewUser && basedAnnotation.image.reviewUser.id!=cytomineService.currentUser.id) {
                 throw new WrongArgumentException("You must be the image reviewer to accept annotation. Image reviewer is ${basedAnnotation.image.reviewUser?.username}.")
             }
-            if(ReviewedAnnotation.findByParentIdent(basedAnnotation.id)) {
+            if(ReviewedAnnotation.findByParentIdentAndDeletedIsNull(basedAnnotation.id)) {
                 throw new AlreadyExistException("Annotation is already accepted!")
             }
 
@@ -288,7 +288,7 @@ class RestReviewedAnnotationController extends RestController {
      ])
     def deleteAnnotationReview() {
         try {
-            ReviewedAnnotation reviewedAnnotation = ReviewedAnnotation.findByParentIdent(params.long('id'))
+            ReviewedAnnotation reviewedAnnotation = ReviewedAnnotation.findByParentIdentAndDeletedIsNull(params.long('id'))
 
             if(!reviewedAnnotation) {
                 throw new WrongArgumentException("This annotation is not accepted, you cannot reject it!")
@@ -368,7 +368,7 @@ class RestReviewedAnnotationController extends RestController {
 
                     }
                     annotation.refresh()
-                    if(!ReviewedAnnotation.findByParentIdent(annotation.id)) {
+                    if(!ReviewedAnnotation.findByParentIdentAndDeletedIsNull(annotation.id)) {
                         //if not yet reviewed, review it
                         realReviewed++
                         def review = reviewAnnotation(annotation, null, false)
@@ -439,7 +439,7 @@ class RestReviewedAnnotationController extends RestController {
                         taskService.updateTask(task,10+(int)(((double)indexAnnotation/(double)annotations.size())*0.9d*100),"${realUnReviewed} new reviewed annotations...")
                         cleanUpGorm()
                     }
-                    ReviewedAnnotation reviewed = ReviewedAnnotation.findByParentIdent(annotation.id)
+                    ReviewedAnnotation reviewed = ReviewedAnnotation.findByParentIdentAndDeletedIsNull(annotation.id)
                     if(reviewed) {
                         realUnReviewed++
                         data << reviewed.id
