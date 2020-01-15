@@ -65,6 +65,7 @@ class AnnotationTrack extends CytomineDomain {
         domain.id = JSONUtils.getJSONAttrLong(json, 'id', null)
         domain.created = JSONUtils.getJSONAttrDate(json, 'created')
         domain.updated = JSONUtils.getJSONAttrDate(json, 'updated')
+        domain.deleted = JSONUtils.getJSONAttrDate(json, 'deleted')
 
         domain.track = JSONUtils.getJSONAttrDomain(json, "track", new Track(), true)
         domain.annotationClassName = JSONUtils.getJSONAttrStr(json, 'annotationClassName',true)
