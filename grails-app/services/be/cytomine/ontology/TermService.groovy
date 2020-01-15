@@ -122,8 +122,9 @@ class TermService extends ModelService {
      * @return Response structure (created domain data,..)
      */
     def add(def json) {
-        securityACLService.check(json.ontology, Ontology,WRITE)
         SecUser currentUser = cytomineService.getCurrentUser()
+        securityACLService.checkUser(currentUser)
+        securityACLService.check(json.ontology, Ontology,WRITE)
         return executeCommand(new AddCommand(user: currentUser),null,json)
     }
 
@@ -134,8 +135,9 @@ class TermService extends ModelService {
      * @return  Response structure (new domain data, old domain data..)
      */
     def update(Term term, def jsonNewData) {
-        securityACLService.check(term.container(),WRITE)
         SecUser currentUser = cytomineService.getCurrentUser()
+        securityACLService.checkUser(currentUser)
+        securityACLService.check(term.container(),WRITE)
         return executeCommand(new EditCommand(user: currentUser), term,jsonNewData)
     }
 
@@ -148,11 +150,13 @@ class TermService extends ModelService {
      * @return Response structure (code, old domain,..)
      */
     def delete(Term domain, Transaction transaction = null, Task task = null, boolean printMessage = true) {
+        SecUser currentUser = cytomineService.getCurrentUser()
+        securityACLService.checkUser(currentUser)
+
         //We don't delete domain, we juste change a flag
         def jsonNewData = JSON.parse(domain.encodeAsJSON())
         jsonNewData.deleted = new Date().time
 
-        SecUser currentUser = cytomineService.getCurrentUser()
         securityACLService.check(domain.container(),DELETE)
         Command c = new EditCommand(user: currentUser, transaction: transaction)
         c.delete = true

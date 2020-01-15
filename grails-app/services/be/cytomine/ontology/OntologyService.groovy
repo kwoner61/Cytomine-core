@@ -96,8 +96,9 @@ class OntologyService extends ModelService {
      * @return  Response structure (new domain data, old domain data..)
      */
     def update(Ontology domain, def jsonNewData) throws CytomineException {
-        securityACLService.check(domain,WRITE)
         SecUser currentUser = cytomineService.getCurrentUser()
+        securityACLService.checkUser(currentUser)
+        securityACLService.check(domain,WRITE)
         return executeCommand(new EditCommand(user: currentUser),domain,jsonNewData)
     }
 
@@ -110,11 +111,12 @@ class OntologyService extends ModelService {
      * @return Response structure (code, old domain,..)
      */
     def delete(Ontology domain, Transaction transaction = null, Task task = null, boolean printMessage = true) {
+        SecUser currentUser = cytomineService.getCurrentUser()
+        securityACLService.checkUser(currentUser)
         //We don't delete domain, we juste change a flag
         def jsonNewData = JSON.parse(domain.encodeAsJSON())
         jsonNewData.deleted = new Date().time
 
-        SecUser currentUser = cytomineService.getCurrentUser()
         securityACLService.check(domain,DELETE)
         Command c = new EditCommand(user: currentUser, transaction: transaction)
         c.delete = true

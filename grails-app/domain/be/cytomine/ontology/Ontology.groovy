@@ -25,6 +25,8 @@ import be.cytomine.utils.JSONUtils
 import org.restapidoc.annotation.RestApiObject
 import org.restapidoc.annotation.RestApiObjectField
 import org.restapidoc.annotation.RestApiObjectFields
+import org.springframework.security.acls.domain.BasePermission
+import org.springframework.security.acls.model.Permission
 
 /**
  * An ontology is a list of term
@@ -231,4 +233,36 @@ class Ontology extends CytomineDomain implements Serializable {
         return this;
     }
 
+    @Override
+    /* An ontology can be edited by:
+     * - a user having WRITE permission on ontology
+     * - a user in a dependent project if all dependent projects are collaborative
+     * - a user managing all dependent projects
+     * - an admin
+     */
+    boolean checkPermission(Permission permission, boolean isAdmin) {
+        if (permission == BasePermission.WRITE || permission == BasePermission.DELETE) {
+            if (isAdmin) {
+                return true;
+            }
+
+            if((Project.countByOntologyAndModeNotEqualAndDeletedIsNull(this, Project.EditingMode.CLASSIC) == 0)) {
+                return true;
+            }
+
+            def managerAllProjects = true
+            for (Project p : projects()) {
+                if (!p.hasACLPermission(BasePermission.ADMINISTRATION)) {
+                    managerAllProjects = false
+                    break
+                }
+            }
+
+            if (managerAllProjects) {
+                return true;
+            }
+        }
+
+        return super.checkPermission(permission, isAdmin)
+    }
 }
