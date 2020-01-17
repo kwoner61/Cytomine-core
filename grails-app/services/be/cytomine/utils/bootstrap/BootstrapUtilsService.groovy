@@ -61,6 +61,38 @@ class BootstrapUtilsService {
     def processingServerService
     def configurationService
 
+    def dropSqlColumn(def table, def column) {
+        def sql = new Sql(dataSource)
+        def result = sql.executeUpdate('ALTER TABLE ' + table + ' DROP COLUMN IF EXISTS ' + column + ';')
+        sql.close()
+        return result
+    }
+
+    def updateSqlColumnConstraint(def table, def column, def newSqlConstraint) {
+        def sql = new Sql(dataSource)
+        def result = sql.executeUpdate('ALTER TABLE ' + table + ' ALTER COLUMN ' + column + ' ' + newSqlConstraint + ';')
+        sql.close()
+        return result
+    }
+
+    def dropSqlColumnUniqueConstraint(def table) {
+        def sql = new Sql(dataSource)
+        sql.eachRow("select constraint_name from information_schema.table_constraints " +
+                "where table_name = '${table}' and constraint_type = 'UNIQUE';") {
+            sql.executeUpdate("ALTER TABLE ${table} DROP CONSTRAINT "+ it.constraint_name +";")
+        }
+        sql.close()
+    }
+
+    def checkSqlColumnExistence(def table, def column) {
+        def sql = new Sql(dataSource)
+        boolean exists = sql.rows("SELECT column_name " +
+                "FROM information_schema.columns " +
+                "WHERE table_name='${table}' and column_name='${column}';").size() == 1;
+        sql.close()
+        return exists
+    }
+
     public def createUsers(def usersSamples) {
 
         SecRole.findByAuthority("ROLE_USER") ?: new SecRole(authority: "ROLE_USER").save(flush: true)
