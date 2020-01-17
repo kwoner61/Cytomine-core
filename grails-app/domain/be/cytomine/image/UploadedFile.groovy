@@ -185,6 +185,8 @@ class UploadedFile extends CytomineDomain implements Serializable {
     }
 
     def getPath() {
+        if (contentType == "virtual/stack")
+            return null;
         return Paths.get(imageServer?.basePath, user.id as String, filename).toString()
     }
 

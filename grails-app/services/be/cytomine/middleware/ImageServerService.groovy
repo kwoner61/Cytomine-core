@@ -1,6 +1,7 @@
 package be.cytomine.middleware
 
 import be.cytomine.AnnotationDomain
+import be.cytomine.Exception.InvalidRequestException
 import be.cytomine.api.UrlApi
 import be.cytomine.image.AbstractImage
 import be.cytomine.image.AbstractSlice
@@ -49,6 +50,9 @@ class ImageServerService extends ModelService {
     }
 
     def downloadUri(UploadedFile uploadedFile) {
+        if (!uploadedFile.path) {
+            throw new InvalidRequestException("Uploaded file has no valid path.")
+        }
         makeGetUrl("/image/download", uploadedFile.imageServer.url,
                 [fif: uploadedFile.path, mimeType: uploadedFile.contentType])
     }
@@ -74,7 +78,9 @@ class ImageServerService extends ModelService {
     }
 
     def profile(AbstractImage image) {
-        def (server, parameters) = imsParametersFromAbstractImage(image)
+        def server = image.getImageServerInternalUrl()
+        def parameters = [:]
+        parameters.mimeType = image.uploadedFile.contentType
         parameters.abstractImage = image.id
         parameters.uploadedFileParent = image.uploadedFile.id
         parameters.user = cytomineService.currentUser.id
@@ -260,6 +266,10 @@ class ImageServerService extends ModelService {
     }
 
     private static def imsParametersFromAbstractImage(AbstractImage image) {
+        if (!image.path) {
+            throw new InvalidRequestException("Abstract image has no valid path.")
+        }
+
         def server = image.getImageServerInternalUrl()
         def parameters = [
                 fif: image.path,
@@ -269,6 +279,10 @@ class ImageServerService extends ModelService {
     }
 
     private static def imsParametersFromAbstractSlice(AbstractSlice slice) {
+        if (!slice.path) {
+            throw new InvalidRequestException("Abstract slice has no valid path.")
+        }
+
         def server = slice.getImageServerInternalUrl()
         def parameters = [
                 fif: slice.path,
@@ -278,6 +292,10 @@ class ImageServerService extends ModelService {
     }
 
     private static def imsParametersFromCompanionFile(CompanionFile cf) {
+        if (!cf.path) {
+            throw new InvalidRequestException("Companion file has no valid path.")
+        }
+
         def server = cf.getImageServerInternalUrl()
         def parameters = [fif: cf.path]
         return [server, parameters]
