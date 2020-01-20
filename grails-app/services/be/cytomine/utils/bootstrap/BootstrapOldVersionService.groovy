@@ -220,14 +220,12 @@ class BootstrapOldVersionService {
         if (AbstractSlice.count() == 0) {
             log.info "Migration of abstract slice"
 
-            log.info "Abstract slice: Add (0,0,0) abstract slice for all abstract images which are not in an image group"
+            log.info "Abstract slice: Add (0,0,0) abstract slice for all abstract images"
             def values = []
             sql.eachRow("select uploaded_file.id, image_id, mime_id, abstract_image.created " +
                     "from uploaded_file " +
                     "left join abstract_image on abstract_image.id = uploaded_file.image_id " +
-                    "where image_id is not null " +
-                    "and image_id not in " +
-                    "(select base_image_id from image_instance ii right join image_sequence seq on ii.id = seq.image_id)") {
+                    "where image_id is not null") {
                 values << [
                         id: "nextval('hibernate_sequence')",
                         created: it.created,
@@ -256,7 +254,7 @@ class BootstrapOldVersionService {
         if (SliceInstance.count() == 0) {
             log.info "Migration of slice instances"
 
-            log.info "Slice instance: Add (0,0,0) slice instance for all abstract images which are not in an image group"
+            log.info "Slice instance: Add (0,0,0) slice instance for all image instances which are not in an image group"
             def values = []
             sql.eachRow("SELECT image_instance.id as iiid, abstract_slice.id as asid, image_instance.project_id as pid, " +
                     "image_instance.created " +
