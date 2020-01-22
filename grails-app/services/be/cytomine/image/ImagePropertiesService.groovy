@@ -18,6 +18,8 @@ package be.cytomine.image
 
 import be.cytomine.meta.Property
 
+import grails.transaction.Transactional
+
 class ImagePropertiesService implements Serializable {
 
     def grailsApplication
@@ -46,6 +48,7 @@ class ImagePropertiesService implements Serializable {
         ]
     }
 
+    @Transactional
     def clear(AbstractImage image) {
         def propertyKeys = keys().collect { it.value.name }
         Property.findAllByDomainIdentAndKeyInList(image.id, propertyKeys)?.each {
