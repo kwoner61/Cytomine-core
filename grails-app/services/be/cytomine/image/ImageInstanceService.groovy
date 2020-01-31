@@ -235,7 +235,13 @@ class ImageInstanceService extends ModelService {
         }
         sql.close()
 
-        return [data:data, total:size]
+        def result = [data:data, total:size]
+        max = (max > 0) ? max : Integer.MAX_VALUE
+        result.offset = offset
+        result.perPage = Math.min(max, result.total)
+        result.totalPages = Math.ceil(result.total / max)
+
+        return result
     }
 
     def listLight(User user) {
@@ -500,7 +506,14 @@ class ImageInstanceService extends ModelService {
             }
             data = result
         }
-        return [data:data, total:size]
+
+        def result = [data:data, total:size]
+        max = (max > 0) ? max : Integer.MAX_VALUE
+        result.offset = offset
+        result.perPage = Math.min(max, result.total)
+        result.totalPages = Math.ceil(result.total / max)
+
+        return result
     }
 
     def listExtended(Project project, String sortColumn, String sortDirection, def searchParameters, Long max  = 0, Long offset = 0, def extended) {

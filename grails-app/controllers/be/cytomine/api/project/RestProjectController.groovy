@@ -60,7 +60,7 @@ class RestProjectController extends RestController {
         Boolean withDescription = params.boolean("withDescription")
         Boolean withCurrentUserRoles = params.boolean("withCurrentUserRoles")
 
-        def projectList
+        def result
         if(currentRoleServiceProxy.isAdminByNow(user)) {
             //if user is admin, we print all available project
             user = null
@@ -72,8 +72,8 @@ class RestProjectController extends RestController {
         if(withLastActivity) extended.put("withLastActivity",withLastActivity)
         if (withDescription) extended.put("withDescription", withDescription)
         if(withCurrentUserRoles) extended.put("withCurrentUserRoles",withCurrentUserRoles)
-        projectList = projectService.list(user, extended, searchParameters, params.sort, params.order, params.long('max'), params.long('offset'))
-        responseSuccess([collection : projectList.data, size : projectList.total])
+        result = projectService.list(user, extended, searchParameters, params.sort, params.order, params.long('max'), params.long('offset'))
+        responseSuccess([collection : result.data, size : result.total, offset: result.offset, perPage: result.perPage, totalPages: result.totalPages])
     }
 
     /**
@@ -221,7 +221,7 @@ class RestProjectController extends RestController {
         User user = User.read(params.long('id'))
         if(user) {
             def result = projectService.list(user,params.long('max',0),params.long('offset',0))
-            responseSuccess([collection : result.data, size : result.total])
+            responseSuccess([collection : result.data, size : result.total, offset: result.offset, perPage: result.perPage, totalPages: result.totalPages])
         } else {
             responseNotFound("User", params.id)
         }

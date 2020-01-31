@@ -246,7 +246,13 @@ class JobService extends ModelService {
         }
         sql.close()
 
-        return [data:data, total:size]
+        def result = [data:data, total:size]
+        max = (max > 0) ? max : Integer.MAX_VALUE
+        result.offset = offset
+        result.perPage = Math.min(max, result.total)
+        result.totalPages = Math.ceil(result.total / max)
+
+        return result
     }
 
     /**

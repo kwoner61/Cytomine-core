@@ -86,7 +86,7 @@ class RestImageInstanceController extends RestController {
         String sortDirection = params.order ? params.order : "desc"
         SecUser user = secUserService.read(params.long('user'))
         def result = imageInstanceService.list(user, sortColumn, sortDirection, searchParameters, params.long('max'), params.long('offset'))
-        responseSuccess([collection : result.data, size : result.total])
+        responseSuccess([collection : result.data, size : result.total, offset: result.offset, perPage: result.perPage, totalPages: result.totalPages])
     }
 
     @RestApiMethod(description="Get a lighted list of all image instance available for the current user", listing = true)
@@ -129,16 +129,20 @@ class RestImageInstanceController extends RestController {
             String sortDirection = params.order ?: "desc"
             def extended = [:]
             if(params.withLastActivity) extended.put("withLastActivity",params.withLastActivity)
-            def imageList
+            def result
             if(extended.isEmpty()) {
-                def result = imageInstanceService.list(project, sortColumn, sortDirection, searchParameters, params.long('max'), params.long('offset'), light)
-                imageList = [collection : result.data, size : result.total]
+                result = imageInstanceService.list(project, sortColumn, sortDirection, searchParameters, params.long('max'), params.long('offset'), light)
             } else {
-                def result = imageInstanceService.listExtended(project, sortColumn, sortDirection, searchParameters, params.long('max'), params.long('offset'), extended)
-                imageList = [collection : result.data, size : result.total]
+                result = imageInstanceService.listExtended(project, sortColumn, sortDirection, searchParameters, params.long('max'), params.long('offset'), extended)
             }
 
-            responseSuccess(imageList)
+            responseSuccess([
+                    collection : result.data,
+                    size : result.total,
+                    offset: result.offset,
+                    perPage: result.perPage,
+                    totalPages: result.totalPages
+            ])
         }
         else if (project && params.tree && params.boolean("tree"))  {
             responseSuccess(imageInstanceService.listTree(project, params.long('max'), params.long('offset')))

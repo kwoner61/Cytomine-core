@@ -641,7 +641,11 @@ abstract class ModelService {
 
         Closure c = selection >> sorting
         def data = domain.createCriteria().list(max:max, offset:offset,c)
-        return [data : data, total : total]
+
+        max = (max != null && max > 0) ? max : Integer.MAX_VALUE
+        offset = (offset != null) ? offset : 0
+
+        return [data: data, total: total, offset: offset, perPage: Math.min(max, total), totalPages: Math.ceil(total/max)]
     }
 
 }

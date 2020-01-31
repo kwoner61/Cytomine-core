@@ -235,7 +235,13 @@ class SecUserService extends ModelService {
         }
         sql.close()
 
-        return [data:data, total:size]
+        def result = [data:data, total:size]
+        max = (max > 0) ? max : Integer.MAX_VALUE
+        result.offset = offset
+        result.perPage = Math.min(max, result.total)
+        result.totalPages = Math.ceil(result.total / max)
+
+        return result
     }
 
     def lock(SecUser user){
@@ -385,7 +391,13 @@ class SecUserService extends ModelService {
             frequenciessFetched = true
         }
 
-        return [data: results, total: total]
+        def result = [data:results, total:total]
+        max = (max > 0) ? max : Integer.MAX_VALUE
+        result.offset = offset
+        result.perPage = Math.min(max, result.total)
+        result.totalPages = Math.ceil(result.total / max)
+
+        return result
     }
 
     def listUsersByProject(Project project, boolean withProjectRole = true, def searchParameters = [], String sortColumn, String sortDirection, Long max = 0, Long offset = 0){
@@ -416,7 +428,7 @@ class SecUserService extends ModelService {
         if(onlineUserSearch) {
             def onlineUsers = getAllOnlineUserIds(project)
             if(onlineUsers.isEmpty())
-                return [data: [], total: 0]
+                return [data: [], total: 0, offset: 0, perPage: 0, totalPages: 0]
 
             where += " and secUser.id in ("+getAllOnlineUserIds(project).join(",")+") "
         }
@@ -467,7 +479,13 @@ class SecUserService extends ModelService {
             return item[0]
         }
 
-        return [data: users, total: total]
+        def result = [data:users, total:total]
+        max = (max > 0) ? max : Integer.MAX_VALUE
+        result.offset = offset
+        result.perPage = Math.min(max, result.total)
+        result.totalPages = Math.ceil(result.total / max)
+
+        return result
     }
 
     def listUsers(Project project, boolean showUserJob = false) {

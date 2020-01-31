@@ -87,7 +87,7 @@ class RestJobController extends RestController {
 
         def result = jobService.list(softwares, projects, [withJobParameters:withJobParameters, withUser:withUser], params.sort, params.order, searchParameters, params.long('max',0), params.long('offset',0), light)
 
-        responseSuccess([collection : result.data, size:result.total])
+        responseSuccess([collection : result.data, size:result.total, offset: result.offset, perPage: result.perPage, totalPages: result.totalPages])
     }
 
     /**

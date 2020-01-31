@@ -199,7 +199,7 @@ class RestUserController extends RestController {
             def extended = [:]
             if(params.getBoolean("withRoles")) extended.put("withRoles",params.withRoles)
             result = secUserService.list(extended, searchParameters, params.sort, params.order, params.long("max",0), params.long("offset",0))
-            responseSuccess([collection : result.data, size : result.total])
+            responseSuccess([collection : result.data, size : result.total, offset: result.offset, perPage: result.perPage, totalPages: result.totalPages])
         }
     }
 
@@ -393,7 +393,7 @@ class RestUserController extends RestController {
 
         def results = secUserService.listUsersExtendedByProject(project, extended, searchParameters, sortColumn, sortDirection, params.long('max',0), params.long('offset',0))
 
-        responseSuccess([collection : results.data, size:results.total])
+        responseSuccess([collection : results.data, size:results.total, offset: results.offset, perPage: results.perPage, totalPages: results.totalPages])
 
         //boolean showUserJob = params.boolean('showJob')
     }
