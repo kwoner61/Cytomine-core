@@ -131,11 +131,21 @@ class JobService extends ModelService {
             select +=", ${softwareAlias}.name as software_name, ${softwareAlias}.software_version as software_version "
             from += "JOIN software $softwareAlias ON ${softwareAlias}.id = ${jobAlias}.software_id "
         }
+        def usernameParams = [:]
         if(extended.withUser) {
             select +=", $userAlias.*, uj.id as user_job_id "
             from += "LEFT OUTER JOIN sec_user uj ON uj.job_id = ${jobAlias}.id "
             from += "LEFT OUTER JOIN sec_user $userAlias ON uj.user_id = ${userAlias}.id "
-            if(usernameSearch) where += "AND ${userAlias}.username IN ('"+usernameSearch.values+"') "
+            if(usernameSearch) {
+                if(!usernameSearch.values.class.isArray() && !(usernameSearch.values instanceof List)){
+                    usernameSearch.values = [usernameSearch.values]
+                }
+                def placeholders = (1..usernameSearch.values.size()).collect { "u_username_$it" }
+                usernameSearch.values.eachWithIndex { username, i ->
+                    usernameParams[placeholders[i]] = username
+                }
+                where += "AND ${userAlias}.username IN ("+ placeholders.collect{ ":$it" }.join(",") +") "
+            }
         }
 
 
@@ -181,6 +191,8 @@ class JobService extends ModelService {
                 mapParams["j_favorite_2"] = (mapParams["j_favorite_2"] == 'true');
             }
         }
+
+        mapParams += usernameParams
 
         sql.eachRow(request, mapParams) {
             def map = [:]
