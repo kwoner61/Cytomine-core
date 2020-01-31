@@ -351,8 +351,8 @@ class StatsService extends ModelService {
         Long available = 0
         spaces.each {
             def size = imageServerService.storageSpace(it)
-            used += size.used
-            available += size.available
+            used += (Long) size?.used
+            available += (Long) size?.available
         }
 
         Long total = used + available
