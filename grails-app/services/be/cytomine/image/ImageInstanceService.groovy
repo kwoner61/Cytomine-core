@@ -260,6 +260,20 @@ class ImageInstanceService extends ModelService {
         return data
     }
 
+    def listLight(Project project) {
+        securityACLService.check(project, READ)
+        def data = []
+
+        def images = ImageInstance.findAllByProjectAndDeletedIsNull(project)
+        images.each { ImageInstance it ->
+            data << [
+                    id: it.id,
+                    instanceFilename: it.blindInstanceFilename,
+            ]
+        }
+        return data
+    }
+
     def listLastOpened(User user, Long offset = null, Long max = null) {
         securityACLService.checkIsSameUser(user, cytomineService.currentUser)
         def data = []
