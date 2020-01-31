@@ -110,7 +110,11 @@ class UploadedFileService extends ModelService {
                 "CASE WHEN (uf.status = ${UploadedFile.Status.CONVERTED.code} OR uf.status = ${UploadedFile.Status.DEPLOYED.code}) " +
                 "THEN ai.id ELSE NULL END AS image " +
                 "FROM uploaded_file uf " +
-                "LEFT JOIN uploaded_file AS tree ON (tree.l_tree <@ uf.l_tree AND tree.id != uf.id) " +
+                "LEFT JOIN (SELECT *  FROM uploaded_file t " +
+                "WHERE EXISTS (SELECT 1 FROM acl_sid AS asi LEFT JOIN acl_entry AS ae ON asi.id = ae.sid " +
+                "LEFT JOIN acl_object_identity AS aoi ON ae.acl_object_identity = aoi.id " +
+                "WHERE aoi.object_id_identity = t.storage_id AND asi.sid = :username) AND t.deleted IS NULL) " +
+                "AS tree ON (uf.l_tree @> tree.l_tree AND tree.id != uf.id) " +
                 "LEFT JOIN abstract_image AS ai ON ai.uploaded_file_id = uf.id " +
                 "LEFT JOIN uploaded_file AS parent ON parent.id = uf.parent_id " +
                 "WHERE EXISTS (SELECT 1 FROM acl_sid AS asi " +
