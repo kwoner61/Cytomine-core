@@ -108,6 +108,8 @@ class AbstractImage extends CytomineDomain implements Serializable {
         physicalSizeX column: "physical_size_x"
         physicalSizeY column: "physical_size_y"
         physicalSizeZ column: "physical_size_z"
+        uploadedFile fetch: 'join'
+        sample fetch: 'join', cache: true
     }
 
     static constraints = {

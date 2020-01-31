@@ -54,6 +54,7 @@ class AbstractSlice extends CytomineDomain implements Serializable {
         id(generator: 'assigned', unique: true)
         sort([time: 'asc', zStack: 'asc', channel: 'asc'])
         mime fetch: 'join', cache: true
+        uploadedFile fetch: 'join'
         cache(true)
     }
 
