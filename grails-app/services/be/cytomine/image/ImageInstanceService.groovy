@@ -171,12 +171,12 @@ class ImageInstanceService extends ModelService {
 
         if (search.contains("${imageInstanceAlias}.instance_filename") || sortedProperty.contains("${imageInstanceAlias}.instance_filename")) {
             joinAI = true
-            search = search.replaceAll("${imageInstanceAlias}.instance_filename", "COALESCE(${imageInstanceAlias}.instance_filename, ${abstractImageAlias}.original_filename)");
+            search = search.replaceAll("${imageInstanceAlias}\\.instance_filename", "COALESCE(${imageInstanceAlias}.instance_filename, ${abstractImageAlias}.original_filename)");
         }
 
         if (sortedProperty.contains("${imageInstanceAlias}.instance_filename")) {
             joinAI = true
-            sortedProperty = sortedProperty.replaceAll("${imageInstanceAlias}.instance_filename", "COALESCE(${imageInstanceAlias}.instance_filename, ${abstractImageAlias}.original_filename)");
+            sortedProperty = sortedProperty.replaceAll("${imageInstanceAlias}\\.instance_filename", "COALESCE(${imageInstanceAlias}.instance_filename, ${abstractImageAlias}.original_filename)");
             select += ", COALESCE(${imageInstanceAlias}.instance_filename, ${abstractImageAlias}.original_filename) "
         }
 
@@ -419,12 +419,12 @@ class ImageInstanceService extends ModelService {
 
         if (search.contains("${imageInstanceAlias}.instance_filename") || sortedProperty.contains("${imageInstanceAlias}.instance_filename")) {
             joinAI = true
-            search = search.replaceAll("${imageInstanceAlias}.instance_filename", "COALESCE(${imageInstanceAlias}.instance_filename, ${abstractImageAlias}.original_filename)");
+            search = search.replaceAll("${imageInstanceAlias}\\.instance_filename", "COALESCE(${imageInstanceAlias}.instance_filename, ${abstractImageAlias}.original_filename)");
         }
 
         if (sortedProperty.contains("${imageInstanceAlias}.instance_filename")) {
             joinAI = true
-            sortedProperty = sortedProperty.replaceAll("${imageInstanceAlias}.instance_filename", "COALESCE(${imageInstanceAlias}.instance_filename, ${abstractImageAlias}.original_filename)");
+            sortedProperty = sortedProperty.replaceAll("${imageInstanceAlias}\\.instance_filename", "COALESCE(${imageInstanceAlias}.instance_filename, ${abstractImageAlias}.original_filename)");
             select += ", COALESCE(${imageInstanceAlias}.instance_filename, ${abstractImageAlias}.original_filename) "
         }
 
