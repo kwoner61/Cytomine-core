@@ -116,6 +116,7 @@ class Job extends CytomineDomain  {
         status(range: 0..8)
         rate(nullable: true)
         processingServer(nullable: true)
+        favorite(nullable: true)
     }
 
     static mapping = {

@@ -128,7 +128,7 @@ class BootstrapOldVersionService {
         log.info "Users: Add new column language"
         sql.executeUpdate("UPDATE sec_user SET language = 'ENGLISH';")
         bootstrapUtilsService.updateSqlColumnConstraint("sec_user", "language", "SET DEFAULT 'ENGLISH'")
-        bootstrapUtilsService.updateSqlColumnConstraint("sec_user", "language", "SET NOT NULL")
+//        bootstrapUtilsService.updateSqlColumnConstraint("sec_user", "language", "SET NOT NULL")
 
         log.info "Users: Add new column origin"
         def systemUsers = ['ImageServer1', 'superadmin', 'admin', 'rabbitmq', 'monitoring']
@@ -228,7 +228,7 @@ class BootstrapOldVersionService {
                     "where image_id is not null") {
                 values << [
                         id: "nextval('hibernate_sequence')",
-                        created: it.created,
+                        created: "'${it.created}'",
                         version: 0,
                         image_id: it.image_id,
                         uploaded_file_id: it.id,
@@ -244,7 +244,7 @@ class BootstrapOldVersionService {
             def groups = values.collate(batchSize)
             groups.eachWithIndex { def vals, int i ->
                 def formatted = vals.collect { v -> "(" + fields.collect { f -> v[f] }.join(",") + ")"}
-                sql.execute("INSERT INTO abstract_slice (${fields.join(",")}) VALUES ${formatted.join(",")};")
+                sql.execute('INSERT INTO abstract_slice (' + fields.join(",") + ') VALUES ' + formatted.join(",") + ';')
                 log.info "- Inserted ${i * batchSize} elements ($i / ${groups.size()})"
             }
         }
@@ -266,7 +266,7 @@ class BootstrapOldVersionService {
                     "and image_sequence.id is null;") {
                 values << [
                         id: "nextval('hibernate_sequence')",
-                        created: it.created,
+                        created: "'${it.created}'",
                         version: 0,
                         base_slice_id: it.asid,
                         image_id: it.iiid,
@@ -279,7 +279,7 @@ class BootstrapOldVersionService {
             def groups = values.collate(batchSize)
             groups.eachWithIndex { def vals, int i ->
                 def formatted = vals.collect { v -> "(" + fields.collect { f -> v[f] }.join(",") + ")"}
-                sql.execute("INSERT INTO slice_instance (${fields.join(",")}) VALUES ${formatted.join(",")};")
+                sql.execute('INSERT INTO slice_instance (' + fields.join(",") + ') VALUES ' + formatted.join(",") + ';')
                 log.info "- Inserted ${i * batchSize} elements ($i / ${groups.size()})"
             }
         }
@@ -305,11 +305,11 @@ class BootstrapOldVersionService {
         log.info "Abstract image: remove no more used columns"
         bootstrapUtilsService.dropSqlColumnUniqueConstraint("abstract_image")
         bootstrapUtilsService.dropSqlColumn("abstract_image", "filename")
-        bootstrapUtilsService.dropSqlColumn("abstract_image", "mime_id")
+
         bootstrapUtilsService.dropSqlColumn("abstract_image", "path")
 
         log.info "Abstract image: Remove no more used DB cached thumbs"
-        sql.executeUpdate("delete from attached_file where domain_class_name = 'be.cytomine.image.AbstractImage' and name = 'thumb';")
+        sql.executeUpdate("delete from attached_file where domain_class_name = 'be.cytomine.image.AbstractImage' and filename like '/image/thumb%';")
 
 
         /****** IMAGE INSTANCE ******/
@@ -329,11 +329,19 @@ class BootstrapOldVersionService {
         def abstractImagesFromImageGroupToSlices = [:]
         def imageGroupsToImageInstances = [:]
 
+        bootstrapUtilsService.updateSqlColumnConstraint("uploaded_file", "converted", "DROP NOT NULL")
+        bootstrapUtilsService.updateSqlColumnConstraint("uploaded_file", "path", "DROP NOT NULL")
+        bootstrapUtilsService.updateSqlColumnConstraint("abstract_image", "mime_id", "DROP NOT NULL")
+
         if (ImageGroup.count() > 0) {
             log.info "Migration of image groups"
             ImageGroup.findAll().each { group ->
                 log.info "Image group: Convert group ${group.name}"
                 def sequences = ImageSequence.findAllByImageGroup(group)
+                if (sequences.size() == 0) {
+                    log.info "Empty image group skipped"
+                    return
+                }
                 def duration = sequences.collect { it.time }.unique().size()
                 def depth = sequences.collect { it.zStack }.unique().size()
                 def channels = sequences.collect { it.channel }.unique().size()
@@ -343,10 +351,10 @@ class BootstrapOldVersionService {
                 Storage storage = Storage.findByUser(user)
                 UploadedFile uf = new UploadedFile(originalFilename: group.name, filename: group.name,
                         user: user, storage: storage,
-                        extension: "virt", imageServer: server,
+                        ext: "virt", imageServer: server, path: "/", converted: true,
                         contentType: "virtual/stack", size: 0, status: 100).save(flush: true, failOnError: true)
 
-                def image = new AbstractImage(uploadedFile: uf, originalFilename: uf.originalFilename,
+                def image = new AbstractImage(uploadedFile: uf, originalFilename: uf.originalFilename, user: user,
                         duration: duration, depth: depth, channels: channels, width: width, height: height)
                 image.save(failOnError: true, flush: true)
 
@@ -360,8 +368,8 @@ class BootstrapOldVersionService {
                 if (hdf5) {
                     def hdf5Filename = hdf5.filename - grailsApplication.config.storage_path
                     hdf5Filename = hdf5Filename.substring(hdf5Filename.indexOf("/")+1).trim()
-                    def profileUf = new UploadedFile(originalFilename: "profile.hdf5", filename: hdf5Filename,
-                            user: user, storage: storage, extension: "hdf5", imageServer: server,
+                    def profileUf = new UploadedFile(originalFilename: "profile.hdf5", filename: hdf5Filename, parent: uf,
+                            user: user, storage: storage, ext: "hdf5", imageServer: server, path: "/", converted: true,
                             contentType: "application/x-hdf5", size: 0, status: 100).save(flush: true, failOnError: true)
                     new CompanionFile(uploadedFile: profileUf, image: image,
                             originalFilename: "profile.hdf5", filename: "profile.hdf5", type: "HDF5").save(flush: true, failOnError: true)
@@ -396,6 +404,8 @@ class BootstrapOldVersionService {
             }
         }
 
+        bootstrapUtilsService.dropSqlColumn("abstract_image", "mime_id")
+
 
         /****** UPLOADED FILE ******/
         log.info "Migration of uploaded files"
@@ -409,7 +419,7 @@ class BootstrapOldVersionService {
                     "where abstract_image.id = image_id " +
                     "and uploaded_file_id is null " +
                     "and cast(ltree2text(subltree(uploaded_file.l_tree, 0, 1)) as bigint) IN (SELECT id FROM uploaded_file) " +
-                    ((hasIG) ? "and abstract_image.id NOT IN (${abstractImagesFromImageGroupToSlices.keySet().join(',')}); " : ";"))
+                    ((hasIG) ? 'and abstract_image.id NOT IN (' + abstractImagesFromImageGroupToSlices.keySet().join(',') + '); ' : ";"))
         }
 
         log.info "Uploaded file: Remove no more used columns"
@@ -507,18 +517,19 @@ class BootstrapOldVersionService {
         if (imageInstancesFromImageGroupToSlices.size() > 0) {
             log.info "Cleaning: Delete old image instances used in image groups"
             sql.executeUpdate("DELETE FROM image_sequence " +
-                    "where image_id IN (${imageInstancesFromImageGroupToSlices.keySet().join(',')})")
+                    ('where image_id IN (' + imageInstancesFromImageGroupToSlices.keySet().join(',') + ')'))
             sql.executeUpdate("DELETE FROM image_instance " +
-                    "where id IN (${imageInstancesFromImageGroupToSlices.keySet().join(',')})")
+                    ('where id IN (' + imageInstancesFromImageGroupToSlices.keySet().join(',') + ')'))
             sql.executeUpdate("DELETE FROM image_grouphdf5;")
             sql.executeUpdate("DELETE FROM image_group;")
         }
 
         log.info "Cleaning: Delete old image references"
         sql.executeUpdate("DELETE FROM storage_abstract_image;")
-        sql.executeUpdate("delete from image_instance where id not in (select image_id from slice_instance);")
-        sql.executeUpdate("delete from abstract_image where id not in (select image_id from abstract_slice);")
-
+//        sql.executeUpdate("delete from image_instance where id not in (select image_id from slice_instance);")
+//        sql.executeUpdate("delete from abstract_image where id not in (select image_id from abstract_slice);")
+        sql.executeUpdate("UPDATE image_instance ii SET deleted = NOW() WHERE NOT EXISTS(SELECT 1 FROM slice_instance si WHERE si.image_id = ii.id);")
+        sql.executeUpdate("UPDATE abstract_image ai SET deleted = NOW() WHERE NOT EXISTS(SELECT 1 FROM abstract_slice asl WHERE asl.image_id = ai.id);")
 
         /****** COUNTERS ******/
         log.info "Migration of counters"

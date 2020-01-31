@@ -70,7 +70,10 @@ class BootstrapUtilsService {
 
     def updateSqlColumnConstraint(def table, def column, def newSqlConstraint) {
         def sql = new Sql(dataSource)
-        def result = sql.executeUpdate('ALTER TABLE ' + table + ' ALTER COLUMN ' + column + ' ' + newSqlConstraint + ';')
+        def result
+        if (checkSqlColumnExistence(table, column)) {
+            result = sql.executeUpdate('ALTER TABLE ' + table + ' ALTER COLUMN ' + column + ' ' + newSqlConstraint + ';')
+        }
         sql.close()
         return result
     }
@@ -78,8 +81,8 @@ class BootstrapUtilsService {
     def dropSqlColumnUniqueConstraint(def table) {
         def sql = new Sql(dataSource)
         sql.eachRow("select constraint_name from information_schema.table_constraints " +
-                "where table_name = '${table}' and constraint_type = 'UNIQUE';") {
-            sql.executeUpdate("ALTER TABLE ${table} DROP CONSTRAINT "+ it.constraint_name +";")
+                "where table_name = '" + table +"' and constraint_type = 'UNIQUE';") {
+            sql.executeUpdate("ALTER TABLE " + table +" DROP CONSTRAINT "+ it.constraint_name +";")
         }
         sql.close()
     }
@@ -88,7 +91,7 @@ class BootstrapUtilsService {
         def sql = new Sql(dataSource)
         boolean exists = sql.rows("SELECT column_name " +
                 "FROM information_schema.columns " +
-                "WHERE table_name='${table}' and column_name='${column}';").size() == 1;
+                "WHERE table_name = '" + table +"' and column_name='"+ column + "';").size() == 1;
         sql.close()
         return exists
     }
