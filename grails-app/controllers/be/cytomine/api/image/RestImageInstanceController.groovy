@@ -19,7 +19,9 @@ package be.cytomine.api.image
 import be.cytomine.Exception.CytomineException
 import be.cytomine.Exception.ForbiddenException
 import be.cytomine.Exception.InvalidRequestException
+import be.cytomine.Exception.ObjectNotFoundException
 import be.cytomine.api.RestController
+import be.cytomine.image.CompanionFile
 import be.cytomine.image.ImageInstance
 import be.cytomine.image.SliceInstance
 import be.cytomine.image.multidim.ImageGroup
@@ -624,6 +626,26 @@ class RestImageInstanceController extends RestController {
         bounds.put("mimeType", [list : abstractImages.collect{it?.uploadedFile?.contentType}.unique()])
 
         responseSuccess(bounds)
+    }
+
+    def profile() {
+        try {
+            ImageInstance imageInstance = imageInstanceService.read(params.long("id"))
+            if (imageInstance) {
+                if (!imageInstance.baseImage.hasProfile()) {
+                    throw new ObjectNotFoundException("No profile for abstract image ${imageInstance.baseImage}")
+                }
+
+                CompanionFile cf = CompanionFile.findByImageAndType(imageInstance.baseImage, "HDF5")
+
+                responseSuccess(imageServerService.profile(cf, params.geometry, params))
+            } else {
+                responseNotFound("Image", params.id)
+            }
+        }
+        catch (CytomineException e) {
+            responseError(e)
+        }
     }
 
 

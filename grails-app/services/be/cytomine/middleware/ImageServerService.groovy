@@ -96,6 +96,14 @@ class ImageServerService extends ModelService {
         return JSON.parse(new URL(makeGetUrl("/profile.json", server, parameters)).text)
     }
 
+    def profile(CompanionFile profile, String geometry, def params) {
+        def (server, parameters) = imsParametersFromCompanionFile(profile)
+        parameters.location = geometry
+        parameters.minSlice = params.minSlice
+        parameters.maxSlice = params.maxSlice
+        return JSON.parse(new URL(makeGetUrl("/profile.json", server, parameters)).text)
+    }
+
     def associated(ImageInstance image) {
         associated(image.baseImage)
     }

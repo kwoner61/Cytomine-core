@@ -73,6 +73,9 @@ class ImageInstanceUrlMappings {
             action = [GET: "getReferenceSlice"]
         }
 
+        "/api/imageinstance/$id/profile.$format"(controller: "restImageInstance") {
+            action = [GET: "profile"]
+        }
 
         "/api/imageinstance/$id/download"(controller: "restImageInstance"){
             action = [GET:"download"]
