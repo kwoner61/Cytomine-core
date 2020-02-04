@@ -7,5 +7,6 @@ class ProjectLastActivity {
     Date lastActivity
 
     static constraints = {
+        project(unique: true)
     }
 }

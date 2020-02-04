@@ -113,6 +113,22 @@ class BootstrapOldVersionService {
         Version.setCurrentVersion(Long.parseLong(grailsApplication.metadata.'app.versionDate'), grailsApplication.metadata.'app.version')
     }
 
+    def initv2_0_1() {
+        log.info "Project: Populate project last activity table"
+        def sql = new Sql(dataSource)
+        def values = []
+        sql.eachRow("SELECT project_id, MAX(created) AS date FROM command_history WHERE project_id IS NOT NULL GROUP BY project_id") {
+            values << [id: "nextval('hibernate_sequence')", version: 0, project_id: it.project_id, last_activity: "'${it.date}'"]
+        }
+
+        def batchSize = 100
+        def fields = ["id", "version", "project_id", "last_activity"]
+        def groups = values.collate(batchSize)
+        groups.eachWithIndex { def vals, int i ->
+            def formatted = vals.collect { v -> "(" + fields.collect { f -> v[f] }.join(",") + ")"}
+            sql.execute('INSERT INTO project_last_activity (' + fields.join(",") +') VALUES ' + formatted.join(",") + " ON CONFLICT DO NOTHING;")
+        }
+    }
 
     def initv2_0_0() {
         log.info "Migration to V2.0.0"
@@ -366,8 +382,7 @@ class BootstrapOldVersionService {
 
                 def hdf5 = ImageGroupHDF5.findByGroupAndStatus(group, 3)
                 if (hdf5) {
-                    def hdf5Filename = hdf5.filename - grailsApplication.config.storage_path
-                    hdf5Filename = hdf5Filename.substring(hdf5Filename.indexOf("/")+1).trim()
+                    def hdf5Filename = hdf5.filename.split("/")[-1]?.trim()
                     def profileUf = new UploadedFile(originalFilename: "profile.hdf5", filename: hdf5Filename, parent: uf,
                             user: user, storage: storage, ext: "hdf5", imageServer: server, path: "/", converted: true,
                             contentType: "application/x-hdf5", size: 0, status: 100).save(flush: true, failOnError: true)

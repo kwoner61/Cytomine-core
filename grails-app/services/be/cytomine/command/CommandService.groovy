@@ -75,7 +75,6 @@ class CommandService {
             c.save(failOnError: true)
             CommandHistory ch = new CommandHistory(command: c, prefixAction: "", project: c.project,user: c.user, message: c.actionMessage)
             ch.save(failOnError: true);
-            updateProjectLastActivity(ch)
             if (c.saveOnUndoRedoStack) {
                 def item = new UndoStackItem(command: c, user: c.user, transaction: c.transaction)
                 item.save(flush: true,failOnError: true)
@@ -181,8 +180,7 @@ class CommandService {
                 transaction: firstUndoStack.transaction
         ).save(flush: true)
         //save to history stack
-        def ch = new CommandHistory(command: firstUndoStack.getCommand(), prefixAction: "UNDO", project: firstUndoStack.getCommand().project, user: firstUndoStack.user, message: firstUndoStack.command.actionMessage).save(failOnError: true)
-        updateProjectLastActivity(ch)
+        new CommandHistory(command: firstUndoStack.getCommand(), prefixAction: "UNDO", project: firstUndoStack.getCommand().project, user: firstUndoStack.user, message: firstUndoStack.command.actionMessage).save(failOnError: true)
         //delete from undo stack
         firstUndoStack.delete(flush: true)
     }
@@ -199,24 +197,8 @@ class CommandService {
                 transaction: lastRedoStack.transaction,
         ).save(flush: true)
         //add to history stack
-        def ch = new CommandHistory(command: lastRedoStack.getCommand(), prefixAction: "REDO", project: lastRedoStack.getCommand().project,user: lastRedoStack.user,message: lastRedoStack.command.actionMessage).save(failOnError: true);
-        updateProjectLastActivity(ch)
+        new CommandHistory(command: lastRedoStack.getCommand(), prefixAction: "REDO", project: lastRedoStack.getCommand().project,user: lastRedoStack.user,message: lastRedoStack.command.actionMessage).save(failOnError: true);
         //delete the redo item
         lastRedoStack.delete(flush: true)
     }
-
-    def updateProjectLastActivity(CommandHistory ch) {
-        if (!ch.project) {
-            return
-        }
-
-        def pla = ProjectLastActivity.findByProject(ch.project)
-        if (!pla) {
-            pla = new ProjectLastActivity(project: ch.project)
-        }
-
-        pla.setLastActivity(ch.created)
-        pla.save(failOnError: true)
-    }
-
 }
