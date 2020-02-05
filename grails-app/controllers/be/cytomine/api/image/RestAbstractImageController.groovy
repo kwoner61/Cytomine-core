@@ -48,7 +48,8 @@ class RestAbstractImageController extends RestController {
     def list() {
         SecUser user = cytomineService.getCurrentUser()
         Project project = projectService.read(params.long("project"))
-        responseSuccess(abstractImageService.list(user, project))
+        def result = abstractImageService.list(user, project, params.sort, params.order, params.long('max'), params.long('offset'), searchParameters)
+        responseSuccess([collection : result.data, size : result.total, offset: result.offset, perPage: result.perPage, totalPages: result.totalPages])
     }
 
     @RestApiMethod(description="Get all image having an instance in a project", listing = true)

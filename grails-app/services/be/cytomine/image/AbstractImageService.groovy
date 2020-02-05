@@ -98,32 +98,37 @@ class AbstractImageService extends ModelService {
         }
     }
 
-    def list(SecUser user, Project project = null) {
-        List<AbstractImage> images
+    def list(SecUser user, Project project = null, String sortedProperty = null, String sortDirection = null, Long max  = 0, Long offset = 0, searchParameters = []) {
+        def validSearchParameters = getDomainAssociatedSearchParameters(AbstractImage, searchParameters)
+
+        def result
         if(currentRoleServiceProxy.isAdminByNow(user)) {
-            images = AbstractImage.list()
+            result =  criteriaRequestWithPagination(AbstractImage, max, offset, {
+                isNull("deleted")
+            }, validSearchParameters, sortedProperty, sortDirection)
         }
         else {
             List<Storage> storages = securityACLService.getStorageList(cytomineService.currentUser, false)
-            images = AbstractImage.createCriteria().list {
+            result =  criteriaRequestWithPagination(AbstractImage, max, offset, {
                 createAlias("uploadedFile", "uf")
                 'in'("uf.storage.id", storages.collect{ it.id })
                 isNull("deleted")
-            }
+            }, validSearchParameters, sortedProperty, sortDirection)
         }
 
         if(project) {
+            List<AbstractImage> images = result.data
             TreeSet<Long> inProjectImagesId = new TreeSet<>(ImageInstance.findAllByProjectAndDeletedIsNull(project).collect{it.baseImage.id})
 
-            def result = []
+            def data = []
             images.each { image ->
-                def data = AbstractImage.getDataFromDomain(image)
-                data.inProject = (inProjectImagesId.contains(image.id))
-                result << data
+                def ai = AbstractImage.getDataFromDomain(image)
+                ai.inProject = (inProjectImagesId.contains(image.id))
+                data << ai
             }
-            return result
+            result.data = data
         }
-        return images
+        return result
     }
 
     def add(def json) throws CytomineException {
