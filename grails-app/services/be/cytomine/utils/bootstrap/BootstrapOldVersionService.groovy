@@ -36,6 +36,7 @@ import be.cytomine.meta.Property
 import be.cytomine.ontology.Track
 import be.cytomine.processing.ImageFilter
 import be.cytomine.project.Project
+import be.cytomine.project.ProjectLastActivity
 import be.cytomine.security.SecRole
 import be.cytomine.security.SecUser
 import be.cytomine.security.SecUserSecRole
@@ -114,20 +115,7 @@ class BootstrapOldVersionService {
     }
 
     def initv2_0_1() {
-        log.info "Project: Populate project last activity table"
-        def sql = new Sql(dataSource)
-        def values = []
-        sql.eachRow("SELECT project_id, MAX(created) AS date FROM command_history WHERE project_id IS NOT NULL GROUP BY project_id") {
-            values << [id: "nextval('hibernate_sequence')", version: 0, project_id: it.project_id, last_activity: "'${it.date}'"]
-        }
 
-        def batchSize = 100
-        def fields = ["id", "version", "project_id", "last_activity"]
-        def groups = values.collate(batchSize)
-        groups.eachWithIndex { def vals, int i ->
-            def formatted = vals.collect { v -> "(" + fields.collect { f -> v[f] }.join(",") + ")"}
-            sql.execute('INSERT INTO project_last_activity (' + fields.join(",") +') VALUES ' + formatted.join(",") + " ON CONFLICT DO NOTHING;")
-        }
     }
 
     def initv2_0_0() {
@@ -164,6 +152,22 @@ class BootstrapOldVersionService {
 
         log.info "Projects: Allow projects without ontology"
         bootstrapUtilsService.updateSqlColumnConstraint("project", "ontology_id", "DROP NOT NULL")
+
+        if (ProjectLastActivity.count() == 0) {
+            log.info "Projects: Populate project last activity table"
+            def values = []
+            sql.eachRow("SELECT project_id, MAX(created) AS date FROM command_history WHERE project_id IS NOT NULL GROUP BY project_id") {
+                values << [id: "nextval('hibernate_sequence')", version: 0, project_id: it.project_id, last_activity: "'${it.date}'"]
+            }
+
+            def batchSize = 100
+            def fields = ["id", "version", "project_id", "last_activity"]
+            def groups = values.collate(batchSize)
+            groups.eachWithIndex { def vals, int i ->
+                def formatted = vals.collect { v -> "(" + fields.collect { f -> v[f] }.join(",") + ")"}
+                sql.execute('INSERT INTO project_last_activity (' + fields.join(",") +') VALUES ' + formatted.join(",") + " ON CONFLICT DO NOTHING;")
+            }
+        }
 
 
         /******* SOFTWARE ******/
@@ -230,6 +234,19 @@ class BootstrapOldVersionService {
         log.info "Image server: Remove no more used columns"
         bootstrapUtilsService.dropSqlColumn("image_server", "service")
         bootstrapUtilsService.dropSqlColumn("image_server", "class_name")
+
+
+        /****** UPLOADED FILE (1) ******/
+        if (bootstrapUtilsService.checkSqlColumnExistence('uploaded_file', 'image_id')) {
+            log.info "Migration of uploaded files (1)"
+
+            log.info "Set uploaded files with valid images and status to 'uploaded' as 'deployed'"
+            sql.executeUpdate("UPDATE uploaded_file SET status = 2 WHERE image_id IS NOT NULL and status = 0;");
+
+            log.info "Remove erroneous uploaded files (filename duplicates)"
+            sql.executeUpdate("DELETE FROM uploaded_file WHERE size > 0 AND parent_id IS NOT NULL AND image_id IN (SELECT image_id FROM uploaded_file GROUP BY image_id, size HAVING count(*) = 2);")
+            sql.executeUpdate("DELETE FROM uploaded_file WHERE size = 0 AND image_id IN (SELECT image_id FROM uploaded_file GROUP BY image_id HAVING COUNT(*) = 2);")
+        }
 
 
         /****** ABSTRACT SLICE ******/
@@ -423,18 +440,15 @@ class BootstrapOldVersionService {
 
 
         /****** UPLOADED FILE ******/
-        log.info "Migration of uploaded files"
+        log.info "Migration of uploaded files (2)"
         if (bootstrapUtilsService.checkSqlColumnExistence('uploaded_file', 'image_id')) {
-            def hasIG = abstractImagesFromImageGroupToSlices.size() > 0
-
             log.info("Uploaded file: Change direction of UF - AI relation and use the root as AI uploaded file")
             sql.executeUpdate("update abstract_image " +
                     "set uploaded_file_id = cast(ltree2text(subltree(uploaded_file.l_tree, 0, 1)) as bigint) " +
                     "from uploaded_file " +
                     "where abstract_image.id = image_id " +
                     "and uploaded_file_id is null " +
-                    "and cast(ltree2text(subltree(uploaded_file.l_tree, 0, 1)) as bigint) IN (SELECT id FROM uploaded_file) " +
-                    ((hasIG) ? 'and abstract_image.id NOT IN (' + abstractImagesFromImageGroupToSlices.keySet().join(',') + '); ' : ";"))
+                    "and cast(ltree2text(subltree(uploaded_file.l_tree, 0, 1)) as bigint) IN (SELECT id FROM uploaded_file);")
         }
 
         log.info "Uploaded file: Remove no more used columns"
