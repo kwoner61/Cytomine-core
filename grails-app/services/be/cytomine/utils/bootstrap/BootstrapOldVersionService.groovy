@@ -130,7 +130,7 @@ class BootstrapOldVersionService {
         bootstrapUtilsService.updateSqlColumnConstraint("sec_user", "is_developer", "SET DEFAULT FALSE")
 
         log.info "Users: Add new column language"
-        sql.executeUpdate("UPDATE sec_user SET language = 'ENGLISH';")
+        sql.executeUpdate("UPDATE sec_user SET language = 'ENGLISH' WHERE language IS NULL;")
         bootstrapUtilsService.updateSqlColumnConstraint("sec_user", "language", "SET DEFAULT 'ENGLISH'")
 //        bootstrapUtilsService.updateSqlColumnConstraint("sec_user", "language", "SET NOT NULL")
 
