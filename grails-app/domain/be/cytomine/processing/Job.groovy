@@ -93,7 +93,7 @@ class Job extends CytomineDomain  {
 
     @RestApiObjectField(description = "Flag to star an interesting job", mandatory =
     false)
-    boolean favorite = false
+    Boolean favorite = false
 
     @RestApiObjectFields(params=[
         @RestApiObjectField(apiFieldName = "algoType", description = "The algo type based on the class name",allowedType = "string",useForCreation = false),
