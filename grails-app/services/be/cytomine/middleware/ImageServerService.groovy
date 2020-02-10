@@ -246,6 +246,10 @@ class ImageServerService extends ModelService {
         window(image.baseImage.referenceSlice, params, urlOnly)
     }
 
+    def window(AbstractImage image, def params, def urlOnly = false) {
+        window(image.referenceSlice, params, urlOnly)
+    }
+
     def window(SliceInstance slice, def params, def urlOnly = false) {
         window(slice.baseSlice, params, urlOnly)
     }
