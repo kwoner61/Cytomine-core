@@ -63,7 +63,6 @@ deploy:
       secure: ml7gn5xsbIzjaCoB3Yt1GZ91wQ9Va+kr7qhW4uvrOwhGc4OjHuy4Dmmd7tmxsyYfziy0X00+plOn1hjfWeKpPCvAwDZctKqtJrNvxu51SkXZn8G0IzJ0yfYM3xWmszeehS639bupQK6flhSti1ipZQSPAPPtVO9hAunBZWk8vZKmF+occ7qwdFlwEd1ZSViMmE4l3QqSDyraG8qctLW8D9VJaGidbPQMVr/Y3SqrSyWGDRcLhB7mJ/hEhDnORJeF7oapq3ablSKonAQsrWn4jLnKuoJ5lMP5MWlIXH0y3kj7zDrYejx6CzUD2m8jhItplpv6+O6xAAhmDM5OHD1PgbVQrS/RSkMfvoY02GX9F8fVu2d449Vbg7VVHIP2ThitC5SO9JXJzrsFnLz6nkoFZcFNj3DdoPQKUm2kHTqQHSv6r/TJt2HXwbSnlr+TyhaIXzxG7z8auyFLLY6J8X6A/rH3uiyqR/TMTJh7gHuVHnszt/VgBjEqGEqDBeIs5mSHPTSA4VpDLFkkljQYpGghyZsOx2oOZjf0g/4n3m3HEstBtDqQYZ3F8DSwzp0U8b+cGg3y2J4/Am3azH51N3z1yOR7+4HUda7jzvuxeiAaJhQoulKO7kkm4e5EfG2vgf95vhnqfz7nHNMMXkmUdmThWdBcapFbYqfcfAjkN+Zd5Wg=
     file:
       - core.war
-      - restapidoc.json
     skip_cleanup: true
     on:
       condition: $DEPLOY = true
