@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2009-2017. Authors: see NOTICE file.
+* Copyright (c) 2009-2019. Authors: see NOTICE file.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -54,6 +54,10 @@ class ProjectUrlMappings {
         "/api/project/method/lastopened.$format" (controller: "restProject") {
             action = [GET:"listLastOpened"]
         }
+        "/api/bounds/project.$format"(controller:"restProject"){
+            action = [GET:"bounds"]
+        }
+
 
         "/api/project/$id/invitation.$format" (controller: "restProject") {
             action = [POST:"inviteNewUser"]

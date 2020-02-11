@@ -1,7 +1,7 @@
 package be.cytomine.utils
 
 /*
-* Copyright (c) 2009-2017. Authors: see NOTICE file.
+* Copyright (c) 2009-2019. Authors: see NOTICE file.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -17,20 +17,25 @@ package be.cytomine.utils
 */
 
 import be.cytomine.CytomineDomain
+import be.cytomine.Exception.CytomineException
 import be.cytomine.Exception.InvalidRequestException
 import be.cytomine.Exception.ObjectNotFoundException
 import be.cytomine.Exception.ServerException
 import be.cytomine.Exception.WrongArgumentException
+import be.cytomine.annotations.DependencyOrder
 import be.cytomine.command.Command
 import be.cytomine.command.DeleteCommand
 import be.cytomine.ontology.AlgoAnnotation
 import be.cytomine.ontology.UserAnnotation
+import org.springframework.util.ReflectionUtils
 import grails.util.GrailsNameUtils
 import org.springframework.transaction.annotation.Propagation
 import org.springframework.transaction.annotation.Transactional
 
+import java.lang.reflect.Field
 import java.sql.ResultSet
 import java.sql.ResultSetMetaData
+import java.time.ZoneId
 
 import static org.springframework.security.acls.domain.BasePermission.READ
 
@@ -136,16 +141,17 @@ abstract class ModelService {
                 c.backup = backup
             }
             //remove all dependent domains
-            def allServiceMethods = this.metaClass.methods*.name
-            int numberOfDirectDependence = 0
-            def dependencyMethodName = []
-            allServiceMethods.each {
-                if(it.startsWith("deleteDependent")) {
-                    numberOfDirectDependence++
-                    dependencyMethodName << "$it"
-                }
-            }
-            dependencyMethodName.unique().eachWithIndex { method, index ->
+
+            def allServiceMethods = this.getClass().getDeclaredMethods()
+            def dependencyMethods = allServiceMethods.findAll{it.name.startsWith("deleteDependent")}.unique({it.name})
+
+            def (ordered, unordered) = dependencyMethods.split { it.annotations.findAll{it instanceof DependencyOrder}.size() > 0  }
+            ordered = ordered.sort{- it.annotations.find{it instanceof DependencyOrder}.order()}
+            dependencyMethods = ordered + unordered
+
+            int numberOfDirectDependence = dependencyMethods.size()
+
+            dependencyMethods*.name.eachWithIndex { method, index ->
                 taskService.updateTask(task, (int)((double)index/(double)numberOfDirectDependence)*100, "")
                 this."$method"(domainToDelete,c.transaction,task)
             }
@@ -193,8 +199,6 @@ abstract class ModelService {
         return domain
     }
 
-
-
     /**
      * Create domain from JSON object
      * @param json JSON with new domain info
@@ -203,9 +207,6 @@ abstract class ModelService {
     CytomineDomain createFromJSON(def json) {
         return currentDomain().insertDataIntoDomain(json)
     }
-
-
-
 
     /**
      * Create new domain in database
@@ -234,7 +235,6 @@ abstract class ModelService {
         //Build response message
         return response
     }
-
 
     /**
      * Edit domain from database
@@ -278,20 +278,25 @@ abstract class ModelService {
         def result = []
         def errors = []
         for(int i=0;i<json.size();i++){
-            def resp;
+            def resp = [:]
             try{
                 resp = addOne(json[i])
 
                 String objectName;
-                if(currentDomain() == AlgoAnnotation || currentDomain() == UserAnnotation){
+                if (currentDomain() == AlgoAnnotation || currentDomain() == UserAnnotation) {
                     objectName = "annotation"
                 } else {
                     objectName = currentDomain().toString().toLowerCase().split("\\.").last()
                 }
                 resp = [domain:resp.data.get(objectName).id, status : resp.status]
-            } catch(WrongArgumentException e){
-                errors << [json:json[i], message : e.msg]
+            } catch(WrongArgumentException | CytomineException e){
+                log.info e.printStackTrace()
+                errors << [data:json[i], message : e.msg]
                 resp = [message : e.msg, status : e.code]
+            } catch(Exception e) {
+                log.info e
+                log.info e.printStackTrace()
+                resp = [message : e.toString(), status : 500]
             }
 
             result << resp
@@ -301,16 +306,16 @@ abstract class ModelService {
 
         def response = [:]
 
-        def succeeded = result.findAll{it.status >= 200 && it.status < 300}
+        def succeeded = result.findAll{it?.status >= 200 && it?.status < 300}
 
         if(succeeded == result) {
             response.data = [message: currentDomain().toString().toLowerCase().split("\\.").last()+"s "+succeeded.collect{it.domain}.join(",")+" added"]
             response.status = 200
         } else if(succeeded.size() == 0) {
-            response.data = [message: "No entry saved", error: errors]
+            response.data = [success: false, message: "No entry saved", errors: errors]
             response.status = 400
         } else {
-            response.data = [message: "Only part of the entries ("+currentDomain().toString().toLowerCase().split("\\.").last()+"s "+succeeded.collect{it.domain}.join(",")+") added.", error: errors]
+            response.data = [success: false, message: "Only part of the entries ("+currentDomain().toString().toLowerCase().split("\\.").last()+"s "+succeeded.collect{it.domain}.join(",")+") added.", errors: errors]
             response.status = 206
         }
 
@@ -330,7 +335,6 @@ abstract class ModelService {
         session.flush()
         session.clear()
     }
-
 
     /**
      * Destroy domain from database
@@ -411,6 +415,237 @@ abstract class ModelService {
             }
         }
         return false
+    }
+
+    def convertSearchParameter(Class type, def parameter){
+
+        if(parameter == null || parameter.equals("null")) return null
+        if(parameter instanceof List || parameter.class.isArray()) return parameter.collect{convertSearchParameter(type, it)}
+
+        def output
+
+        if ((type == Integer || type == int) && !(parameter instanceof Integer)) {
+            output = Integer.parseInt(parameter)
+        } else if ((type == Long || type == long) && !(parameter instanceof Long)) {
+            output = Long.parseLong(parameter)
+        } else if ((type == Double || type == double) && !(parameter instanceof Double)) {
+            output = Double.parseDouble(parameter)
+        } else if (type == Date) {
+            output = new Date(Long.parseLong(parameter))
+        } else if (CytomineDomain.isAssignableFrom(type)) {
+            output = Long.parseLong(parameter)
+            output = type.read(output)
+
+        } else {
+            output = parameter
+        }
+        return output
+    }
+
+    protected def getDomainAssociatedSearchParameters(Class<? extends CytomineDomain> domain, ArrayList searchParameters) {
+        if(!searchParameters) return []
+
+        def result = []
+        def translated = []
+
+        for (def parameter : searchParameters) {
+
+            if (parameter.operator.equals("ilike") || parameter.operator.equals("like")) {
+                parameter.values = "%" + parameter.values + "%"
+            }
+
+            Field field = ReflectionUtils.findField(domain, parameter.field)
+
+            if (field) {
+                def value = convertSearchParameter(field.type, parameter.values)
+
+                result << [operator: parameter.operator, property: field.name, value: value]
+                translated << parameter
+            }
+
+        }
+
+        searchParameters.removeAll(translated)
+
+        return result
+    }
+
+    protected def fieldNameToSQL(String field) {
+        String regex = "([a-z])([A-Z]+)"
+        String replacement = "\$1_\$2"
+        return field.replaceAll(regex, replacement).toLowerCase()
+    }
+
+    protected def searchParametersToSQLConstraints(def parameters) {
+        for (def parameter : parameters){
+            parameter.property = fieldNameToSQL(parameter.property)
+
+            if(parameter.value instanceof Date){
+                parameter.value = ((Date) parameter.value).toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime()
+            }
+
+            String sql
+            switch(parameter.operator){
+                case "equals":
+                    if(parameter.value != null) sql = parameter.property+" = :"+parameter.property.replaceAll("\\.","_")
+                    else sql = parameter.property+" IS NULL "
+                    break
+                case "nequals":
+                    if(parameter.value != null) sql = parameter.property+" != :"+parameter.property.replaceAll("\\.","_")
+                    else sql = parameter.property+" IS NOT NULL "
+                    break
+                case "like":
+                    sql = parameter.property+" LIKE :"+parameter.property.replaceAll("\\.","_")
+                    break
+                case "ilike":
+                    sql = parameter.property+" ILIKE :"+parameter.property.replaceAll("\\.","_")
+                    break
+                case "lte":
+                    sql = parameter.property+" <= :"+parameter.property.replaceAll("\\.","_")
+                    break
+                case "gte":
+                    sql = parameter.property+" >= :"+parameter.property.replaceAll("\\.","_")
+                    break
+                case "in":
+
+                    if(parameter.value == null || parameter.value == "null") {
+                        sql = parameter.property+" IS NULL "
+                        break
+                    }
+
+                    if(!parameter.value.class.isArray() && !(parameter.value instanceof List)){
+                        parameter.value = [parameter.value]
+                    }
+
+                    parameter.value = parameter.value.unique()
+
+                    if(parameter.value.size() == 1 && (parameter.value[0] == null || parameter.value[0] == "null")) {
+                        sql = parameter.property+" IS NULL "
+                        break
+                    }
+
+                    sql = parameter.property+" IN ("
+                    sql += (1..parameter.value.count{it != null && it != 'null'}).collect {":"+parameter.property.replaceAll("\\.","_")+"_"+it}.join(",")
+                    sql += ") "
+
+                    if(parameter.value.contains(null) || parameter.value.contains("null")){
+                        parameter.value = parameter.value.findAll{it != null && it != 'null'}
+                        sql = "("+sql+" OR "+parameter.property+" IS NULL) "
+                    } else {
+                        break
+                    }
+
+                    break
+            //case "":
+            }
+            parameter.sql = sql
+            parameter.sqlParameter = [:]
+
+            if(parameter.value?.class?.isArray() || (parameter.value instanceof List)){
+                (1..parameter.value.size()).each {
+                    parameter.sqlParameter.put(parameter.property.replaceAll("\\.","_")+"_"+it, parameter.value[it-1])
+                }
+            } else parameter.sqlParameter.put(parameter.property.replaceAll("\\.","_"), parameter.value)
+        }
+
+        //remove parameters not injected into sql (as IS NULL)
+        parameters.each {
+            it.sqlParameter = it.sqlParameter.findAll{key, value -> it.sql.contains(key)}
+            if(it.sqlParameter.size() == 0) it.remove("sqlParameter")
+        }
+
+        parameters = [data:parameters, sqlParameters:[]]
+        parameters.sqlParameters = parameters.data.findResults{it.sqlParameter}
+
+        //as we have an array with maps and some maps with more than one element, we sum.
+        long nbParameters = parameters.sqlParameters.inject(0) { sum, params -> sum + params.size() }
+
+        //if a same property is used multiple times
+        if(parameters.sqlParameters.collectEntries().keySet().size() < nbParameters){
+            def duplicateKeys = parameters.data.groupBy{it.property}.findAll{key, value -> value.size()> 1}.keySet()
+            parameters.data.findAll {duplicateKeys.contains(it.property)}.eachWithIndex{ it, index ->
+                String oldName = it.sqlParameter.keySet()[0]
+                String newName = oldName+"_"+index
+
+                it.sql = it.sql.replace(":"+oldName, ":"+newName)
+                it.sqlParameter.put(newName, it.sqlParameter.remove(oldName))
+            }
+        }
+
+        if(parameters.sqlParameters.size() > 0) parameters.sqlParameters = parameters.sqlParameters.collectEntries()
+
+
+        return parameters
+    }
+
+    protected def criteriaRequestWithPagination(Class<? extends CytomineDomain> domain, Long max, Long offset, Closure preselection, def searchParameters, String sortedProperty = null, String sortDirection = null){
+        sortedProperty = (sortedProperty != null && ReflectionUtils.findField(domain, sortedProperty)) ? sortedProperty : "created"
+        if(!sortDirection.equals("asc") && !sortDirection.equals("desc")) sortDirection = "asc"
+
+        Closure sorting = {
+            order(sortedProperty, sortDirection)
+        }
+
+        return criteriaRequestWithPagination(domain, max, offset, preselection, searchParameters, sorting)
+    }
+
+    protected def criteriaRequestWithPagination(Class<? extends CytomineDomain> domain, Long max, Long offset, Closure preselection, def searchParameters, Closure sorting){
+
+        for(def t : searchParameters) {
+            if(["in"].contains(t.operator)) {
+                if(t.value && (t.value.class.isArray() || (t.value instanceof List))){
+                    t.value = t.value.unique()
+                    if(t.value.size() == 1 && t.value[0] == null){
+                        t.value = null
+                    }
+                }
+            }
+            if(t.operator.equals("equals")) {
+                t.operator = "eq"
+            }
+        }
+
+        Closure selection = preselection >> {
+
+            for(def t : searchParameters) {
+                if(["in"].contains(t.operator)){
+
+                    if(t.value == null) {
+                        isNull t.property
+                        continue
+                    }
+
+                    if(!t.value.class.isArray() && !(t.value instanceof List)){
+                        t.value = [t.value]
+                    }
+                    if(t.value.isEmpty()) {
+                        isNull "id"
+                        continue
+                    }
+
+                    if(t.value.contains(null) || t.value.contains("null")){
+                        or {
+                            inList t.property, t.value
+                            isNull t.property
+                        }
+                    } else {
+                        inList t.property, t.value
+                    }
+                } else {
+                    "${t.operator}" t.property,t.value
+                }
+            }
+        }
+
+        def total = domain.createCriteria().count(selection)
+
+        Closure c = selection >> sorting
+        def data = domain.createCriteria().list(max:max, offset:offset,c)
+
+        max = (max != null && max > 0) ? max : Integer.MAX_VALUE
+        offset = (offset != null) ? offset : 0
+
+        return [data: data, total: total, offset: offset, perPage: Math.min(max, total), totalPages: Math.ceil(total/max)]
     }
 
 }

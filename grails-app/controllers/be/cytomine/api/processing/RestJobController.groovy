@@ -1,7 +1,7 @@
 package be.cytomine.api.processing
 
 /*
-* Copyright (c) 2009-2017. Authors: see NOTICE file.
+* Copyright (c) 2009-2019. Authors: see NOTICE file.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import be.cytomine.processing.ProcessingServer
 import be.cytomine.processing.Software
 import be.cytomine.project.Project
 import be.cytomine.security.UserJob
+import be.cytomine.utils.JSONUtils
 import be.cytomine.utils.Task
 import grails.converters.JSON
 import org.restapidoc.annotation.*
@@ -52,6 +53,7 @@ class RestJobController extends RestController {
     def cytomineService
     def securityACLService
     def jobRuntimeService
+    def statsService
 
     /**
      * List all job
@@ -66,6 +68,8 @@ class RestJobController extends RestController {
         Boolean light = params.boolean('light') ? params.boolean('light') : false;
         def softwares_id = params.software ? params.software.split(',').collect { Long.parseLong(it)} : null
         def projects_id = params.project ? params.project.split(',').collect { Long.parseLong(it)} : null
+        Boolean withJobParameters = params.boolean('withJobParameters', true) //backward compatibility
+        Boolean withUser = params.boolean('withUser', true) //backward compatibility
 
         Collection<Project> projects
         if (projects_id) {
@@ -81,7 +85,9 @@ class RestJobController extends RestController {
             softwares = Software.list() //implement security ?
         }
 
-        responseSuccess(jobService.list(softwares, projects, light))
+        def result = jobService.list(softwares, projects, [withJobParameters:withJobParameters, withUser:withUser], params.sort, params.order, searchParameters, params.long('max',0), params.long('offset',0), light)
+
+        responseSuccess([collection : result.data, size:result.total, offset: result.offset, perPage: result.perPage, totalPages: result.totalPages])
     }
 
     /**
@@ -110,6 +116,7 @@ class RestJobController extends RestController {
             long idJob = result?.data?.job?.id
             def userjob = jobService.createUserJob(secUserService.getUser(springSecurityService.currentUser.id), Job.read(idJob))
             result?.data?.job?.userJob = userjob?.id
+            result?.data?.job?.username = userjob?.humanUsername()
             log.info userjob
             responseResult(result)
         } catch (CytomineException e) {
@@ -149,6 +156,7 @@ class RestJobController extends RestController {
         long jobId = params.long("id")
         Job job = Job.read(jobId)
 
+        securityACLService.checkUser(cytomineService.currentUser)
         securityACLService.check(job.container(), READ)
         UserJob userJob = UserJob.findByJob(job)
 
@@ -169,6 +177,7 @@ class RestJobController extends RestController {
         long processingServerId = params.long("processingServerId")
         ProcessingServer processingServer = ProcessingServer.read(processingServerId)
 
+        securityACLService.checkUser(cytomineService.currentUser)
         securityACLService.check(job.container(), READ)
         UserJob userJob = UserJob.findByJob(job)
 
@@ -235,6 +244,29 @@ class RestJobController extends RestController {
         }
     }
 
+    def setFavorite() {
+        Job job = jobService.read(params.long('id'))
+        securityACLService.checkisNotReadOnly(job.container())
+        if (job) {
+            def favorite = JSONUtils.getJSONAttrBoolean(request.JSON, 'favorite', false)
+            responseSuccess(jobService.markAsFavorite(job, favorite))
+        } else {
+            responseNotFound("Job", params.id)
+        }
+    }
+
+    def getLog() {
+        Job job = jobService.read(params.long('id'))
+        def data = jobService.getLog(job)
+        if (data) {
+            responseSuccess(data)
+        } else {
+            responseNotFound("Job", params.id)
+        }
+    }
+
+    def transactionService
+
     /**
      * Delete the full data set build by the job
      * This method will delete: annotation prediction, uploaded files,...
@@ -273,13 +305,19 @@ class RestJobController extends RestController {
                 taskService.updateTask(task,60,"Delete all annotations...")
                 jobService.deleteAllAlgoAnnotations(job)
 
-                taskService.updateTask(task,90,"Delete all files...")
+                taskService.updateTask(task,80,"Delete all files...")
                 jobService.deleteAllJobData(job)
 
-                taskService.finishTask(task)
-                job.dataDeleted = true;
-                job.save(flush:true)
-                responseSuccess([message:"All data from job launch "+ job.created + " are deleted!"])
+                taskService.updateTask(task, 90, "Delete job...")
+                try {
+                    def result = jobService.delete(job, transactionService.start())
+                    taskService.finishTask(task)
+                    responseResult(result)
+                } catch (CytomineException e) {
+                    taskService.finishTask(task)
+                    log.error(e)
+                    response([success: false, errors: e.msg, errorValues : e.values], e.code)
+                }
             }
         }
     }
@@ -360,6 +398,21 @@ class RestJobController extends RestController {
             log.error(e)
             response([success: false, errors: e.msg], e.code)
         }
+    }
+
+    def bounds() {
+        def jobs
+
+        Project project = Project.read(params.projectId)
+        securityACLService.check(project, READ)
+        jobs = Job.findAllByProject(project)
+        def userJobs = UserJob.findAllByJobInList(jobs)
+
+        def bounds = statsService.bounds(Job, jobs)
+
+        bounds.put("software", [list : jobs.collect{it.software}.unique()])
+        bounds.put("username", [list : userJobs.collect{it.humanUsername()}.unique()])
+        responseSuccess(bounds)
     }
 
 

@@ -1,7 +1,7 @@
 package be.cytomine.utils.database
 
 /*
-* Copyright (c) 2009-2017. Authors: see NOTICE file.
+* Copyright (c) 2009-2019. Authors: see NOTICE file.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -18,13 +18,6 @@ package be.cytomine.utils.database
 
 import groovy.sql.Sql
 
-/**
- * Created by IntelliJ IDEA.
- * User: lrollus
- * Date: 6/03/14
- * Time: 16:05
- * Service used to refresh counter (project annotation counter,...)
- */
 class CounterService {
 
     def sessionFactory
@@ -49,15 +42,12 @@ class CounterService {
              *
              */
             def sql = new Sql(dataSource)
-             sql.executeUpdate("UPDATE image_instance ii\n" +
+            sql.executeUpdate("UPDATE image_instance ii\n" +
                     "SET\n" +
                     "  count_image_annotations = (SELECT count(*) FROM user_annotation WHERE image_id = ii.id AND deleted IS NULL),\n" +
                     "  count_image_job_annotations = (SELECT count(*) FROM algo_annotation WHERE image_id = ii.id AND deleted IS NULL),\n" +
                     "  count_image_reviewed_annotations = (SELECT count(*) FROM reviewed_annotation WHERE image_id = ii.id AND deleted IS NULL)")
 
-            try {
-                sql.close()
-            }catch (Exception e) {}
             /*
             * Refresh counter for each images
             * UPDATE project p
@@ -69,8 +59,7 @@ class CounterService {
             * WHERE p.id IN (SELECT DISTINCT project_id FROM image_instance WHERE deleted IS NULL);
             *
             */
-             sql = new Sql(dataSource)
-             sql.executeUpdate("UPDATE project p\n" +
+            sql.executeUpdate("UPDATE project p\n" +
                     "  SET \n" +
                     "    count_annotations = (SELECT sum(count_image_annotations) FROM image_instance WHERE project_id = p.id AND deleted IS NULL),\n" +
                     "    count_job_annotations = (SELECT sum(count_image_job_annotations) FROM image_instance WHERE project_id = p.id AND deleted IS NULL),\n" +
@@ -94,7 +83,7 @@ class CounterService {
            * WHERE p.id NOT IN (SELECT DISTINCT project_id FROM image_instance WHERE deleted IS NULL);
            *
            */
-           sql = new Sql(dataSource)
+            /*sql = new Sql(dataSource)
             sql.executeUpdate("UPDATE project p\n" +
                     "SET\n" +
                     "  count_annotations = 0,\n" +
@@ -105,7 +94,7 @@ class CounterService {
             try {
                 sql.close()
             }catch (Exception e) {}
-
+*/
         } catch (org.postgresql.util.PSQLException e) {
             log.info e
         }

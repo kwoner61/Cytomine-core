@@ -1,7 +1,11 @@
 package be.cytomine.processing
 
+import be.cytomine.Exception.CytomineMethodNotYetImplementedException
+import be.cytomine.Exception.InvalidRequestException
+import be.cytomine.Exception.WrongArgumentException
+
 /*
-* Copyright (c) 2009-2017. Authors: see NOTICE file.
+* Copyright (c) 2009-2019. Authors: see NOTICE file.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -24,9 +28,13 @@ import be.cytomine.security.User
 import be.cytomine.security.UserJob
 import be.cytomine.sql.AlgoAnnotationListing
 import be.cytomine.sql.ReviewedAnnotationListing
+import be.cytomine.meta.AttachedFile
 import be.cytomine.utils.ModelService
 import be.cytomine.utils.Task
+import groovy.sql.GroovyResultSet
 import groovy.sql.Sql
+import org.codehaus.groovy.grails.web.json.JSONObject
+import org.springframework.util.ReflectionUtils
 
 import java.text.SimpleDateFormat
 
@@ -64,23 +72,187 @@ class JobService extends ModelService {
      * List max job for a project and a software
      * Light flag allow to get a light list with only main job properties
      */
-    def list(def softwares, def projects, boolean light) {
+    def list(def softwares, def projects, def extended = [:], String sortColumn = "created", String sortDirection = "desc", def searchParameters = [], Long max = 0, Long offset = 0, boolean light) {
 
-        def jobs = Job.findAllBySoftwareInListAndProjectInList(softwares, projects, [sort : "created", order : "desc"])
+        if (searchParameters.find {it.field.equals("username")} && !extended.withUser) throw new WrongArgumentException("Cannot search on username without argument withUser")
 
-        if(!light) {
-//            jobs.each {
-//                //compute success rate if not yet done
-//                //TODO: this may be heavy...computeRate just after job running?
-//                if(it.rate==-1 && it.status==Job.SUCCESS) {
-//                    it.rate = it.software?.service?.computeRate(it)
-//                    it.save(flush: true)
-//                }
-//            }
-            jobs
-        } else {
-            getJOBResponseList(jobs)
+        String jobAlias = "j"
+        String softwareAlias = "s"
+        String userAlias = "u"
+
+        if(!sortColumn)  sortColumn = "created"
+        if(!sortDirection)  sortDirection = "desc"
+
+        if(sortColumn.equals("softwareName")) sortColumn = "name"
+
+
+        String sortedProperty = ReflectionUtils.findField(Job, sortColumn) ? "${jobAlias}.$sortColumn" : null
+        if(!sortedProperty) sortedProperty = ReflectionUtils.findField(Software, sortColumn) ? softwareAlias + "." + sortColumn : null
+        if(!sortedProperty && sortColumn == "username") sortedProperty = "${userAlias}.$sortColumn"
+        if(!sortedProperty) throw new CytomineMethodNotYetImplementedException("Job list sorted by $sortColumn is not implemented")
+
+        if (sortedProperty == "${userAlias}.$sortColumn" && !extended.withUser) throw new WrongArgumentException("Cannot sort on username without argument withUser")
+
+        for (def parameter : searchParameters){
+            if(parameter.field.equals("softwareName")) parameter.field = "name"
         }
+
+
+        def validatedSearchParameters = getDomainAssociatedSearchParameters(Job, searchParameters).collect {[operator:it.operator, property:"$jobAlias."+it.property, value:it.value]}
+
+        validatedSearchParameters.addAll(
+                getDomainAssociatedSearchParameters(Software, searchParameters).collect {[operator:it.operator, property:"$softwareAlias."+it.property, value:it.value]})
+
+        if(searchParameters.size() > 1){
+            log.debug "The following search parameters have not been validated: "+searchParameters
+        }
+
+        def sqlSearchConditions = searchParametersToSQLConstraints(validatedSearchParameters)
+
+
+        sqlSearchConditions = [
+                job : sqlSearchConditions.data.findAll{it.property.startsWith("$jobAlias.")}.collect{it.sql}.join(" AND "),
+                software : sqlSearchConditions.data.findAll{it.property.startsWith("$softwareAlias.")}.collect{it.sql}.join(" AND "),
+                parameters: sqlSearchConditions.sqlParameters
+        ]
+
+        boolean joinSoftware = true//sqlSearchConditions.software || sortedProperty.contains(softwareAlias+".") as we return softwareName by default
+        def usernameSearch = searchParameters.find {it.field.equals("username")}
+
+
+        String select, from, where, search, sort
+        String request
+
+        select = "SELECT distinct $jobAlias.* "
+        from = "FROM job $jobAlias "
+        where = "WHERE true = true "
+
+        if(joinSoftware) {
+            select +=", ${softwareAlias}.name as software_name, ${softwareAlias}.software_version as software_version "
+            from += "JOIN software $softwareAlias ON ${softwareAlias}.id = ${jobAlias}.software_id "
+        }
+        def usernameParams = [:]
+        if(extended.withUser) {
+            select +=", $userAlias.*, uj.id as user_job_id "
+            from += "LEFT OUTER JOIN sec_user uj ON uj.job_id = ${jobAlias}.id "
+            from += "LEFT OUTER JOIN sec_user $userAlias ON uj.user_id = ${userAlias}.id "
+            if(usernameSearch) {
+                if(!usernameSearch.values.class.isArray() && !(usernameSearch.values instanceof List)){
+                    usernameSearch.values = [usernameSearch.values]
+                }
+                def placeholders = (1..usernameSearch.values.size()).collect { "u_username_$it" }
+                usernameSearch.values.eachWithIndex { username, i ->
+                    usernameParams[placeholders[i]] = username
+                }
+                where += "AND ${userAlias}.username IN ("+ placeholders.collect{ ":$it" }.join(",") +") "
+            }
+        }
+
+
+        if(softwares && !softwares.isEmpty()){
+            where += "AND ${jobAlias}.software_id IN ("+softwares.collect{it.id}.join(",")+") "
+        }
+        else where += "AND ${jobAlias}.id IS NULL "
+        if(projects && !projects.isEmpty()) {
+            where += "AND ${jobAlias}.project_id IN ("+projects.collect{it.id}.join(",")+") "
+        }
+        else where += "AND ${jobAlias}.id IS NULL "
+
+        search = ""
+
+        if(sqlSearchConditions.job){
+            search +=" AND "
+            search += sqlSearchConditions.job
+        }
+        if(sqlSearchConditions.software){
+            search +=" AND "
+            search += sqlSearchConditions.software
+        }
+
+        sort = " ORDER BY "+sortedProperty
+        sort += (sortDirection.equals("desc")) ? " DESC " : " ASC "
+        //sort += (sortDirection.equals("desc")) ? " NULLS LAST " : " NULLS FIRST "
+
+
+        request = select + from + where + search + sort
+        if(max > 0) request += " LIMIT $max"
+        if(offset > 0) request += " OFFSET $offset"
+
+
+        def sql = new Sql(dataSource)
+        def data = []
+        def mapParams = sqlSearchConditions.parameters
+
+        if (mapParams instanceof Map) {
+            if (mapParams.containsKey("j_favorite_1")) {
+                mapParams["j_favorite_1"] = (mapParams["j_favorite_1"] == 'true');
+            }
+            if (mapParams.containsKey("j_favorite_2")) {
+                mapParams["j_favorite_2"] = (mapParams["j_favorite_2"] == 'true');
+            }
+        }
+
+        mapParams += usernameParams
+
+        sql.eachRow(request, mapParams) {
+            def map = [:]
+
+            for (int i = 1; i <= ((GroovyResultSet) it).getMetaData().getColumnCount(); i++) {
+                String key = ((GroovyResultSet) it).getMetaData().getColumnName(i)
+                String objectKey = key.replaceAll("(_)([A-Za-z0-9])", { Object[] test -> test[2].toUpperCase() })
+
+
+                map.putAt(objectKey, it[key])
+            }
+
+            // I mock methods and fields to pass through getDataFromDomain of Project
+            map["class"] = Job.class
+            map['project'] = [id: map['projectId']]
+            map['software'] = [
+                    id             : map['softwareId'],
+                    name           : map['softwareName'],
+                    softwareVersion: map['softwareVersion'],
+                    fullName       : { _ ->
+                        if (map['softwareVersion']?.trim())
+                            return "${map['softwareName']} (${map['softwareVersion']})"
+
+                        return map['softwareName'];
+                    }
+            ]
+            map['processingServer'] = [id: map['processingServerId']]
+
+            def line = Job.getDataFromDomain(map)
+
+            if (extended.withUser) {
+                line.putAt('username', map.username)
+                line.putAt('userJob', map.userJobId)
+            }
+
+            data << line
+        }
+
+        if(extended.withJobParameters){
+            def parameters = jobParameterService.list(data.collect{it.id})
+            for(def line : data){
+                line.putAt('jobParameters', parameters.findAll{it.job == line.id})
+            }
+        }
+
+        def size
+        request = "SELECT COUNT(DISTINCT ${jobAlias}.id) " + from + where + search
+
+        sql.eachRow(request, mapParams) {
+            size = it.count
+        }
+        sql.close()
+
+        def result = [data:data, total:size]
+        max = (max > 0) ? max : Integer.MAX_VALUE
+        result.offset = offset
+        result.perPage = Math.min(max, result.total)
+        result.totalPages = Math.ceil(result.total / max)
+
+        return result
     }
 
     /**
@@ -88,7 +260,9 @@ class JobService extends ModelService {
      * @param json New domain data
      * @return Response structure (created domain data,..)
      */
-    def add(def json) {
+    def add(JSONObject json) {
+        if(!json.project) throw new InvalidRequestException("software not set")
+
         securityACLService.check(json.project,Project, READ)
         securityACLService.checkisNotReadOnly(json.project,Project)
         SecUser currentUser = cytomineService.getCurrentUser()
@@ -150,6 +324,23 @@ class JobService extends ModelService {
 
     def getStringParamsI18n(def domain) {
         return [domain.id, domain.software.name]
+    }
+
+    def getLog(Job job) {
+        def log = AttachedFile.findByDomainClassNameAndDomainIdentAndFilename("be.cytomine.processing.Job", job.id, "log.out")
+
+        if (!log) {
+            return null
+        }
+        def ret = AttachedFile.getDataFromDomain(log)
+        ret['data'] = new String(log.data);
+        return ret
+    }
+
+    def markAsFavorite(Job job, boolean favorite) {
+        new Sql(dataSource).executeUpdate("UPDATE job SET favorite = ${favorite} WHERE id = ${job.id}");
+        job.favorite = favorite
+        return job
     }
 
     List<UserJob> getAllLastUserJob(Project project, Software software) {
@@ -271,6 +462,7 @@ class JobService extends ModelService {
         userJob.accountLocked = user.accountLocked
         userJob.passwordExpired = user.passwordExpired
         userJob.user = user
+        userJob.origin = "JOB"
         userJob = userJob.save(flush: true, failOnError: true)
 
         currentRoleServiceProxy.findCurrentRole(user).each { secRole ->
@@ -292,6 +484,7 @@ class JobService extends ModelService {
             job.number = it.number
             job.created = it.created?.time?.toString()
             job.dataDeleted = it.dataDeleted
+            job.favorite = it.favorite
             data << job
         }
         return data

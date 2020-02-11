@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2009-2017. Authors: see NOTICE file.
+* Copyright (c) 2009-2019. Authors: see NOTICE file.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -72,9 +72,9 @@ class UrlMappings {
             action = [GET:"listDelete"]
         }
 
-        "/api/search.$format"(controller: "search") {
+        /*"/api/search.$format"(controller: "search") {
             action = [GET:"listResponse"]
-        }
+        }*/
 
         "/api/search-engine.$format"(controller: "searchEngine") {
             action = [GET:"search"]
@@ -96,8 +96,8 @@ class UrlMappings {
             action = [GET:"listNews"]
         }
 
-        "/loginWithoutLDAP/login" (controller: "login") {
-            action = [GET:"loginWithoutLDAP"]
+        "/loginWithoutSSO/login" (controller: "login") {
+            action = [GET:"loginWithoutSSO"]
         }
 
         "/login/forgotPassword" (controller: "login") {
@@ -106,10 +106,6 @@ class UrlMappings {
 
         "/login/loginWithToken" (controller: "login") {
             action = [GET:"loginWithToken"]
-        }
-
-        "/login/loginWithLTI" (controller: "login") {
-            action = [POST:"loginWithLTI"]
         }
 
         "/session/admin/open.$format" (controller: "grantRole") {
@@ -122,6 +118,10 @@ class UrlMappings {
             action = [GET:"infoAdminSession"]
         }
 
+        "/api/custom-ui/config.$format" (controller: "customUI") {
+            action = [GET:"retrieveUIConfig"]
+        }
+        //DEPRECATED
         "/custom-ui/config.$format" (controller: "customUI") {
             action = [GET:"retrieveUIConfig"]
         }
@@ -130,6 +130,10 @@ class UrlMappings {
 //            action = [GET:"retrieveUIRoles"]
 //        }
 
+        "/api/custom-ui/project/$project.$format" (controller: "customUI") {
+            action = [GET:"showCustomUIForProject",POST:"addCustomUIForProject"]
+        }
+        //DEPRECATED
         "/custom-ui/project/$project.$format" (controller: "customUI") {
             action = [GET:"showCustomUIForProject",POST:"addCustomUIForProject"]
         }
@@ -143,6 +147,20 @@ class UrlMappings {
         }
         "/ldap.$format" (controller: "restConfiguration") {
             action = [GET:"ldap"]
+        }
+
+        //commands
+        "/api/command/undo.$format" (controller: "command") {
+            action = [GET:"undo"]
+        }
+        "/api/command/$id/undo.$format" (controller: "command") {
+            action = [GET:"undo"]
+        }
+        "/api/command/redo.$format" (controller: "command") {
+            action = [GET:"redo"]
+        }
+        "/api/command/$id/redo.$format" (controller: "command") {
+            action = [GET:"redo"]
         }
     }
 }

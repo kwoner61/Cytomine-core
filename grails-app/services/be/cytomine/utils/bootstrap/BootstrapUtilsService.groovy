@@ -1,7 +1,7 @@
 package be.cytomine.utils.bootstrap
 
 /*
-* Copyright (c) 2009-2017. Authors: see NOTICE file.
+* Copyright (c) 2009-2019. Authors: see NOTICE file.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -19,13 +19,12 @@ package be.cytomine.utils.bootstrap
 import be.cytomine.Exception.InvalidRequestException
 import be.cytomine.Exception.WrongArgumentException
 import be.cytomine.image.AbstractImage
-import be.cytomine.image.ImageInstance
 import be.cytomine.image.Mime
-import be.cytomine.image.UploadedFile
 import be.cytomine.image.server.*
 import be.cytomine.middleware.AmqpQueue
+import be.cytomine.middleware.ImageServer
+import be.cytomine.middleware.AmqpQueueConfigInstance
 import be.cytomine.middleware.MessageBrokerServer
-import be.cytomine.ontology.Property
 import be.cytomine.ontology.Relation
 import be.cytomine.ontology.RelationTerm
 import be.cytomine.processing.ImageFilter
@@ -35,12 +34,12 @@ import be.cytomine.processing.ProcessingServer
 import be.cytomine.security.*
 import be.cytomine.social.PersistentImageConsultation
 import be.cytomine.social.PersistentProjectConnection
-import be.cytomine.utils.Configuration
+import be.cytomine.meta.Configuration
 import grails.plugin.springsecurity.SpringSecurityUtils
 import grails.util.Environment
+import grails.util.Holders
 import groovy.json.JsonBuilder
 import groovy.sql.Sql
-import org.json.simple.JSONObject
 
 /**
  * Cytomine
@@ -62,6 +61,41 @@ class BootstrapUtilsService {
     def processingServerService
     def configurationService
 
+    def dropSqlColumn(def table, def column) {
+        def sql = new Sql(dataSource)
+        def result = sql.executeUpdate('ALTER TABLE ' + table + ' DROP COLUMN IF EXISTS ' + column + ';')
+        sql.close()
+        return result
+    }
+
+    def updateSqlColumnConstraint(def table, def column, def newSqlConstraint) {
+        def sql = new Sql(dataSource)
+        def result
+        if (checkSqlColumnExistence(table, column)) {
+            result = sql.executeUpdate('ALTER TABLE ' + table + ' ALTER COLUMN ' + column + ' ' + newSqlConstraint + ';')
+        }
+        sql.close()
+        return result
+    }
+
+    def dropSqlColumnUniqueConstraint(def table) {
+        def sql = new Sql(dataSource)
+        sql.eachRow("select constraint_name from information_schema.table_constraints " +
+                "where table_name = '" + table +"' and constraint_type = 'UNIQUE';") {
+            sql.executeUpdate("ALTER TABLE " + table +" DROP CONSTRAINT "+ it.constraint_name +";")
+        }
+        sql.close()
+    }
+
+    def checkSqlColumnExistence(def table, def column) {
+        def sql = new Sql(dataSource)
+        boolean exists = sql.rows("SELECT column_name " +
+                "FROM information_schema.columns " +
+                "WHERE table_name = '" + table +"' and column_name='"+ column + "';").size() == 1;
+        sql.close()
+        return exists
+    }
+
     public def createUsers(def usersSamples) {
 
         SecRole.findByAuthority("ROLE_USER") ?: new SecRole(authority: "ROLE_USER").save(flush: true)
@@ -80,7 +114,10 @@ class BootstrapUtilsService {
                     email: item.email,
                     color: item.color,
                     password: item.password,
-                    enabled: true)
+                    language: User.Language.valueOf(Holders.getGrailsApplication().config.grails.defaultLanguage),
+                    enabled: true,
+                    isDeveloper: false,
+                    origin: "BOOTSTRAP")
             user.generateKeys()
 
 
@@ -177,42 +214,37 @@ class BootstrapUtilsService {
         }
     }
 
-    def createConfigurations(){
+    def createConfigurations(boolean update){
         Configuration.Role adminRole = Configuration.Role.ADMIN
         Configuration.Role allUsers = Configuration.Role.ALL
 
         def configs = []
 
-        configs << new Configuration(key: "WELCOME", value: "<p>Welcome to the Cytomine software.</p><p>This software is supported by the <a href='https://cytomine.coop'>Cytomine company</a></p>", readingRole: allUsers)
+        if(!update) configs << new Configuration(key: "WELCOME", value: "<p>Welcome to the Cytomine software.</p><p>This software is supported by the <a href='https://cytomine.coop'>Cytomine company</a></p>", readingRole: allUsers)
 
         configs << new Configuration(key: "retrieval.enabled", value: grailsApplication.config.grails.retrieval.enabled, readingRole: allUsers)
 
-        configs << new Configuration(key: "admin.email", value: grailsApplication.config.grails.admin.email, readingRole: adminRole)
+        configs << new Configuration(key: "admin_email", value: grailsApplication.config.grails.admin.email, readingRole: adminRole)
 
         //SMTP values
-        configs << new Configuration(key: "notification.email", value: grailsApplication.config.grails.notification.email, readingRole: adminRole)
-        configs << new Configuration(key: "notification.password", value: grailsApplication.config.grails.notification.password, readingRole: adminRole)
-        configs << new Configuration(key: "notification.smtp.host", value: grailsApplication.config.grails.notification.smtp.host, readingRole: adminRole)
-        configs << new Configuration(key: "notification.smtp.port", value: grailsApplication.config.grails.notification.smtp.port, readingRole: adminRole)
+        configs << new Configuration(key: "notification_email", value: grailsApplication.config.grails.notification.email, readingRole: adminRole)
+        configs << new Configuration(key: "notification_password", value: grailsApplication.config.grails.notification.password, readingRole: adminRole)
+        configs << new Configuration(key: "notification_smtp_host", value: grailsApplication.config.grails.notification.smtp.host, readingRole: adminRole)
+        configs << new Configuration(key: "notification_smtp_port", value: grailsApplication.config.grails.notification.smtp.port, readingRole: adminRole)
 
 
         //Default project values
         //configs << new Configuration(key: , value: , readingRole: )
 
         //LDAP values
-        configs << new Configuration(key: "ldap.active", value: grailsApplication.config.grails.plugin.springsecurity.ldap.active, readingRole: allUsers)
+        configs << new Configuration(key: "ldap_active", value: grailsApplication.config.grails.plugin.springsecurity.ldap.active, readingRole: allUsers)
         if(grailsApplication.config.grails.plugin.springsecurity.ldap.active) {
-            configs << new Configuration(key: "ldap.context.server", value: grailsApplication.config.grails.plugin.springsecurity.ldap.context.server, readingRole: adminRole)
-            configs << new Configuration(key: "ldap.search.base", value: grailsApplication.config.grails.plugin.springsecurity.ldap.search.base, readingRole: adminRole)
-            configs << new Configuration(key: "ldap.context.managerDn", value: grailsApplication.config.grails.plugin.springsecurity.ldap.context.managerDn, readingRole: adminRole)
-            configs << new Configuration(key: "ldap.context.managerPassword", value: grailsApplication.config.grails.plugin.springsecurity.ldap.context.managerPassword, readingRole: adminRole)
+            configs << new Configuration(key: "ldap_context_server", value: grailsApplication.config.grails.plugin.springsecurity.ldap.context.server, readingRole: adminRole)
+            configs << new Configuration(key: "ldap_search_base", value: grailsApplication.config.grails.plugin.springsecurity.ldap.search.base, readingRole: adminRole)
+            configs << new Configuration(key: "ldap_context_managerDn", value: grailsApplication.config.grails.plugin.springsecurity.ldap.context.managerDn, readingRole: adminRole)
+            configs << new Configuration(key: "ldap_context_managerPassword", value: grailsApplication.config.grails.plugin.springsecurity.ldap.context.managerPassword, readingRole: adminRole)
             //grails.plugin.springsecurity.ldap.authorities.groupSearchBase = ''
         }
-
-        //LTI values
-        //grailsApplication.config.grails.LTIConsumer.each{}
-        //add key secret and name
-        //role invited user values
 
 
         configs.each { config ->
@@ -283,44 +315,28 @@ class BootstrapUtilsService {
     }
 
     def createMultipleIS() {
-
         ImageServer.list().each { server ->
             if(!grailsApplication.config.grails.imageServerURL.contains(server.url)) {
-                log.info server.url + " is not in config, drop it"
-                MimeImageServer.findAllByImageServer(server).each {
-                    log.info "delete $it"
-                    it.delete()
-                }
-
-                ImageServerStorage.findAllByImageServer(server).each {
-                    log.info "delete $it"
-                    it.delete()
-                }
-                log.info "delete IS $server"
-                server.delete()
+                log.info server.url + " is not in config, set it to unavailable"
+                server.available = false
+                server.save()
             }
-
         }
 
-
-
         grailsApplication.config.grails.imageServerURL.eachWithIndex { it, index ->
-            createNewIS(index+"",it)
+            createNewIS("IMS $index", it as String, grailsApplication.config.storage_path as String)
         }
     }
 
 
-    def createNewIS(String name = "", String url) {
-
+    def createNewIS(String name, String url, String basePath) {
         if(!ImageServer.findByUrl(url)) {
             log.info "Create new IMS: $url"
-            def IIPImageServer = [className : 'IIPResolver', name : 'IIP'+name, service : '/image/tile', url : url, available : true]
             ImageServer imageServer = new ImageServer(
-                    className: IIPImageServer.className,
-                    name: IIPImageServer.name,
-                    service : IIPImageServer.service,
-                    url : IIPImageServer.url,
-                    available : IIPImageServer.available
+                    name: name,
+                    url : url,
+                    available : true,
+                    basePath: basePath
             )
 
             if (imageServer.validate()) {
@@ -329,13 +345,6 @@ class BootstrapUtilsService {
                 imageServer.errors?.each {
                     log.info it
                 }
-            }
-
-            Storage.list().each {
-                new ImageServerStorage(
-                        storage : it,
-                        imageServer: imageServer
-                ).save()
             }
 
             Mime.list().each {
@@ -356,6 +365,14 @@ class BootstrapUtilsService {
         }
 
         return imagingServer
+    }
+
+    def updateDefaultProcessingServer() {
+        def ps = ProcessingServer.findByName("local-server")
+        if (ps) {
+            ps.persistentDirectory = grailsApplication.config.cytomine.software.path.softwareImages
+            ps.save(flush: true)
+        }
     }
 
     void convertMimeTypes(){

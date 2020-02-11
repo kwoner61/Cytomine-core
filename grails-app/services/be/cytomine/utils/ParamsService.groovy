@@ -1,7 +1,7 @@
 package be.cytomine.utils
 
 /*
-* Copyright (c) 2009-2017. Authors: see NOTICE file.
+* Copyright (c) 2009-2019. Authors: see NOTICE file.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -110,7 +110,7 @@ class ParamsService {
                     " WHERE id IN ("+users.join(",")+")"
             def data = []
             def sql = new Sql(dataSource)
-            sql.eachRow(request) {
+            sql.eachRow(request, []) {
                 data << it[0]
             }
             try {
@@ -124,7 +124,18 @@ class ParamsService {
             def propertiesToPrint = []
 
             //map group properties and the url params name
-            def assoc = [showBasic:'basic',showMeta:'meta',showWKT:'wkt',showGIS:'gis',showTerm:'term',showImage:'image',showAlgo:'algo', showUser: 'user']
+            def assoc = [
+                    showBasic:'basic',
+                    showMeta:'meta',
+                    showWKT:'wkt',
+                    showGIS:'gis',
+                    showTerm:'term',
+                    showImage:'image',
+                    showAlgo:'algo',
+                    showUser: 'user',
+                    showSlice: 'slice',
+                    showTrack: 'track',
+            ]
 
             //show if ask
             assoc.each { show, group ->

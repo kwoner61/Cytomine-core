@@ -1,7 +1,7 @@
 package be.cytomine.project
 
 /*
-* Copyright (c) 2009-2017. Authors: see NOTICE file.
+* Copyright (c) 2009-2019. Authors: see NOTICE file.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ package be.cytomine.project
 */
 
 import be.cytomine.Exception.CytomineException
+import be.cytomine.Exception.ForbiddenException
 import be.cytomine.Exception.ObjectNotFoundException
 import be.cytomine.Exception.WrongArgumentException
 import be.cytomine.command.*
@@ -53,6 +54,7 @@ class ProjectService extends ModelService {
     def jobService
     def transactionService
     def algoAnnotationService
+    def annotationTermService
     def algoAnnotationTermService
     def imageInstanceService
     def reviewedAnnotationService
@@ -140,20 +142,69 @@ class ProjectService extends ModelService {
     def list(SecUser user = null) {
         if (user) {
             return Project.executeQuery(
-                    "select distinct project "+
-                            "from AclObjectIdentity as aclObjectId, AclEntry as aclEntry, AclSid as aclSid, Project as project "+
+                    "select distinct project " +
+                            "from AclObjectIdentity as aclObjectId, AclEntry as aclEntry, AclSid as aclSid, Project as project " +
                             "where aclObjectId.objectId = project.id " +
-                            "and aclEntry.aclObjectIdentity = aclObjectId.id "+
-                            "and aclEntry.sid = aclSid.id and aclSid.sid like '"+user.username+"' and project.deleted is null")
+                            "and aclEntry.aclObjectIdentity = aclObjectId.id " +
+                            "and aclEntry.sid = aclSid.id and aclSid.sid like '" + user.humanUsername() + "' and project.deleted is null")
         } else {
             Project.findAllByDeletedIsNull()
         }
     }
 
-    def listExtended(SecUser user = null, def extended) {
-        if(extended.isEmpty()) return list(user)
+    def list(SecUser user = null, Long max , Long offset) {
+        return list(user, [:], [], null, null, max , offset)
+    }
+    def list(SecUser user = null, LinkedHashMap extended, List searchParameters = [], String sortColumn = null, String sortDirection = null, Long max  = 0, Long offset = 0) {
 
-        String select, from, where
+        for (def parameter : searchParameters){
+            if(parameter.field.equals("numberOfImages")) parameter.field = "countImages"
+            if(parameter.field.equals("numberOfAnnotations")) parameter.field = "countAnnotations"
+            if(parameter.field.equals("numberOfJobAnnotations")) parameter.field = "countJobAnnotations"
+            if(parameter.field.equals("numberOfReviewedAnnotations")) parameter.field = "countReviewedAnnotations"
+            if(parameter.field.equals("ontology")) parameter.field = "ontology_id"
+        }
+
+        if (sortColumn == "lastActivity" && !extended.withLastActivity) throw new WrongArgumentException("Cannot sort on lastActivity without argument withLastActivity")
+        if (sortColumn == "membersCount" && !extended.withMembersCount) throw new WrongArgumentException("Cannot sort on membersCount without argument withMembersCount")
+
+
+        def validParameters = getDomainAssociatedSearchParameters(Project, searchParameters).each{it.property = "p."+it.property}
+        loop:for (def parameter : searchParameters){
+            String property
+            switch(parameter.field) {
+                case "ontology_id" :
+                    property = "ontology.id"
+                    parameter.values= convertSearchParameter(Long.class, parameter.values)
+                    break
+                case "membersCount" :
+                    property = "members.member_count"
+                    parameter.values= convertSearchParameter(Long.class, parameter.values)
+                    break
+                case "tag" :
+                    property = "t.tag_id"
+                    parameter.values= convertSearchParameter(Long.class, parameter.values)
+                    break
+                default:
+                    continue loop
+            }
+
+            validParameters << [operator: parameter.operator, property: property, value: parameter.values]
+        }
+
+        def sqlSearchConditions = searchParametersToSQLConstraints(validParameters)
+
+        sqlSearchConditions = [
+                project : sqlSearchConditions.data.findAll{it.property.startsWith("p.")}.collect{it.sql}.join(" AND "),
+                ontology : sqlSearchConditions.data.findAll{it.property.startsWith("ontology.")}.collect{it.sql}.join(" AND "),
+                members : sqlSearchConditions.data.findAll{it.property.startsWith("members.")}.collect{it.sql}.join(" AND "),
+                tags : sqlSearchConditions.data.findAll{it.property.startsWith("t.")}.collect{it.sql}.join(" AND "),
+                parameters: sqlSearchConditions.sqlParameters
+        ]
+
+        if (sqlSearchConditions.members && !extended.withMembersCount) throw new WrongArgumentException("Cannot search on members attributes without argument withMembersCount")
+
+        String select, from, where, search, sort
         String request
         //faster method
         if (user) {
@@ -162,25 +213,39 @@ class ProjectService extends ModelService {
                     "JOIN acl_object_identity as aclObjectId ON aclObjectId.object_id_identity = p.id " +
                     "JOIN acl_entry as aclEntry ON aclEntry.acl_object_identity = aclObjectId.id " +
                     "JOIN acl_sid as aclSid ON aclEntry.sid = aclSid.id "
-            where = "WHERE aclSid.sid like '"+user.username+"' and p.deleted is null"
+            where = "WHERE aclSid.sid like '"+user.username+"' and p.deleted is null "
         }
         else {
-            select = "SELECT  p.* "
+            select = "SELECT DISTINCT(p.id), p.* "
             from = "FROM project p "
-            where = "WHERE p.deleted is null"
+            where = "WHERE p.deleted is null "
         }
         select += ", ontology.name as ontology_name, ontology.id as ontology "
         from += "LEFT OUTER JOIN ontology ON p.ontology_id = ontology.id "
         select += ", discipline.name as discipline_name, discipline.id as discipline "
         from += "LEFT OUTER JOIN discipline ON p.discipline_id = discipline.id "
 
+        search = "";sort = ""
+        if(sqlSearchConditions.project){
+            search +=" AND "
+            search += sqlSearchConditions.project
+        }
+
+        if(sqlSearchConditions.ontology){
+            search +=" AND "
+            search += sqlSearchConditions.ontology
+        }
+
+        if(sqlSearchConditions.tags){
+            from += "LEFT OUTER JOIN tag_domain_association t ON p.id = t.domain_ident AND t.domain_class_name = 'be.cytomine.project.Project' "
+            search +=" AND "
+            search += sqlSearchConditions.tags
+        }
+
+
         if(extended.withLastActivity) {
-            select += ", activities.max_date "
-            from += "LEFT OUTER JOIN " +
-                    "( SELECT  project_id, MAX(created) max_date " +
-                    "  FROM command_history " +
-                    "  GROUP BY project_id " +
-                    ") activities ON p.id = activities.project_id "
+            select += ", activities.last_activity "
+            from += "LEFT OUTER JOIN project_last_activity activities ON p.id = activities.project_id "
         }
         if(extended.withMembersCount) {
             select += ", members.member_count "
@@ -190,17 +255,71 @@ class ProjectService extends ModelService {
                     "   WHERE aclEntry.acl_object_identity = aclObjectId.id and aclEntry.sid = aclSid.id and aclSid.sid = secUser.username and secUser.class = 'be.cytomine.security.User' " +
                     "   GROUP BY aclObjectId.object_id_identity " +
                     ") members ON p.id = members.project_id "
+
+            if(sqlSearchConditions.members){
+                search +=" AND "
+                search += sqlSearchConditions.members
+            }
         }
         if (extended.withDescription) {
             select += ", d.data as description "
             from += "LEFT OUTER JOIN description d ON d.domain_ident = p.id "
         }
+        if(extended.withCurrentUserRoles) {
+            SecUser currentUser = cytomineService.currentUser // cannot use user param because it is set to null if user connected as admin
+            select += ", (admin_project.id IS NOT NULL) AS is_admin, (repr.id IS NOT NULL) AS is_representative "
+            from += "LEFT OUTER JOIN admin_project " +
+                    "ON admin_project.id = p.id AND admin_project.user_id = $currentUser.id " +
+                    "LEFT OUTER JOIN project_representative_user repr " +
+                    "ON repr.project_id = p.id AND repr.user_id = $currentUser.id "
 
-        request = select + from+where
+            def searchedRole = searchParameters.find {it.field == "currentUserRole"}
+            if(searchedRole) {
+                if(searchedRole.values.contains("manager") && searchedRole.values.contains("contributor")){} // nothing because null or not null
+                else if(searchedRole.values.contains("manager")) search += " AND admin_project.id IS NOT NULL  "
+                else if(searchedRole.values.contains("contributor")) search += " AND admin_project.id IS NULL  "
+            }
+
+        }
+
+        switch(sortColumn) {
+            case "currentUserRole" : 
+                if(extended.withCurrentUserRoles) sortColumn="is_representative "+((sortDirection.equals("desc")) ? " DESC " : " ASC ")+", is_admin"
+            break
+            case "membersCount" :
+                if(extended.withMembersCount) sortColumn="members.member_count"
+                break
+            case "lastActivity" :
+                if(extended.withLastActivity) sortColumn="activities.last_activity"
+                break
+            case "name":
+            case "numberOfImages":
+            case "numberOfAnnotations":
+            case "numberOfJobAnnotations":
+            case "numberOfReviewedAnnotations":
+                String regex = "([a-z])([A-Z]+)"
+                String replacement = "\$1_\$2"
+                sortColumn ="p."+sortColumn.replaceAll("numberOf", "count").replaceAll(regex, replacement).toLowerCase()
+                break
+        }
+
+        if(sortColumn) {
+            sort = " ORDER BY "+sortColumn
+            sort += (sortDirection.equals("desc")) ? " DESC " : " ASC "
+            sort += (sortDirection.equals("desc")) ? " NULLS LAST " : " NULLS FIRST "
+        }
+
+
+        request = select + from + where + search + sort
+        if(max > 0) request += " LIMIT $max"
+        if(offset > 0) request += " OFFSET $offset"
+
 
         def sql = new Sql(dataSource)
         def data = []
-        sql.eachRow(request) {
+        def mapParams = sqlSearchConditions.parameters
+
+        sql.eachRow(request, mapParams) {
             def map = [:]
 
             for(int i =1;i<=((GroovyResultSet) it).getMetaData().getColumnCount();i++){
@@ -221,20 +340,37 @@ class ProjectService extends ModelService {
             def line = Project.getDataFromDomain(map)
 
             if(extended.withLastActivity) {
-                line.putAt("lastActivity", map.maxDate)
+                line.putAt("lastActivity", map.lastActivity)
             }
             if(extended.withMembersCount) {
+                if(!map.memberCount) map.memberCount = 0
                 line.putAt("membersCount", map.memberCount)
             }
             if (extended.withDescription) {
                 line.putAt("description", map.description ?: "")
             }
+            if(extended.withCurrentUserRoles) {
+                line.putAt("currentUserRoles", [admin: map.isAdmin, representative: map.isRepresentative])
+            }
             data << line
 
         }
+
+        def size
+        request = "SELECT COUNT(DISTINCT p.id) " + from + where + search
+
+        sql.eachRow(request, mapParams) {
+            size = it.count
+        }
         sql.close()
 
-        return data
+        def result = [data:data, total:size]
+        max = (max > 0) ? max : Integer.MAX_VALUE
+        result.offset = offset
+        result.perPage = Math.min(max, result.total)
+        result.totalPages = Math.ceil(result.total / max)
+
+        return result
     }
 
     def listByOntology(Ontology ontology) {
@@ -295,7 +431,11 @@ class ProjectService extends ModelService {
         SecUser currentUser = cytomineService.getCurrentUser()
 
         securityACLService.checkUser(currentUser)
-        securityACLService.check(json.ontology,Ontology, READ)
+
+        if(json.ontology && !json.ontology instanceof JSONObject.Null) {
+            securityACLService.check(json.ontology,Ontology, READ)
+        }
+
         taskService.updateTask(task,10,"Check retrieval consistency")
         checkRetrievalConsistency(json)
         def result = executeCommand(new AddCommand(user: currentUser),null,json)
@@ -349,6 +489,37 @@ class ProjectService extends ModelService {
         taskService.updateTask(task,5,"Start editing project ${project.name}")
         SecUser currentUser = cytomineService.getCurrentUser()
         securityACLService.check(project.container(),WRITE)
+
+        if(project.ontology?.id != jsonNewData.ontology){
+            boolean deleteTerms = jsonNewData.forceOntologyUpdate
+            long associatedTermsCount
+            long userAssociatedTermsCount = 0L
+            long algoAssociatedTermsCount = 0L
+            long reviewedAssociatedTermsCount = 0L
+            if(!deleteTerms) userAssociatedTermsCount += annotationTermService.list(project).size()
+            algoAssociatedTermsCount += algoAnnotationTermService.list(project).size()
+            reviewedAssociatedTermsCount += ReviewedAnnotation.countByProjectAndTermsIsNotNull(project)
+            associatedTermsCount = userAssociatedTermsCount + algoAssociatedTermsCount + reviewedAssociatedTermsCount
+
+            if(associatedTermsCount > 0){
+                String message = "This project has $associatedTermsCount associated terms: "
+                if(!deleteTerms) message += "$userAssociatedTermsCount from project members, "
+                message += "$algoAssociatedTermsCount from jobs and "
+                message += "$reviewedAssociatedTermsCount reviewed. "
+                message += "The ontology cannot be updated."
+                throw new ForbiddenException(message, [
+                        userAssociatedTermsCount: userAssociatedTermsCount,
+                        algoAssociatedTermsCount: algoAssociatedTermsCount,
+                        reviewedAssociatedTermsCount: reviewedAssociatedTermsCount
+                ])
+            }
+            if(deleteTerms) {
+                for(def at : annotationTermService.list(project)){
+                    annotationTermService.delete(at)
+                }
+            }
+        }
+
         def result = executeCommand(new EditCommand(user: currentUser),project, jsonNewData)
 
         project = Project.read(result?.data?.project?.id)
@@ -471,7 +642,7 @@ class ProjectService extends ModelService {
         def group2 = [$group : [_id : '$_id.project', "users" :[$sum:1]]]
         def result;
 
-        result = db.persistentProjectConnection.aggregate(
+        result = db.persistentConnection.aggregate(
                 match,
                 group1,
                 group2
@@ -572,13 +743,14 @@ class ProjectService extends ModelService {
 
 
     protected def beforeUpdate(Project domain) {
-        domain.countAnnotations = UserAnnotation.countByProject(domain)
-        domain.countImages = ImageInstance.countByProject(domain)
-        domain.countJobAnnotations = AlgoAnnotation.countByProject(domain)
-        domain.countReviewedAnnotations = ReviewedAnnotation.countByProject(domain)
+        domain.countAnnotations = UserAnnotation.countByProjectAndDeletedIsNotNull(domain)
+        domain.countImages = ImageInstance.countByProjectAndDeletedIsNotNull(domain)
+        domain.countJobAnnotations = AlgoAnnotation.countByProjectAndDeletedIsNotNull(domain)
+        domain.countReviewedAnnotations = ReviewedAnnotation.countByProjectAndDeletedIsNotNull(domain)
     }
 
     protected def beforeDelete(Project domain) {
+        ProjectLastActivity.findByProject(domain).delete()
         CommandHistory.findAllByProject(domain).each { it.delete() }
         Command.findAllByProject(domain).each {
             it

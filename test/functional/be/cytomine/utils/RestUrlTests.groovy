@@ -1,7 +1,11 @@
 package be.cytomine.utils
 
+import be.cytomine.meta.AttachedFile
+import be.cytomine.meta.Configuration
+import be.cytomine.meta.Description
+
 /*
-* Copyright (c) 2009-2017. Authors: see NOTICE file.
+* Copyright (c) 2009-2019. Authors: see NOTICE file.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -58,9 +62,9 @@ class RestUrlTests {
             [clazz:SearchEngineFilter, filters : []],
             [clazz:Group, filters : []],
             [clazz:User, filters : []],
-            [clazz:AttachedFile, filters : []],
+            [clazz:AttachedFile, filters: []],
             [clazz:Configuration, filters: []],
-            [clazz:Description, filters : []],
+            [clazz:Description, filters: []],
             [clazz:News, filters : []]
     ]
 

@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2009-2017. Authors: see NOTICE file.
+* Copyright (c) 2009-2019. Authors: see NOTICE file.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -83,13 +83,16 @@ grails.project.dependency.resolution = {
         compile 'org.imsglobal:basiclti-util:1.1.2'
         compile 'org.json:json:20141113'
         compile 'joda-time:joda-time:2.10.1'
+        compile 'com.github.jai-imageio:jai-imageio-core:1.4.0'
+        compile( "commons-validator:commons-validator:1.5.0" ) {
+            excludes 'xml-apis','commons-digester','commons-logging','commons-beanutils', 'commons-collections'
+        }
     }
     plugins {
         compile ":mongodb:3.0.2"
         runtime ':hibernate4:4.3.5.5'
         build ':tomcat:7.0.54'
         compile ':cache:1.1.7'
-        compile ':asset-pipeline:1.9.6'
         compile ":grails-melody:1.49.0"
         compile ":rest-api-doc:0.6"
         compile ":rest:0.8"

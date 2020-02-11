@@ -1,7 +1,7 @@
 package be.cytomine
 
 /*
-* Copyright (c) 2009-2017. Authors: see NOTICE file.
+* Copyright (c) 2009-2019. Authors: see NOTICE file.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -138,34 +138,6 @@ class UserTests  {
     }
 
 
-
-    void testListProjectUser() {
-        def project = BasicInstanceBuilder.getProject()
-        def result = UserAPI.list(project.id,"project","user",Infos.SUPERADMINLOGIN, Infos.SUPERADMINPASSWORD)
-        assert 200 == result.code
-        def json = JSON.parse(result.data)
-        assert json.collection instanceof JSONArray
-
-        result = UserAPI.list(project.id,"project","user",true,Infos.SUPERADMINLOGIN, Infos.SUPERADMINPASSWORD)
-        assert 200 == result.code
-        json = JSON.parse(result.data)
-        assert json.collection instanceof JSONArray
-
-        result = UserAPI.list(-99,"project","user",Infos.SUPERADMINLOGIN, Infos.SUPERADMINPASSWORD)
-        assert 404 == result.code
-    }
-
-    void testListProjectAdmin() {
-        def project = BasicInstanceBuilder.getProject()
-        def result = UserAPI.list(project.id,"project","admin",Infos.SUPERADMINLOGIN, Infos.SUPERADMINPASSWORD)
-        assert 200 == result.code
-        def json = JSON.parse(result.data)
-        assert json.collection instanceof JSONArray
-
-        result = UserAPI.list(-99,"project","admin",Infos.SUPERADMINLOGIN, Infos.SUPERADMINPASSWORD)
-        assert 404 == result.code
-    }
-
     void testListProjectCreator() {
         def project = BasicInstanceBuilder.getProject()
         def result = UserAPI.list(project.id,"project","creator",Infos.SUPERADMINLOGIN, Infos.SUPERADMINPASSWORD)
@@ -237,6 +209,19 @@ class UserTests  {
         userToAdd.email = "invalid@email"
         def result = UserAPI.create(userToAdd.encodeAsJSON(), Infos.SUPERADMINLOGIN, Infos.SUPERADMINPASSWORD)
         assert 400 == result.code
+        userToAdd = BasicInstanceBuilder.getUserNotExist()
+        userToAdd.email = "somperson@someagency.agency"
+        result = UserAPI.create(userToAdd.encodeAsJSON(), Infos.SUPERADMINLOGIN, Infos.SUPERADMINPASSWORD)
+        assert 200 == result.code
+        userToAdd = BasicInstanceBuilder.getUserNotExist()
+        userToAdd.email = "somperson@someschool.school"
+        result = UserAPI.create(userToAdd.encodeAsJSON(), Infos.SUPERADMINLOGIN, Infos.SUPERADMINPASSWORD)
+        assert 200 == result.code
+
+        userToAdd = BasicInstanceBuilder.getUserNotExist()
+        userToAdd.email = "vandana.bunwaree@llb.school"
+        result = UserAPI.create(userToAdd.encodeAsJSON(), Infos.SUPERADMINLOGIN, Infos.SUPERADMINPASSWORD)
+        assert 200 == result.code
     }
 
     void testUpdateUserCorrect() {
@@ -300,30 +285,6 @@ class UserTests  {
     void testDeleteMe() {
         def result = UserAPI.delete(User.findByUsername(Infos.SUPERADMINLOGIN).id, Infos.SUPERADMINLOGIN, Infos.SUPERADMINPASSWORD)
         assert 403==result.code
-    }
-
-    void testAddDeleteUserToProject() {
-        def project = BasicInstanceBuilder.getProjectNotExist()
-        BasicInstanceBuilder.saveDomain(project)
-
-        //Add project right for user 2
-        def resAddUser = ProjectAPI.addUserProject(project.id, BasicInstanceBuilder.user1.id, Infos.SUPERADMINLOGIN, Infos.SUPERADMINPASSWORD)
-        assert 200 == resAddUser.code
-
-        resAddUser = ProjectAPI.deleteUserProject(project.id, BasicInstanceBuilder.user1.id, Infos.SUPERADMINLOGIN, Infos.SUPERADMINPASSWORD)
-        assert 200 == resAddUser.code
-    }
-
-    void testAddDeleteAdminToProject() {
-        def project = BasicInstanceBuilder.getProjectNotExist()
-        BasicInstanceBuilder.saveDomain(project)
-
-        //Add project right for user 2
-        def resAddUser = ProjectAPI.addAdminProject(project.id, BasicInstanceBuilder.user1.id, Infos.SUPERADMINLOGIN, Infos.SUPERADMINPASSWORD)
-        assert 200 == resAddUser.code
-
-        resAddUser = ProjectAPI.deleteAdminProject(project.id, BasicInstanceBuilder.user1.id, Infos.SUPERADMINLOGIN, Infos.SUPERADMINPASSWORD)
-        assert 200 == resAddUser.code
     }
 
     // SHOW USER JOB
@@ -543,6 +504,15 @@ class UserTests  {
         assert 200 == UserAPI.signature(user.username,"newpassword").code
         assert 401 == UserAPI.signature(user.username,"password").code
 
+    }
+
+    void testCheckPassword() {
+
+        def response = UserAPI.checkPassword(Infos.SUPERADMINPASSWORD,Infos.SUPERADMINLOGIN,Infos.SUPERADMINPASSWORD)
+        assert 200 == response.code
+
+        response = UserAPI.checkPassword("test",Infos.SUPERADMINLOGIN,Infos.SUPERADMINPASSWORD)
+        assert 401 == response.code
     }
 
     void testResetPasswordWithBadUser() {

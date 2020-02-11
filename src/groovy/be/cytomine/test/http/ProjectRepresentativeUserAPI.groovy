@@ -3,7 +3,7 @@ package be.cytomine.test.http
 import be.cytomine.project.ProjectRepresentativeUser
 
 /*
-* Copyright (c) 2009-2017. Authors: see NOTICE file.
+* Copyright (c) 2009-2019. Authors: see NOTICE file.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -43,6 +43,11 @@ class ProjectRepresentativeUserAPI extends DomainAPI {
 
     static def delete(def id, Long idProject, String username, String password) {
         String URL = Infos.CYTOMINEURL + "api/project/" + idProject + "/representative/"+id+".json"
+        return doDELETE(URL,username,password)
+    }
+
+    static def deleteByUser(def idUser, Long idProject, String username, String password) {
+        String URL = Infos.CYTOMINEURL + "api/project/" + idProject + "/representative.json?user=$idUser"
         return doDELETE(URL,username,password)
     }
 }

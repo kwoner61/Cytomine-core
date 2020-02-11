@@ -1,7 +1,7 @@
 package be.cytomine.test.http
 
 /*
-* Copyright (c) 2009-2017. Authors: see NOTICE file.
+* Copyright (c) 2009-2019. Authors: see NOTICE file.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -18,6 +18,8 @@ package be.cytomine.test.http
 
 import be.cytomine.image.ImageInstance
 import be.cytomine.ontology.UserAnnotation
+import be.cytomine.project.Project
+import be.cytomine.security.User
 import be.cytomine.test.BasicInstanceBuilder
 import be.cytomine.test.Infos
 import grails.converters.JSON
@@ -40,6 +42,13 @@ class UserAnnotationAPI extends DomainAPI {
         return doGET(URL, username, password)
     }
 
+    static def countByProject(Long id, String username, String password, Long startDate=null, Long endDate=null) {
+        String URL = Infos.CYTOMINEURL + "/api/project/$id/userannotation/count.json?" +
+                (startDate ? "&startDate=$startDate" : "") +
+                (endDate ? "&endDate=$endDate" : "")
+        return doGET(URL, username, password)
+    }
+
     static def list(String username, String password) {
         String URL = Infos.CYTOMINEURL + "api/userannotation.json"
         return doGET(URL, username, password)
@@ -51,6 +60,12 @@ class UserAnnotationAPI extends DomainAPI {
 
     static def listByProject(Long id, boolean offset, String username, String password) {
         String URL = Infos.CYTOMINEURL + "api/annotation.json?project=$id" + (offset? "&offset=0&max=3":"")
+        return doGET(URL, username, password)
+    }
+
+    static def listByProject(Long id, List<Long> tags, boolean noTag = false, String username, String password) {
+        String URL = Infos.CYTOMINEURL + "api/annotation.json?project=$id&tags="+tags.join(",")
+        if (noTag) URL+="&noTag=true"
         return doGET(URL, username, password)
     }
 
@@ -81,7 +96,7 @@ class UserAnnotationAPI extends DomainAPI {
 
 
     static def listByProjectAndTerm(Long idProject, Long idTerm, Long idUser,String username, String password) {
-        String URL = Infos.CYTOMINEURL + "api/annotation.json?term=$idTerm&project=$idProject&users="+idUser
+        String URL = Infos.CYTOMINEURL + "api/annotation.json?term=$idTerm&project=$idProject&user="+idUser
         return doGET(URL, username, password)
     }
 
@@ -128,9 +143,11 @@ class UserAnnotationAPI extends DomainAPI {
         String URL = Infos.CYTOMINEURL + "api/userannotation.json?"+(minPoint? "&minPoint=$minPoint": "")+(maxPoint? "&maxPoint=$maxPoint": "")
         def result = doPOST(URL,jsonAnnotation,username,password)
         def json = JSON.parse(result.data)
-        if(JSON.parse(jsonAnnotation) instanceof JSONArray) return [code: result.code]
+        if(JSON.parse(jsonAnnotation) instanceof JSONArray) return result
         Long idAnnotation = json?.annotation?.id
-        return [data: UserAnnotation.get(idAnnotation), code: result.code]
+        result.command = json.command
+        result.data = UserAnnotation.get(idAnnotation)
+        return result
     }
 
     static def update(def id, def jsonAnnotation, String username, String password) {
@@ -144,7 +161,7 @@ class UserAnnotationAPI extends DomainAPI {
     }
 
     static def buildBasicUserAnnotation(String username, String password) {
-        def project = BasicInstanceBuilder.getProjectNotExist()
+        Project project = BasicInstanceBuilder.getProjectNotExist()
         Infos.addUserRight(username,project.ontology)
         //Create project with user 1
         def result = ProjectAPI.create(project.encodeAsJSON(), username, password)
@@ -152,16 +169,14 @@ class UserAnnotationAPI extends DomainAPI {
         project = result.data
 
         //Add image with user 1
-        ImageInstance image = BasicInstanceBuilder.getImageInstanceNotExist()
-        image.project = project
+        ImageInstance image = BasicInstanceBuilder.getImageInstanceNotExist(project)
         result = ImageInstanceAPI.create(image.encodeAsJSON(), username, password)
         assert 200==result.code
         image = result.data
 
         //Add annotation 1 with cytomine admin
-        UserAnnotation annotation = BasicInstanceBuilder.getUserAnnotationNotExist()
-        annotation.image = image
-        annotation.project = image.project
+        UserAnnotation annotation = BasicInstanceBuilder.getUserAnnotationNotExist(project, image)
+        annotation.user = User.findByUsername(username)
         result = UserAnnotationAPI.create(annotation.encodeAsJSON(), username, password)
         assert 200==result.code
         annotation = result.data

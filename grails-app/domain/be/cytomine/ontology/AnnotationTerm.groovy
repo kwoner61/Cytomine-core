@@ -1,7 +1,7 @@
 package be.cytomine.ontology
 
 /*
-* Copyright (c) 2009-2017. Authors: see NOTICE file.
+* Copyright (c) 2009-2019. Authors: see NOTICE file.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -55,6 +55,7 @@ class AnnotationTerm extends CytomineDomain implements Serializable {
         domain.id = JSONUtils.getJSONAttrLong(json,'id',null)
         domain.created = JSONUtils.getJSONAttrDate(json, 'created')
         domain.updated = JSONUtils.getJSONAttrDate(json, 'updated')
+        domain.deleted = JSONUtils.getJSONAttrDate(json, 'deleted')
         domain.userAnnotation = JSONUtils.getJSONAttrDomain(json, "userannotation", new UserAnnotation(), true)
         domain.term = JSONUtils.getJSONAttrDomain(json, "term", new Term(), true)
         domain.user = JSONUtils.getJSONAttrDomain(json, "user", new SecUser(), true)

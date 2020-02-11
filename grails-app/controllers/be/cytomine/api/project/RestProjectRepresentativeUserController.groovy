@@ -1,7 +1,9 @@
 package be.cytomine.api.project
 
+import be.cytomine.Exception.CytomineException
+
 /*
-* Copyright (c) 2009-2017. Authors: see NOTICE file.
+* Copyright (c) 2009-2019. Authors: see NOTICE file.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -19,6 +21,7 @@ package be.cytomine.api.project
 import be.cytomine.api.RestController
 import be.cytomine.project.Project
 import be.cytomine.project.ProjectRepresentativeUser
+import be.cytomine.security.User
 import be.cytomine.utils.Task
 import grails.converters.JSON
 import org.restapidoc.annotation.RestApi
@@ -35,6 +38,8 @@ class RestProjectRepresentativeUserController extends RestController {
 
     def projectRepresentativeUserService
     def taskService
+    def projectService
+    def secUserService
 
     @RestApiMethod(description="List all representative user of a project", listing=true)
     @RestApiParams(params=[
@@ -66,10 +71,26 @@ class RestProjectRepresentativeUserController extends RestController {
     @RestApiMethod(description="Delete a project_representative_user")
     @RestApiParams(params=[
             @RestApiParam(name="id", type="long", paramType = RestApiParamType.PATH,description = "The project_representative_user id"),
-            @RestApiParam(name="task", type="long", paramType = RestApiParamType.PATH,description = "(Optional, default:null) The id of the task to update during process"),
+            @RestApiParam(name="idProject", type="long", paramType = RestApiParamType.PATH,description = "The project id relative to the representative"),
+            @RestApiParam(name="idUser", type="long", paramType = RestApiParamType.QUERY,description = "An user id"),
+            @RestApiParam(name="task", type="long", paramType = RestApiParamType.QUERY,description = "(Optional, default:null) The id of the task to update during process"),
     ])
     def delete () {
-        Task task = taskService.read(params.getLong("task"))
-        delete(projectRepresentativeUserService, JSON.parse("{id : $params.id}"),task)
+        try {
+            Task task = taskService.read(params.getLong("task"))
+            def domain
+            if(params.id) domain = projectRepresentativeUserService.retrieve(JSON.parse("{id : $params.id}"))
+            if(!domain) {
+                Project project = projectService.read(params.getLong("idProject"))
+                User user = secUserService.read(params.getLong("user"))
+
+                domain = projectRepresentativeUserService.getByProjectAndUser(project, user)
+            }
+            def result = projectRepresentativeUserService.delete(domain,transactionService.start(),task)
+            responseResult(result)
+        } catch (CytomineException e) {
+            log.error(e)
+            response([success: false, errors: e.msg], e.code)
+        }
     }
 }

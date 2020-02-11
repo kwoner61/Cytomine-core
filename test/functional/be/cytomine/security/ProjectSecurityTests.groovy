@@ -1,7 +1,7 @@
 package be.cytomine.security
 
 /*
-* Copyright (c) 2009-2017. Authors: see NOTICE file.
+* Copyright (c) 2009-2019. Authors: see NOTICE file.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@ package be.cytomine.security
 */
 
 import be.cytomine.image.ImageInstance
-import be.cytomine.ontology.Property
+import be.cytomine.meta.Property
 import be.cytomine.ontology.UserAnnotation
 import be.cytomine.processing.Job
 import be.cytomine.processing.JobData
@@ -26,7 +26,7 @@ import be.cytomine.project.Project
 import be.cytomine.test.BasicInstanceBuilder
 import be.cytomine.test.Infos
 import be.cytomine.test.http.*
-import be.cytomine.utils.Description
+import be.cytomine.meta.Description
 import grails.converters.JSON
 
 /**

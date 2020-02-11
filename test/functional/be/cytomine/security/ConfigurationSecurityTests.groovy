@@ -18,7 +18,7 @@ package be.cytomine.security
 
 import be.cytomine.test.BasicInstanceBuilder
 import be.cytomine.test.http.ConfigurationAPI
-import be.cytomine.utils.Configuration
+import be.cytomine.meta.Configuration
 import grails.converters.JSON
 
 class ConfigurationSecurityTests extends SecurityTestsAbstract{

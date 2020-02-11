@@ -1,7 +1,7 @@
 package be.cytomine
 
 /*
-* Copyright (c) 2009-2017. Authors: see NOTICE file.
+* Copyright (c) 2009-2019. Authors: see NOTICE file.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -15,21 +15,12 @@ package be.cytomine
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-
-import be.cytomine.image.ImageInstance
-import be.cytomine.ontology.Ontology
-import be.cytomine.ontology.Property
-import be.cytomine.ontology.Term
-import be.cytomine.processing.*
-import be.cytomine.project.Project
 import be.cytomine.test.BasicInstanceBuilder
 import be.cytomine.test.Infos
 import be.cytomine.test.http.JobAPI
 import be.cytomine.test.http.JobParameterAPI
 import be.cytomine.test.http.JobTemplateAPI
-import be.cytomine.test.http.JobTemplateAnnotationAPI
 import be.cytomine.utils.UpdateData
-import com.vividsolutions.jts.io.WKTReader
 import grails.converters.JSON
 import org.codehaus.groovy.grails.web.json.JSONArray
 import org.codehaus.groovy.grails.web.json.JSONObject

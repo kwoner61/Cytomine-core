@@ -1,6 +1,6 @@
 <!--
 /*
-* Copyright (c) 2009-2017. Authors: see NOTICE file.
+* Copyright (c) 2009-2019. Authors: see NOTICE file.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -15,19 +15,12 @@
 * limitations under the License.
 */
 -->
-<%--
-  Created by IntelliJ IDEA.
-  User: lrollus
-  Date: 4/11/13
-  Time: 9:20
-  To change this template use File | Settings | File Templates.
---%>
 
 <%@ page contentType="text/html;charset=UTF-8" %>
 <html>
 <head>
-    <title>Login without LDAP</title>
-    <link rel="stylesheet" href="../lib/bootstrap-3.0.3/css/bootstrap.min.css"/>
+    <title>Login without SSO</title>
+    <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.0.3/css/bootstrap.min.css">
 
     <style type="text/css">
     body {
@@ -77,31 +70,27 @@
     <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/2.0.0/jquery.min.js"></script>
 </head>
 <body>
-    <div class="container">
+<div class="container">
 
-        <form id="login-form" class="form-signin" role="form">
-            <h2 class="form-signin-heading">Login without LDAP:</h2>
-            <input id="j_username" name="j_username" type="text" class="form-control" placeholder="Username" required>
-            <input id="j_password" name="j_password" type="password" class="form-control" placeholder="Password" required>
-            <div class="checkbox">
-                <label>
-                    <input id="remember_me" name="remember_me" type="checkbox" checked> Remember me
-                </label>
-            </div>
-            <button class="btn btn-lg btn-primary btn-block" type="submit">Sign in</button>
-        </form>
+    <form id="login-form" class="form-signin" role="form">
+        <h2 class="form-signin-heading">Login without SSO:</h2>
+        <input id="j_username" name="j_username" type="text" class="form-control" placeholder="Username" required>
+        <input id="j_password" name="j_password" type="password" class="form-control" placeholder="Password" required>
+        <div class="checkbox">
+            <label>
+                <input id="remember_me" name="remember_me" type="checkbox" checked> Remember me
+            </label>
+        </div>
+        <button class="btn btn-lg btn-primary btn-block" type="submit">Sign in</button>
+    </form>
 
-    </div> <!-- /container -->
+</div> <!-- /container -->
 
 
-     <script>
-    console.log("script");
+<script>
     var register = function() {
         console.log("register");
         var data = $("#login-form").serialize(); //should be in LoginDIalogView
-        // console.log(data);
-
-
 
         $.ajax({
             url: 'j_spring_security_check',
@@ -120,16 +109,13 @@
                 }
             }
         });
-    }
-    console.log($('#submit-login').length);
-
-   //$("#submit-login").click(register);
+    };
 
     $( "#login-form" ).submit(function( event ) {
         event.preventDefault();
         register();
     });
-     </script>
+</script>
 
 
 </body>

@@ -1,7 +1,7 @@
 package be.cytomine.ontology
 
 /*
-* Copyright (c) 2009-2017. Authors: see NOTICE file.
+* Copyright (c) 2009-2019. Authors: see NOTICE file.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -114,6 +114,7 @@ class Term extends CytomineDomain implements Serializable, Comparable {
         domain.comment = JSONUtils.getJSONAttrStr(json,'comment')
         domain.color = JSONUtils.getJSONAttrStr(json,'color')
         domain.ontology = JSONUtils.getJSONAttrDomain(json, "ontology", new Ontology(), true)
+        domain.deleted = JSONUtils.getJSONAttrDate(json, "deleted")
 
         if (!domain.name) {
             throw new WrongArgumentException("Term name cannot be null")

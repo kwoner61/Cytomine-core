@@ -1,7 +1,7 @@
 package be.cytomine.search
 
 /*
-* Copyright (c) 2009-2017. Authors: see NOTICE file.
+* Copyright (c) 2009-2019. Authors: see NOTICE file.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -146,8 +146,8 @@ class SearchEngineService extends ModelService {
             throw new WrongArgumentException("Each words must have at least 3 characters!")
         }
 
-        if (words.find { it.contains("*") || it.contains("%") || it.contains("_") }) {
-            throw new WrongArgumentException("Character *, % or _ are not allowed!")
+        if (words.find { it.contains("*") || it.contains("%") || it.contains("_") || it.contains("--") }) {
+            throw new WrongArgumentException("Character *, %, -- or _ are not allowed!")
         }
     }
 

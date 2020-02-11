@@ -1,7 +1,7 @@
 package be.cytomine
 
 /*
-* Copyright (c) 2009-2017. Authors: see NOTICE file.
+* Copyright (c) 2009-2019. Authors: see NOTICE file.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -121,6 +121,24 @@ class AlgoAnnotationListingTests {
         )
         assert 200 == result.code
         def json = JSON.parse(result.data)
+
+        long size = json.size
+        assert json.collection.size() == size
+
+        AlgoAnnotationAPI.delete(annotationTerm.retrieveAnnotationDomain().id, Infos.SUPERADMINLOGIN, Infos.SUPERADMINPASSWORD)
+
+        result = AlgoAnnotationAPI.listByProjectAndTerm(
+                annotationTerm.retrieveAnnotationDomain().project.id,
+                annotationTerm.term.id,
+                ImageInstance.findAllByProject(annotationTerm.retrieveAnnotationDomain().project),
+                annotationTerm.retrieveAnnotationDomain().user.id,
+                Infos.SUPERADMINLOGIN,
+                Infos.SUPERADMINPASSWORD
+        )
+        assert 200 == result.code
+        json = JSON.parse(result.data)
+
+        assert json.collection.size() == size -1
     }
 
     void testListAlgoAnnotationByProjectAndTermWithUserNullWithCredential() {

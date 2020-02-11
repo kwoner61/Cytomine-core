@@ -1,7 +1,7 @@
 package be.cytomine.ontology
 
 /*
-* Copyright (c) 2009-2017. Authors: see NOTICE file.
+* Copyright (c) 2009-2019. Authors: see NOTICE file.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -25,6 +25,8 @@ import be.cytomine.utils.JSONUtils
 import org.restapidoc.annotation.RestApiObject
 import org.restapidoc.annotation.RestApiObjectField
 import org.restapidoc.annotation.RestApiObjectFields
+import org.springframework.security.acls.domain.BasePermission
+import org.springframework.security.acls.model.Permission
 
 /**
  * An ontology is a list of term
@@ -130,7 +132,7 @@ class Ontology extends CytomineDomain implements Serializable {
      */
     def projects() {
         if(this.version!=null){
-            Project.findAllByOntology(this)
+            Project.findAllByOntologyAndDeletedIsNull(this)
         } else {
             return []
         }
@@ -219,6 +221,7 @@ class Ontology extends CytomineDomain implements Serializable {
         domain.id = JSONUtils.getJSONAttrLong(json,'id',null)
         domain.name = JSONUtils.getJSONAttrStr(json, 'name')
         domain.user = JSONUtils.getJSONAttrDomain(json, "user", new SecUser(), true)
+        domain.deleted = JSONUtils.getJSONAttrDate(json, "deleted")
         return domain;
     }
 
@@ -230,4 +233,36 @@ class Ontology extends CytomineDomain implements Serializable {
         return this;
     }
 
+    @Override
+    /* An ontology can be edited by:
+     * - a user having WRITE permission on ontology
+     * - a user in a dependent project if all dependent projects are collaborative
+     * - a user managing all dependent projects
+     * - an admin
+     */
+    boolean checkPermission(Permission permission, boolean isAdmin) {
+        if (permission == BasePermission.WRITE || permission == BasePermission.DELETE) {
+            if (isAdmin) {
+                return true;
+            }
+
+            if((Project.countByOntologyAndModeNotEqualAndDeletedIsNull(this, Project.EditingMode.CLASSIC) == 0)) {
+                return true;
+            }
+
+            def managerAllProjects = true
+            for (Project p : projects()) {
+                if (!p.hasACLPermission(BasePermission.ADMINISTRATION)) {
+                    managerAllProjects = false
+                    break
+                }
+            }
+
+            if (managerAllProjects) {
+                return true;
+            }
+        }
+
+        return super.checkPermission(permission, isAdmin)
+    }
 }

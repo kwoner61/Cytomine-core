@@ -1,7 +1,7 @@
 package be.cytomine.test.http
 
 /*
-* Copyright (c) 2009-2017. Authors: see NOTICE file.
+* Copyright (c) 2009-2019. Authors: see NOTICE file.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -32,22 +32,47 @@ class UploadedFileAPI extends DomainAPI {
         return doGET(URL, username, password)
     }
 
-    static def list(String username, String password) {
-        String URL = Infos.CYTOMINEURL + "api/uploadedfile.json"
+    static def list(Long max = 0, Long offset = 0, String username, String password) {
+        return list(false, null, null, max, offset, username, password)
+    }
+    static def list(boolean detailed, Long max = 0, Long offset = 0, String username, String password) {
+        return list(detailed, null, null, max, offset, username, password)
+    }
+    static def list(boolean detailed = false, String sort, String order, Long max = 0, Long offset = 0, String username, String password) {
+        String URL = Infos.CYTOMINEURL + "api/uploadedfile.json?max=$max&offset=$offset"
+        URL += detailed ? "&detailed=true" : ""
+        URL += sort ? "&sort=$sort" : ""
+        URL += order ? "&order=$order" : ""
         return doGET(URL, username, password)
     }
 
-    static def listOnlyRoots(String username, String password) {
-        String URL = Infos.CYTOMINEURL + "api/uploadedfile.json?onlyRoots=true"
+    static def listOnlyRoots(Long max , Long offset, String username, String password) {
+        return listOnlyRoots(null, null, max , offset, username, password)
+    }
+
+    static def listOnlyRoots(String sort = null, String order = null, Long max = 0, Long offset = 0, String username, String password) {
+        String URL = Infos.CYTOMINEURL + "api/uploadedfile.json?onlyRoots=true&max=$max&offset=$offset"
+        URL += sort ? "&sort=$sort" : ""
+        URL += order ? "&order=$order" : ""
         return doGET(URL, username, password)
     }
 
-    static def listChilds(Long parentId, String username, String password) {
-        String URL = Infos.CYTOMINEURL + "api/uploadedfile.json?parent="+parentId
+    static def listChilds(Long parentId, Long max = 0, Long offset = 0, String username, String password) {
+        return listChilds(parentId, null, null, max, offset, username, password)
+    }
+    static def listChilds(Long parentId, String sort, String order, Long max = 0, Long offset = 0, String username, String password) {
+        String URL = Infos.CYTOMINEURL + "api/uploadedfile.json?parent=$parentId&max=$max&offset=$offset"
+        URL += sort ? "&sort=$sort" : ""
+        URL += order ? "&order=$order" : ""
         return doGET(URL, username, password)
     }
-    static def hierarchicalList(Long rootId, String username, String password) {
-        String URL = Infos.CYTOMINEURL + "api/uploadedfile.json?root="+rootId
+
+    static def hierarchicalList(Long rootId, Long max = 0, Long offset = 0, String username, String password) {
+        String URL = Infos.CYTOMINEURL + "api/uploadedfile.json?root=$rootId&max=$max&offset=$offset"
+        return doGET(URL, username, password)
+    }
+    static def searchWithName(String name, String username, String password) {
+        String URL = Infos.CYTOMINEURL + "api/uploadedfile.json?detailed=true&originalFilename[ilike]="+name
         return doGET(URL, username, password)
     }
 

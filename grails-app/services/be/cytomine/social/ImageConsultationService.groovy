@@ -11,6 +11,7 @@ import be.cytomine.sql.UserAnnotationListing
 import be.cytomine.utils.JSONUtils
 import be.cytomine.utils.ModelService
 import grails.transaction.Transactional
+import org.hibernate.criterion.Projections
 import org.springframework.web.context.request.RequestContextHolder
 
 import static org.springframework.security.acls.domain.BasePermission.READ
@@ -22,7 +23,6 @@ class ImageConsultationService extends ModelService {
     def dataSource
     def mongo
     def noSQLCollectionService
-    def imageInstanceService
     def projectService
 
     private getProjectConnectionService() {
@@ -33,7 +33,10 @@ class ImageConsultationService extends ModelService {
 
         SecUser user = cytomineService.getCurrentUser()
         Long imageId = JSONUtils.getJSONAttrLong(json,"image",-1)
-        ImageInstance image = imageInstanceService.read(imageId)
+        ImageInstance image = ImageInstance.read(imageId)
+
+        securityACLService.check(image.project,READ)
+
         closeLastImageConsultation(user.id, imageId, new Date())
         PersistentImageConsultation consultation = new PersistentImageConsultation()
         consultation.user = user.id
@@ -43,8 +46,8 @@ class ImageConsultationService extends ModelService {
         consultation.projectConnection = projectConnectionService.lastConnectionInProject(image.project, user.id)[0].id
         consultation.mode = JSONUtils.getJSONAttrStr(json,"mode",true)
         consultation.created = new Date()
-        consultation.imageName = image.getInstanceFilename()
-        consultation.imageThumb = UrlApi.getThumbImage(image.baseImage?.id, 256)
+        consultation.imageName = image.getBlindInstanceFilename()
+        consultation.imageThumb = UrlApi.getImageInstanceThumbUrlWithMaxSize(image.id, 256)
         consultation.insert(flush:true, failOnError : true) //don't use save (stateless collection)
 
         return consultation
@@ -66,18 +69,30 @@ class ImageConsultationService extends ModelService {
 
             def result = db.persistentImageConsultation.aggregate(request)
 
+            LinkedHashMap<Long, ImageInstance> imageInstancesMap = new LinkedHashMap<>();
+
             result.results().each {
                 try {
-                    ImageInstance image = imageInstanceService.read(it['_id'])
+                    Long imageInstanceId = it['_id']
+                    ImageInstance image = imageInstancesMap.get(imageInstanceId)
+                    if(! image){
+                        image = ImageInstance.read(imageInstanceId)
+                        imageInstancesMap.put(imageInstanceId, image)
+                    }
+
                     String filename;
-                    filename = image.instanceFilename == null ? image.baseImage.originalFilename : image.instanceFilename;
-                    if(image.project.blindMode) filename = "[BLIND]"+image.baseImage.id
+                    if(image) {
+                        filename = image.instanceFilename == null ? image.baseImage.originalFilename : image.instanceFilename;
+                        if(image.project.blindMode) filename = image.getBlindedName()
+                    } else {
+                        filename = "Image "+imageInstanceId
+                    }
                     data << [
                             created:it['date'],
                             user:user,
                             image:it['_id'],
                             time:it['time'],
-                            imageThumb: UrlApi.getAbstractImageThumbURL(image.baseImage.id),
+                            imageThumb: UrlApi.getImageInstanceThumbUrl(image.id),
                             imageName:filename,
                             project:image.project.id,
                             countCreatedAnnotations:it['countCreatedAnnotations']
@@ -93,21 +108,86 @@ class ImageConsultationService extends ModelService {
         }
     }
 
-    def lastImageOfUsersByProject(Project project){
+    def lastImageOfUsersByProject(Project project, def searchParameters = [], String sortProperty = "created", String sortDirection = "desc", Long max = 0, Long offset = 0){
 
         securityACLService.check(project,READ)
 
         def db = mongo.getDB(noSQLCollectionService.getDatabaseName())
 
         def results = []
-        def images = db.persistentImageConsultation.aggregate(
-                [$match:[project : project.id]],
-                [$sort : [created:-1]],
-                [$group : [_id : '$user', created : [$max :'$created'], image : [$first: '$image'], imageName : [$first: '$imageName'], user : [$first: '$user']]]);
+        def match = [project : project.id]
+        def sp = searchParameters.find{it.operator.equals("in") && it.property.equals("user")}
+        if(sp) match << [user : [$in :sp.value]]
+
+        def aggregation = [
+                [$match:match],
+                [$sort : ["$sortProperty": sortDirection.equals("desc") ? -1 : 1]],
+                [$group : [_id : '$user', created : [$max :'$created'], image : [$first: '$image'], imageName : [$first: '$imageName'], user : [$first: '$user']]],
+                [$skip : offset]
+        ]
+        if(max > 0) aggregation.push([$limit : max])
+
+        def images = db.persistentImageConsultation.aggregate(aggregation)
 
 
+        ImageInstance image;
+        String filename;
         images.results().each {
-            results << [user: it["_id"], created : it["created"], image : it["image"], imageName: it["imageName"]]
+            if(!image){
+                image = ImageInstance.read(it["image"])
+                if(image) {
+                    filename = image.instanceFilename == null ? image.baseImage.originalFilename : image.instanceFilename;
+                    if(image.project.blindMode) filename = image.getBlindedName()
+                } else {
+                    filename = "Image "+it["image"]
+                }
+            }
+            results << [user: it["_id"], created : it["created"], image : it["image"], imageName: filename]
+        }
+        return results
+    }
+
+    /**
+     * return the last Image Of users in a Project. If a user (in the userIds array) doesn't have consulted an image yet, null values will be associated to the user id.
+     */
+    // Improve : Can be improved if we can do this in mongo directly
+    def lastImageOfGivenUsersByProject(Project project, def userIds, String sortProperty = "created", String sortDirection = "desc", Long max = 0, Long offset = 0){
+
+        def results = []
+
+        def connected = PersistentImageConsultation.createCriteria().list(sort: "user", order: sortDirection) {
+            eq("project", project)
+            projections {
+                Projections.groupProperty("user")
+                property("user")
+            }
+        }
+
+        def unconnected = userIds - connected
+        unconnected = unconnected.collect{[user: it , created : null, image : null, imageName: null]}
+
+        if(max == 0) max = unconnected.size() + connected.size() - offset
+
+        if(sortDirection.equals("desc")){
+            //if o+l <= #connected ==> return connected with o et l
+            // if o+l > #c c then return connected with o et l and append enough "nulls"
+
+            if(offset < connected.size()){
+                results = lastImageOfUsersByProject(project, [], sortProperty, sortDirection, max, offset)
+            }
+            int maxOfUnconnected = Math.max(max - results.size(),0)
+            int offsetOfUnconnected = Math.max(offset - connected.size(),0)
+            if (maxOfUnconnected > 0 ) results.addAll(unconnected.subList(offsetOfUnconnected,offsetOfUnconnected+maxOfUnconnected))
+        } else {
+            if(offset + max <= unconnected.size()){
+                results = unconnected.subList((int)offset,(int)(offset+max))
+            }
+            else if(offset + max > unconnected.size() && offset <= unconnected.size()) {
+                results = unconnected.subList((int)offset,unconnected.size())
+                results.addAll(lastImageOfUsersByProject(project, [], sortProperty, sortDirection, max-(unconnected.size()-offset), 0))
+            } else {
+                results.addAll(lastImageOfUsersByProject(project, [], sortProperty, sortDirection, max, offset - unconnected.size()))
+            }
         }
         return results
     }
@@ -134,8 +214,25 @@ class ImageConsultationService extends ModelService {
                 match,
                 [$sort : [created:-1]]
         );
+
+        LinkedHashMap<Long, ImageInstance> imageInstancesMap = new LinkedHashMap<>();
+
         images.results().each {
-            results << [user: it["user"], project: it["project"], created : it["created"], image : it["image"], imageName: it["imageName"], mode: it["mode"]]
+            Long imageInstanceId = it['image']
+            ImageInstance image = imageInstancesMap.get(imageInstanceId)
+            if(! image){
+                image = ImageInstance.read(imageInstanceId)
+                imageInstancesMap.put(imageInstanceId, image)
+            }
+            String filename;
+            if(image) {
+                filename = image.instanceFilename == null ? image.baseImage.originalFilename : image.instanceFilename;
+                if(image.project.blindMode) filename = image.getBlindedName()
+            } else {
+                filename = "Image "+imageInstanceId
+            }
+
+            results << [user: it["user"], project: it["project"], created : it["created"], image : it["image"], imageName: filename, mode: it["mode"]]
         }
         return results
     }
@@ -203,12 +300,48 @@ class ImageConsultationService extends ModelService {
 
         def results = []
         consultations.results().each{
-            results << [project : it["_id"].project, user : it["_id"].user, image : it["_id"].image, time : it.time, countCreatedAnnotations : it.countCreatedAnnotations, first : it.first, last : it.last, frequency : it.frequency, imageName : it.imageName, imageThumb : it.imageThumb]
+
+            ImageInstance image = ImageInstance.read(it["_id"].image)
+            String filename;
+            if(image) {
+                filename = image.instanceFilename == null ? image.baseImage.originalFilename : image.instanceFilename;
+                if(image.project.blindMode) filename = image.getBlindedName()
+            } else {
+                filename = "Image "+it["_id"].image
+            }
+
+
+            results << [project : it["_id"].project,
+                        user : it["_id"].user,
+                        image : it["_id"].image,
+                        time : it.time,
+                        countCreatedAnnotations : it.countCreatedAnnotations,
+                        first : it.first,
+                        last : it.last,
+                        frequency : it.frequency,
+                        imageName : filename,
+                        imageThumb : it.imageThumb
+            ]
         }
 
         return results;
 
     }
 
+    def countByProject(Project project, Long startDate = null, Long endDate = null) {
+        def result = PersistentImageConsultation.createCriteria().get {
+            eq("project", project)
+            if(startDate) {
+                gt("created", new Date(startDate))
+            }
+            if(endDate) {
+                lt("created", new Date(endDate))
+            }
+            projections {
+                rowCount()
+            }
+        }
 
+        return [total: result]
+    }
 }

@@ -1,7 +1,7 @@
 package be.cytomine.utils.database.mongodb
 
 /*
-* Copyright (c) 2009-2017. Authors: see NOTICE file.
+* Copyright (c) 2009-2019. Authors: see NOTICE file.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -45,6 +45,7 @@ class NoSQLCollectionService {
         def db = mongo.getDB(getDatabaseName())
         db.annotationAction.drop()
         db.lastUserPosition.drop()
+        db.lastConnection.drop()
         db.persistentConnection.drop()
         db.persistentImageConsultation.drop()
         db.persistentProjectConnection.drop()

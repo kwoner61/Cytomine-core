@@ -1,7 +1,7 @@
 package be.cytomine.image.multidim
 
 /*
-* Copyright (c) 2009-2017. Authors: see NOTICE file.
+* Copyright (c) 2009-2019. Authors: see NOTICE file.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -184,7 +184,6 @@ class ImageSequenceService extends ModelService {
     def deleteDependentImageInstance(ImageSequence domain, Transaction transaction, Task task = null) {
         imageInstanceService.delete(domain.image,transaction,null,false)
         abstractImageService.delete(domain.image.baseImage)
-        abstractImageService.deleteFile(domain.image.baseImage)
     }
 
     def getStringParamsI18n(def domain) {

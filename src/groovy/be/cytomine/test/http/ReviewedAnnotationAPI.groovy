@@ -1,7 +1,7 @@
 package be.cytomine.test.http
 
 /*
-* Copyright (c) 2009-2017. Authors: see NOTICE file.
+* Copyright (c) 2009-2019. Authors: see NOTICE file.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -38,6 +38,13 @@ class ReviewedAnnotationAPI extends DomainAPI {
         return doGET(URL, username, password)
     }
 
+    static def countByProject(Long id, String username, String password, Long startDate=null, Long endDate=null) {
+        String URL = Infos.CYTOMINEURL + "/api/project/$id/reviewedannotation/count.json?" +
+                (startDate ? "&startDate=$startDate" : "") +
+                (endDate ? "&endDate=$endDate" : "")
+        return doGET(URL, username, password)
+    }
+
     static def list(String username, String password) {
         String URL = Infos.CYTOMINEURL + "api/reviewedannotation.json"
         return doGET(URL, username, password)
@@ -50,6 +57,12 @@ class ReviewedAnnotationAPI extends DomainAPI {
 
     static def listByProject(Long id, Long idUser, String username, String password) {
         String URL = Infos.CYTOMINEURL + "api/annotation.json?reviewed=true&project=$id&user="+idUser
+        return doGET(URL, username, password)
+    }
+
+    static def listByProject(Long id, List<Long> tags, boolean noTag = false, String username, String password) {
+        String URL = Infos.CYTOMINEURL + "api/annotation.json?reviewed=true&project=$id&tags="+tags.join(",")
+        if (noTag) URL+="&noTag=true"
         return doGET(URL, username, password)
     }
 
@@ -79,6 +92,11 @@ class ReviewedAnnotationAPI extends DomainAPI {
 
     static def listByImageAndUser(Long idImage,Long idUser, String username, String password) {
         String URL = Infos.CYTOMINEURL+"api/annotation.json?reviewed=true&user=$idUser&image="+idImage+"&conflict=true"
+        return doGET(URL, username, password)
+    }
+
+    static def listByImageAndReviewUser(Long idImage, Long idReviewUser, String username, String password) {
+        String URL = Infos.CYTOMINEURL+"api/annotation.json?reviewed=true&reviewUsers=$idReviewUser&image="+idImage+"&conflict=true"
         return doGET(URL, username, password)
     }
 

@@ -1,7 +1,7 @@
 package be.cytomine
 
 /*
-* Copyright (c) 2009-2017. Authors: see NOTICE file.
+* Copyright (c) 2009-2019. Authors: see NOTICE file.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -42,7 +42,7 @@ class CounterTests {
        Project project = BasicInstanceBuilder.getProjectNotExist(true)
 
        //check if project p has 0 for each counter
-       refreshCounter()
+       refreshCounter(project)
        checkCounterAnnotation(project,0,0,0,0)
 
        //add 1 images
@@ -50,7 +50,7 @@ class CounterTests {
 
        //check if project p has 0 for each counter, 1 for image
        //check if image has 0 for annotations counter
-       refreshCounter()
+       refreshCounter(project)
        checkCounterAnnotation(project,1,0,0,0)
        checkCounterAnnotation(image,0,0,0)
 
@@ -70,7 +70,7 @@ class CounterTests {
 
        //check if project p has 2 annotations for each class, 1 for image
        //check if image has 2 annotations for each clas
-       refreshCounter()
+       refreshCounter(project)
        checkCounterAnnotation(project,1,2,2,2)
        checkCounterAnnotation(image,2,2,2)
 
@@ -81,7 +81,7 @@ class CounterTests {
 
        //check if project p has 1 annotations for each class, 1 for image
         //check if image has 1 annotations for each class
-       refreshCounter()
+       refreshCounter(project)
        checkCounterAnnotation(project,1,1,1,1)
        checkCounterAnnotation(image,1,1,1)
 
@@ -90,13 +90,13 @@ class CounterTests {
        BasicInstanceBuilder.saveDomain(image)
 
        //check if project p has 0 annotations for each class, 0 for image
-       refreshCounter()
+       refreshCounter(project)
        checkCounterAnnotation(project,0,0,0,0)
 
        //restore image
        image.deleted = null
        BasicInstanceBuilder.saveDomain(image)
-       refreshCounter()
+       refreshCounter(project)
        checkCounterAnnotation(project,1,1,1,1)
        checkCounterAnnotation(image,1,1,1)
 
@@ -117,7 +117,7 @@ class CounterTests {
         assert project.countReviewedAnnotations == reviewed
     }
 
-    private void refreshCounter() {
-        counterService.refreshCounter()
+    private void refreshCounter(Project project) {
+        project.refresh()
     }
 }

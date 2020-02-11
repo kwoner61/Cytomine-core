@@ -60,10 +60,11 @@ class JobRuntimeService {
             String value = parameter.defaultValue
             if (jobParameter)
                 value = jobParameter.value
-            else if (parameter.required && value == null)
+            else if (parameter.required && (value == null || value.isEmpty()))
                 throw new WrongArgumentException("Argument ${parameter.name} is required !")
 
-            values.put(parameter, value)
+            if (value && !value.isEmpty())
+                values.put(parameter, value)
 
             log.info("${parameter.name} = ${value}")
         }

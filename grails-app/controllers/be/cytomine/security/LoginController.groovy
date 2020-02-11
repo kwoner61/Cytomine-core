@@ -1,7 +1,7 @@
 package be.cytomine.security
 
 /*
-* Copyright (c) 2009-2017. Authors: see NOTICE file.
+* Copyright (c) 2009-2019. Authors: see NOTICE file.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -17,27 +17,14 @@ package be.cytomine.security
 */
 
 import be.cytomine.api.RestController
-import be.cytomine.utils.JSONUtils
 import grails.converters.JSON
 import grails.plugin.springsecurity.SpringSecurityUtils
-import net.oauth.OAuthAccessor
-import net.oauth.OAuthConsumer
-import net.oauth.OAuthException
-import net.oauth.OAuthMessage
-import net.oauth.OAuthValidator
-import net.oauth.SimpleOAuthValidator
-import net.oauth.server.OAuthServlet
-import org.apache.commons.lang.RandomStringUtils
-import org.imsglobal.lti.launch.LtiError
-import org.imsglobal.lti.launch.LtiLaunch
-import org.imsglobal.lti.launch.LtiVerificationResult
 import org.springframework.security.authentication.AccountExpiredException
 import org.springframework.security.authentication.CredentialsExpiredException
 import org.springframework.security.authentication.DisabledException
 import org.springframework.security.authentication.LockedException
 import org.springframework.security.core.context.SecurityContextHolder as SCH
 import org.springframework.security.web.authentication.AbstractAuthenticationProcessingFilter
-import be.cytomine.Exception.CytomineException
 import org.springframework.web.context.request.RequestContextHolder
 
 import javax.servlet.http.HttpServletResponse
@@ -65,8 +52,8 @@ class LoginController extends RestController {
     def springSecurityService
     def notificationService
 
-    def loginWithoutLDAP () {
-        log.info "loginWithoutLDAP"
+    def loginWithoutSSO () {
+        log.info "loginWithoutSSO"
         if (springSecurityService.isLoggedIn()) {
             redirect uri: SpringSecurityUtils.securityConfig.successHandler.defaultTargetUrl
         }
@@ -238,116 +225,6 @@ class LoginController extends RestController {
         } else {
             response([success: false, message: "Error : token invalid"], 400)
         }
-    }
-
-    // TODO add a custom_parameter to know on which project the user has access.
-    def loginWithLTI() {
-
-        log.info "params"
-        log.info params
-        log.info params.keySet()
-
-        String consumerName = params.tool_consumer_instance_name
-        log.info "loginWithLTI by $consumerName"
-
-        def consumer = grailsApplication.config.grails.LTIConsumer.find{it.key == params.oauth_consumer_key}
-        log.info consumer
-
-        String privateKey = consumer?.secret
-
-        if(!privateKey) {
-            response([success: false, message: "Untrusted LTI Consumer"], 400)
-            return
-        }
-
-        log.info "lti version : "+request.getParameter("lti_version")
-        log.info "oauth_version : "+request.getParameter("oauth_version")
-
-        // check LTI/Oauth validity
-        //Content of https://github.com/IMSGlobal/basiclti-util-java/blob/master/src/main/java/org/imsglobal/lti/launch/LtiOauthVerifier.java#L31
-        // instead of direct call because for grails, getRequestUrl is not good (add .dispatch at the end).
-        def verify = {
-            OAuthMessage oam = OAuthServlet.getMessage(request, grailsApplication.config.grails.serverURL+request.forwardURI);
-            String oauth_consumer_key;
-            try {
-                oauth_consumer_key = oam.getConsumerKey();
-            } catch (IOException e) {
-                return new LtiVerificationResult(false, LtiError.BAD_REQUEST, "Unable to find consumer key in message");
-            }
-
-            OAuthValidator oav = new SimpleOAuthValidator();
-            OAuthConsumer cons = new OAuthConsumer(null, oauth_consumer_key, privateKey, null);
-            OAuthAccessor acc = new OAuthAccessor(cons);
-
-            try {
-                oav.validateMessage(oam, acc);
-            } catch (OAuthException  | IOException | java.net.URISyntaxException e) {
-                return new LtiVerificationResult(false, LtiError.BAD_REQUEST, "Failed to validate: " + e.getLocalizedMessage());
-            }
-            return new LtiVerificationResult(true, new LtiLaunch(request));
-        }
-
-        LtiVerificationResult ltiResult = verify();
-
-        if(!ltiResult.getSuccess()){
-            response([success: false, message: "LTI verification failed"], 400)
-            return
-        }
-
-        String username = params.lis_person_sourcedid
-        String firstname = params.lis_person_name_given ?: username
-        String lastname = params.lis_person_name_family ?: consumer.name
-        //if valid, check if all the need value are set
-        if(! (firstname && lastname && username)) {
-            response([success: false, message: "Not enough information for LTI connexion. Parameters are : "+params], 400)
-            return
-        }
-        if(!params.lis_person_contact_email_primary) {
-            response([success: false, message: "Email not found. Parameters are : "+params], 400)
-            return
-        }
-
-        def roles = params.roles?.split(",")
-
-        String email = params.lis_person_contact_email_primary
-        log.info "loginWithLTI :$firstname $lastname $email  $roles"
-
-        User user = User.findByUsername(username) //we are not logged, so we bypass the service
-
-        request.getParameterNames().each {
-            println "key : "+it+" value : "+request.getParameter(it)
-        }
-
-        if(!user){
-            if(!email){
-                response([success: false, message: "Not enough information to create a LTI profil"], 400)
-                return
-            }
-
-            SpringSecurityUtils.reauthenticate "superadmin", null
-            log.info "LTI connexion. Create new user "+username
-
-            user = new User(
-                    firstname : firstname,
-                    lastname : lastname,
-                    email: email,
-                    username: username,
-                    password: RandomStringUtils.random(32,  (('A'..'Z') + ('0'..'0')).join().toCharArray()),
-                    enabled: true
-            ).save(flush : true, failOnError: true)
-
-            if(roles?.contains("Instructor")) {
-                SecUserSecRole.create(user, SecRole.findByAuthority("ROLE_USER"))
-            }else {
-                SecUserSecRole.create(user, SecRole.findByAuthority("ROLE_GUEST"))
-            }
-            storageService.initUserStorage(user)
-
-        }
-
-        SpringSecurityUtils.reauthenticate user.username, null
-
-        redirect (url : params.get("custom_redirect"))
     }
 
     def buildToken() {

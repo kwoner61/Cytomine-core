@@ -1,7 +1,7 @@
 package be.cytomine.processing
 
 /*
-* Copyright (c) 2009-2017. Authors: see NOTICE file.
+* Copyright (c) 2009-2019. Authors: see NOTICE file.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -76,6 +76,8 @@ class SoftwareProject extends CytomineDomain implements Serializable{
         returnArray['name'] = domain?.software?.name
         returnArray['softwareVersion'] = domain?.software?.softwareVersion
         returnArray['fullName'] = domain?.software?.fullName()
+        returnArray['deprecated'] = domain?.software?.deprecated
+        returnArray['executable'] = domain?.software?.executable()
         returnArray['project'] = domain?.project?.id
         return returnArray
     }

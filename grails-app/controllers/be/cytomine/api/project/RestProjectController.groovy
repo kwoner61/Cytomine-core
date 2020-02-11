@@ -1,7 +1,7 @@
 package be.cytomine.api.project
 
 /*
-* Copyright (c) 2009-2017. Authors: see NOTICE file.
+* Copyright (c) 2009-2019. Authors: see NOTICE file.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -47,6 +47,7 @@ class RestProjectController extends RestController {
     def dataSource
     def currentRoleServiceProxy
     def securityACLService
+    def statsService
 
     /**
      * List all project available for the current user
@@ -57,8 +58,9 @@ class RestProjectController extends RestController {
         Boolean withMembersCount = params.boolean("withMembersCount")
         Boolean withLastActivity = params.boolean("withLastActivity")
         Boolean withDescription = params.boolean("withDescription")
+        Boolean withCurrentUserRoles = params.boolean("withCurrentUserRoles")
 
-        def projectList
+        def result
         if(currentRoleServiceProxy.isAdminByNow(user)) {
             //if user is admin, we print all available project
             user = null
@@ -69,12 +71,9 @@ class RestProjectController extends RestController {
         if(withMembersCount) extended.put("withMembersCount",withMembersCount)
         if(withLastActivity) extended.put("withLastActivity",withLastActivity)
         if (withDescription) extended.put("withDescription", withDescription)
-        if(extended.isEmpty()){
-            projectList = projectService.list(user)
-        } else {
-            projectList = projectService.listExtended(user, extended)
-        }
-        responseSuccess(projectList)
+        if(withCurrentUserRoles) extended.put("withCurrentUserRoles",withCurrentUserRoles)
+        result = projectService.list(user, extended, searchParameters, params.sort, params.order, params.long('max'), params.long('offset'))
+        responseSuccess([collection : result.data, size : result.total, offset: result.offset, perPage: result.perPage, totalPages: result.totalPages])
     }
 
     /**
@@ -126,7 +125,7 @@ class RestProjectController extends RestController {
             responseResult(result)
         } catch (CytomineException e) {
             log.error(e)
-            response([success: false, errors: e.msg], e.code)
+            response([success: false, errors: e.msg, errorValues: e.values], e.code)
         }
     }
 
@@ -221,7 +220,8 @@ class RestProjectController extends RestController {
     def listByUser() {
         User user = User.read(params.long('id'))
         if(user) {
-            responseSuccess(projectService.list(user))
+            def result = projectService.list(user,params.long('max',0),params.long('offset',0))
+            responseSuccess([collection : result.data, size : result.total, offset: result.offset, perPage: result.perPage, totalPages: result.totalPages])
         } else {
             responseNotFound("User", params.id)
         }
@@ -279,21 +279,27 @@ class RestProjectController extends RestController {
     @RestApiParams(params=[
             @RestApiParam(name="id", type="long", paramType = RestApiParamType.PATH,description = "The project id (if null: all projects)"),
             @RestApiParam(name="user", type="long", paramType = RestApiParamType.QUERY,description = "The user id"),
+            @RestApiParam(name="startDate", type="long", paramType = RestApiParamType.QUERY,description = "Will return actions created after this date. (Optional)"),
+            @RestApiParam(name="endDate", type="long", paramType = RestApiParamType.QUERY, description = "Will return actions created before this date. (Optional)"),
             @RestApiParam(name="fullData", type="boolean", paramType = RestApiParamType.QUERY,description = "Flag to include the full JSON of the data field on each command history. Not recommended for long listing.")
     ])
+
     def listCommandHistory() {
         Project project = projectService.read(params.long('id'))
         Integer offset = params.offset != null ? params.getInt('offset') : 0
         Integer max = (params.max != null && params.getInt('max')!=0) ? params.getInt('max') : Integer.MAX_VALUE
         SecUser user = secUserService.read(params.long('user'))
         Boolean fullData = params.getBoolean('fullData')
-        if (project) {
-            response(findCommandHistory([project],user,max,offset,fullData))
-        } else {
-            //no project defined, get all user projects
-            List<Project> projects = projectService.list(cytomineService.currentUser);
-            response(findCommandHistory(projects,user,max,offset,fullData))
-        }
+        Long startDate = params.long("startDate")
+        Long endDate = params.long("endDate")
+        List<Project> projects = project ? [project] : projectService.list(cytomineService.currentUser)
+        response(findCommandHistory(projects, user, max, offset, fullData, startDate, endDate))
+    }
+
+    @RestApiMethod(description="Count the number of project visits")
+    @RestApiResponseObject(objectIdentifier = "[total:x]")
+    def countByUser() {
+        responseSuccess([total:reviewedAnnotationService.count(cytomineService.currentUser)])
     }
 
     @RestApiMethod(description="Invite a not yer existing user to the project")
@@ -301,6 +307,7 @@ class RestProjectController extends RestController {
             @RestApiParam(name="id", type="long", paramType = RestApiParamType.PATH,description = "The project id"),
             @RestApiParam(name="json", type="string", paramType = RestApiParamType.QUERY,description = "The user name and email of the invited user"),
     ])
+
     def inviteNewUser() {
         Project project = projectService.read(params.long('id'))
 
@@ -313,26 +320,54 @@ class RestProjectController extends RestController {
         }
     }
 
-    private def findCommandHistory(List<Project> projects,SecUser user, Integer max, Integer offset, Boolean fullData) {
+    def bounds() {
+        def projects
+        SecUser user = cytomineService.currentUser
 
-        String request;
+        if(currentRoleServiceProxy.isAdminByNow(user)) {
+            //if user is admin, we print all available project
+            user = null
+        } else {
+            securityACLService.checkGuest(user)
+        }
+
+        def extended = [:]
+        if(params.boolean('withMembersCount')) extended.put("withMembersCount",params.boolean('withMembersCount'))
+        projects = projectService.list(user, extended).data
+
+        def bounds = statsService.bounds(Project, projects)
+
+        ["numberOfAnnotations", "numberOfJobAnnotations", "numberOfReviewedAnnotations", "numberOfImages"].each { field ->
+            bounds.put(field, [min : projects.min{it[field]}?."${field}", max : projects.max{it[field]}?."${field}"])
+        }
+        if(!extended.isEmpty()) {
+            bounds.put("members", [min : projects.min{it.membersCount}?.membersCount, max : projects.max{it.membersCount}?.membersCount])
+        }
+
+        responseSuccess(bounds)
+    }
+
+
+    private def findCommandHistory(List<Project> projects, SecUser user, Integer max, Integer offset,
+                                   Boolean fullData, Long startDate, Long endDate) {
+        String select = "SELECT ch.id as id, ch.created as created, ch.message as message, " +
+                "ch.prefix_action as prefixAction, ch.user_id as user, ch.project_id as project "
+        String from = "FROM command_history ch "
+        String where = "WHERE true " +
+                (projects? "AND ch.project_id IN (${projects.collect{it.id}.join(",")}) " : " ") +
+                (user? "AND ch.user_id =  ${user.id} " : " ") +
+                (startDate ? "AND ch.created > '${new Date(startDate)}' " : "") +
+                (endDate ? "AND ch.created < '${new Date(endDate)}' " : "")
+        String orderBy = "ORDER BY ch.created desc LIMIT $max OFFSET $offset"
 
         if(fullData) {
-            request = "SELECT ch.id as id, ch.created as created, ch.message as message, ch.prefix_action as prefixAction, ch.user_id as user, ch.project_id as project, c.data as data,c.service_name as serviceName, c.class as className, c.action_message as actionMessage, u.username as username " +
-                    "FROM command_history ch, command c, sec_user u " +
-                    "WHERE ch.command_id = c.id AND u.id = ch.user_id " +
-                    (projects? "AND ch.project_id IN (${projects.collect{it.id}.join(",")}) " : " ") +
-                    (user? "AND ch.user_id =  ${user.id} " : " ") +
-                    "ORDER BY created desc LIMIT $max OFFSET $offset"
-        } else {
-            request = "SELECT ch.id as id, ch.created as created, ch.message as message, ch.prefix_action as prefixAction, ch.user_id as user, ch.project_id as project " +
-                    "FROM command_history ch " +
-                    "WHERE true  " +
-                    (projects? "AND ch.project_id IN (${projects.collect{it.id}.join(",")}) " : " ") +
-                    (user? "AND ch.user_id =  ${user.id} " : " ") +
-                    "ORDER BY created desc LIMIT $max OFFSET $offset"
+            select += ", c.data as data,c.service_name as serviceName, " +
+                    "c.class as className, c.action_message as actionMessage, u.username as username "
+            from += "LEFT JOIN command c ON ch.command_id = c.id " +
+                    "LEFT JOIN sec_user u ON u.id = ch.user_id "
         }
-        def result = doGenericRequest(request,fullData)
+
+        def result = doGenericRequest(select + from + where + orderBy, fullData)
         return result
     }
 

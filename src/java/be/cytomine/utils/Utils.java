@@ -1,7 +1,7 @@
 package be.cytomine.utils;
 
 /*
-* Copyright (c) 2009-2017. Authors: see NOTICE file.
+* Copyright (c) 2009-2019. Authors: see NOTICE file.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -19,12 +19,8 @@ package be.cytomine.utils;
 import org.joda.time.DateTime;
 
 import java.util.*;
+import org.joda.time.DateTime;
 
-/**
- * User: lrollus
- * Date: 6/02/12
- * This class implement method
- */
 public class Utils {
 
     /**

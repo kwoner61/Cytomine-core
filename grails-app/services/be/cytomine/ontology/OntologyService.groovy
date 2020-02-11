@@ -1,7 +1,7 @@
 package be.cytomine.ontology
 
 /*
-* Copyright (c) 2009-2017. Authors: see NOTICE file.
+* Copyright (c) 2009-2019. Authors: see NOTICE file.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -18,11 +18,13 @@ package be.cytomine.ontology
 
 import be.cytomine.Exception.ConstraintException
 import be.cytomine.Exception.CytomineException
+import be.cytomine.annotations.DependencyOrder
 import be.cytomine.command.*
 import be.cytomine.project.Project
 import be.cytomine.security.SecUser
 import be.cytomine.utils.ModelService
 import be.cytomine.utils.Task
+import grails.converters.JSON
 import org.springframework.security.acls.domain.BasePermission
 
 import static org.springframework.security.acls.domain.BasePermission.*
@@ -45,6 +47,7 @@ class OntologyService extends ModelService {
         def ontology = Ontology.read(id)
         if (ontology) {
             securityACLService.check(ontology,READ)
+            checkDeleted(ontology)
         }
         ontology
     }
@@ -93,8 +96,9 @@ class OntologyService extends ModelService {
      * @return  Response structure (new domain data, old domain data..)
      */
     def update(Ontology domain, def jsonNewData) throws CytomineException {
-        securityACLService.check(domain,WRITE)
         SecUser currentUser = cytomineService.getCurrentUser()
+        securityACLService.checkUser(currentUser)
+        securityACLService.check(domain,WRITE)
         return executeCommand(new EditCommand(user: currentUser),domain,jsonNewData)
     }
 
@@ -108,9 +112,15 @@ class OntologyService extends ModelService {
      */
     def delete(Ontology domain, Transaction transaction = null, Task task = null, boolean printMessage = true) {
         SecUser currentUser = cytomineService.getCurrentUser()
+        securityACLService.checkUser(currentUser)
+        //We don't delete domain, we juste change a flag
+        def jsonNewData = JSON.parse(domain.encodeAsJSON())
+        jsonNewData.deleted = new Date().time
+
         securityACLService.check(domain,DELETE)
-        Command c = new DeleteCommand(user: currentUser,transaction:transaction)
-        return executeCommand(c,domain,null)
+        Command c = new EditCommand(user: currentUser, transaction: transaction)
+        c.delete = true
+        return executeCommand(c,domain,jsonNewData)
     }
 
     def getStringParamsI18n(def domain) {
@@ -121,14 +131,16 @@ class OntologyService extends ModelService {
         aclUtilService.addPermission(domain, cytomineService.currentUser.username, BasePermission.ADMINISTRATION)
     }
 
+    @DependencyOrder(order = 0)
     def deleteDependentTerm(Ontology ontology, Transaction transaction, Task task = null) {
         Term.findAllByOntology(ontology).each {
             termService.delete(it,transaction, null,false)
         }
     }
 
+    @DependencyOrder(order = 1)
     def deleteDependentProject(Ontology ontology, Transaction transaction, Task task = null) {
-        if(Project.findByOntology(ontology)) {
+        if(Project.findByOntologyAndDeletedIsNull(ontology)) {
             throw new ConstraintException("Ontology is linked with project. Cannot delete ontology!")
         }
     }

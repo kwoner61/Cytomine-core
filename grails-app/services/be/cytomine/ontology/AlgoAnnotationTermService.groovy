@@ -1,7 +1,7 @@
 package be.cytomine.ontology
 
 /*
-* Copyright (c) 2009-2017. Authors: see NOTICE file.
+* Copyright (c) 2009-2019. Authors: see NOTICE file.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import be.cytomine.Exception.ServerException
 import be.cytomine.command.AddCommand
 import be.cytomine.command.Command
 import be.cytomine.command.DeleteCommand
+import be.cytomine.command.EditCommand
 import be.cytomine.command.Transaction
 import be.cytomine.processing.Job
 import be.cytomine.processing.structure.ConfusionMatrix
@@ -46,7 +47,11 @@ class AlgoAnnotationTermService extends ModelService {
 
     def list(AnnotationDomain annotation) {
         securityACLService.check(annotation.container(),READ)
-        AlgoAnnotationTerm.findAllByAnnotationIdent(annotation.id)
+        AlgoAnnotationTerm.findAllByAnnotationIdentAndDeletedIsNull(annotation.id)
+    }
+
+    def list(Project project) {
+        return AlgoAnnotationTerm.findAllByProjectAndDeletedIsNull(project)
     }
 
     def count(Job job) {
@@ -61,12 +66,15 @@ class AlgoAnnotationTermService extends ModelService {
 
     def read(AnnotationDomain annotation, Term term, UserJob userJob) {
         securityACLService.check(annotation.container(),READ)
+        AlgoAnnotationTerm result
         if (userJob) {
-            AlgoAnnotationTerm.findWhere(annotationIdent: annotation.id, term: term, userJob: userJob)
+            result = AlgoAnnotationTerm.findWhere(annotationIdent: annotation.id, term: term, userJob: userJob)
         } else {
-            AlgoAnnotationTerm.findWhere(annotationIdent: annotation.id, term: term)
+            result = AlgoAnnotationTerm.findWhere(annotationIdent: annotation.id, term: term)
         }
 
+        if(result) checkDeleted(result)
+        result
     }
 
     /**
@@ -81,18 +89,23 @@ class AlgoAnnotationTermService extends ModelService {
         } catch(Exception e) {
             annotation = AnnotationDomain.getAnnotationDomain(json.annotationIdent)
         }
+
         securityACLService.check(annotation.project,READ)
         SecUser currentUser = cytomineService.getCurrentUser()
         SecUser creator = SecUser.read(json.user)
         if (!creator)
             json.user = currentUser.id
 
+        json.annotationIdent = annotation.id
+        json.annotationClassName = annotation.getClass().getName()
+
         Command command = new AddCommand(user: currentUser)
         return executeCommand(command,null,json)
     }
 
-    def addAlgoAnnotationTerm(Long annotationID, Long idTerm, Long idUser, SecUser currentUser, Transaction transaction){
-        def json = JSON.parse("{annotationIdent: $annotationID, term: $idTerm,user: $idUser}")
+    def addAlgoAnnotationTerm(AnnotationDomain annotation, Long idTerm, Long idUser, SecUser currentUser, Transaction transaction){
+        def json = JSON.parse("{annotationClassName: ${annotation.getClass().getName()}, " +
+                "annotationIdent: ${annotation.id}, term: $idTerm, user: $idUser}")
         return executeCommand(new AddCommand(user: currentUser, transaction: transaction), null,json)
     }
 
@@ -105,9 +118,13 @@ class AlgoAnnotationTermService extends ModelService {
      * @return Response structure (code, old domain,..)
      */
     def delete(AlgoAnnotationTerm domain, Transaction transaction = null, Task task = null, boolean printMessage = true) {
+        //We don't delete domain, we juste change a flag
+        def jsonNewData = JSON.parse(domain.encodeAsJSON())
+        jsonNewData.deleted = new Date().time
         SecUser currentUser = cytomineService.getCurrentUser()
-        Command c = new DeleteCommand(user: currentUser,transaction:transaction)
-        return executeCommand(c,domain,null)
+        Command c = new EditCommand(user: currentUser, transaction: transaction)
+        c.delete = true
+        return executeCommand(c,domain,jsonNewData)
     }
 
     def afterAdd(def domain, def response) {

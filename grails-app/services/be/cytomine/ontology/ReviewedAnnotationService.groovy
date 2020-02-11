@@ -1,7 +1,7 @@
 package be.cytomine.ontology
 
 /*
-* Copyright (c) 2009-2017. Authors: see NOTICE file.
+* Copyright (c) 2009-2019. Authors: see NOTICE file.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package be.cytomine.ontology
 
 import be.cytomine.AnnotationDomain
 import be.cytomine.command.*
+import be.cytomine.meta.Property
 import be.cytomine.image.ImageInstance
 import be.cytomine.project.Project
 import be.cytomine.security.SecUser
@@ -27,6 +28,7 @@ import be.cytomine.utils.GeometryUtils
 import be.cytomine.utils.ModelService
 import be.cytomine.utils.Task
 import com.vividsolutions.jts.geom.Geometry
+import grails.converters.JSON
 import groovy.sql.Sql
 
 import static org.springframework.security.acls.domain.BasePermission.READ
@@ -52,12 +54,21 @@ class ReviewedAnnotationService extends ModelService {
         def annotation = ReviewedAnnotation.read(id)
         if (annotation) {
             securityACLService.check(annotation.container(),READ)
+            checkDeleted(annotation)
         }
         annotation
     }
 
     def count(User user) {
         return ReviewedAnnotation.countByUser(user)
+    }
+
+    def countByProject(Project project, Date startDate, Date endDate) {
+        String request = "SELECT COUNT(*) FROM ReviewedAnnotation WHERE project = $project.id " +
+                (startDate ? "AND created > '$startDate' " : "") +
+                (endDate ? "AND created < '$endDate' " : "")
+        def result = ReviewedAnnotation.executeQuery(request)
+        return result[0]
     }
 
     def list(Project project, def propertiesToShow = null) {
@@ -252,7 +263,7 @@ class ReviewedAnnotationService extends ModelService {
 //                            updated: it.updated,
 //                            reviewed: (it.countReviewedAnnotations > 0),
 //                            cropURL: UrlApi.getReviewedAnnotationCropWithAnnotationId(it.id),
-//                            smallCropURL: UrlApi.getReviewedAnnotationCropWithAnnotationIdWithMaxWithOrHeight(it.id, 256),
+//                            smallCropURL: UrlApi.getReviewedAnnotationCropWithAnnotationIdWithMaxSize(it.id, 256),
 //                            url: UrlApi.getReviewedAnnotationCropWithAnnotationId(it.id),
 //                            imageURL: UrlApi.getAnnotationURL(it.project, it.image, it.id),
 //                            term: (it.term ? [it.term] : []),
@@ -328,10 +339,14 @@ class ReviewedAnnotationService extends ModelService {
      * @return Response structure (code, old domain,..)
      */
     def delete(ReviewedAnnotation domain, Transaction transaction = null, Task task = null, boolean printMessage = true) {
+        //We don't delete domain, we juste change a flag
+        def jsonNewData = JSON.parse(domain.encodeAsJSON())
+        jsonNewData.deleted = new Date().time
         SecUser currentUser = cytomineService.getCurrentUser()
         securityACLService.checkIsCreator(domain,currentUser)
-        Command c = new DeleteCommand(user: currentUser,transaction:transaction)
-        return executeCommand(c,domain,null)
+        Command c = new EditCommand(user: currentUser, transaction: transaction)
+        c.delete = true
+        return executeCommand(c,domain,jsonNewData)
     }
 
     def getStringParamsI18n(def domain) {

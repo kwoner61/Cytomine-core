@@ -1,7 +1,7 @@
 package be.cytomine.processing
 
 /*
-* Copyright (c) 2009-2017. Authors: see NOTICE file.
+* Copyright (c) 2009-2019. Authors: see NOTICE file.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import be.cytomine.security.User
 import be.cytomine.security.UserJob
 import be.cytomine.utils.ModelService
 import be.cytomine.utils.Task
-import grails.converters.JSON
+import org.codehaus.groovy.grails.web.json.JSONObject
 
 import static org.springframework.security.acls.domain.BasePermission.READ
 
@@ -57,6 +57,18 @@ class JobParameterService extends ModelService {
     def list(Job job) {
         securityACLService.check(job.container(),READ)
         JobParameter.findAllByJob(job)
+    }
+
+    def list(List<Long> jobIds) {
+
+        def parameters = JobParameter.findAllByJobInList(Job.findAllByIdInList(jobIds),[sort: 'job'])
+        def result = []
+        parameters.each {
+            def values = JobParameter.getDataFromDomain(it)
+            if(values['name'].equals("privateKey")) values['value']= "*********************"
+            result << values
+        }
+        return result
     }
 
     /**
@@ -101,8 +113,11 @@ class JobParameterService extends ModelService {
      * Add a job parameter for a job
      */
     def addJobParameter(def idJob, def idSoftwareParameter, def value,User currentUser,Transaction transaction) {
-        def json = JSON.parse("{softwareParameter: $idSoftwareParameter, value: $value, job: $idJob}")
-        return executeCommand(new AddCommand(user: currentUser,transaction:transaction),null,json)
+        JSONObject json = new JSONObject()
+        json.put("softwareParameter", idSoftwareParameter)
+        json.put("value", value)
+        json.put("job", idJob)
+        return executeCommand(new AddCommand(user: currentUser,transaction:transaction), null, json)
     }
 
     def getStringParamsI18n(def domain) {

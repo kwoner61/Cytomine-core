@@ -1,7 +1,7 @@
 package be.cytomine.test.http
 
 /*
-* Copyright (c) 2009-2017. Authors: see NOTICE file.
+* Copyright (c) 2009-2019. Authors: see NOTICE file.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -39,6 +39,12 @@ class RoiAnnotationAPI extends DomainAPI {
 
     static def listByProject(Long id, boolean offset, String username, String password) {
         String URL = Infos.CYTOMINEURL + "api/annotation.json?roi=true&project=$id" + (offset? "&offset=0&max=3":"")
+        return doGET(URL, username, password)
+    }
+
+    static def listByProject(Long id, List<Long> tags, boolean  noTag = false, String username, String password) {
+        String URL = Infos.CYTOMINEURL + "api/annotation.json?roi=true&project=$id&tags="+tags.join(",")
+        if (noTag) URL+="&noTag=true"
         return doGET(URL, username, password)
     }
 

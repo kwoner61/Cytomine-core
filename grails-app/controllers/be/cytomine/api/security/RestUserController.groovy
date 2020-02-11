@@ -1,7 +1,7 @@
 package be.cytomine.api.security
 
 /*
-* Copyright (c) 2009-2017. Authors: see NOTICE file.
+* Copyright (c) 2009-2019. Authors: see NOTICE file.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -17,14 +17,18 @@ package be.cytomine.api.security
 */
 
 import be.cytomine.Exception.CytomineException
+import be.cytomine.Exception.ForbiddenException
 import be.cytomine.api.RestController
 import be.cytomine.image.ImageInstance
+import be.cytomine.image.server.Storage
 import be.cytomine.ontology.Ontology
 import be.cytomine.project.Project
 import be.cytomine.security.Group
 import be.cytomine.security.SecUser
 import be.cytomine.security.User
 import be.cytomine.social.PersistentProjectConnection
+import be.cytomine.social.PersistentImageConsultation
+import be.cytomine.social.AnnotationAction
 import be.cytomine.utils.SecurityUtils
 import grails.converters.JSON
 import grails.plugin.springsecurity.SpringSecurityUtils
@@ -32,6 +36,9 @@ import org.codehaus.groovy.grails.web.json.JSONObject
 import org.joda.time.DateTime
 import org.restapidoc.annotation.*
 import org.restapidoc.pojo.RestApiParamType
+
+import static org.springframework.security.acls.domain.BasePermission.ADMINISTRATION
+import static org.springframework.security.acls.domain.BasePermission.READ
 
 /**
  * Handle HTTP Requests for CRUD operations on the User domain class.
@@ -54,30 +61,8 @@ class RestUserController extends RestController {
     def imageConsultationService
     def projectRepresentativeUserService
     def userAnnotationService
+    def storageService
 
-    /**
-     * Get all project users
-     * Online flag may be set to get only online users
-     */
-    @RestApiMethod(description="Get all project users. Online flag may be set to get only online users", listing = true)
-    @RestApiParams(params=[
-        @RestApiParam(name="id", type="long", paramType = RestApiParamType.PATH, description = "The project id"),
-            @RestApiParam(name="online", type="boolean", paramType = RestApiParamType.QUERY, description = "(Optional, default false) Get only online users for this project"),
-            @RestApiParam(name="showJob", type="boolean", paramType = RestApiParamType.QUERY, description = "(Optional, default false) Also show the users job for this project"),
-    ])
-    def showByProject() {
-        boolean online = params.boolean('online')
-        boolean showUserJob = params.boolean('showJob')
-        Project project = projectService.read(params.long('id'))
-        if (project && !online) {
-            responseSuccess(secUserService.listUsers(project, showUserJob))
-        } else if (project && online) {
-            def users = secUserService.getAllFriendsUsersOnline(cytomineService.currentUser, project)
-            responseSuccess(users)
-        } else {
-            responseNotFound("User", "Project", params.id)
-        }
-    }
 
     /**
      * Get all project managers
@@ -175,6 +160,19 @@ class RestUserController extends RestController {
         }
     }
 
+    @RestApiMethod(description="Get all storage users.", listing = true)
+    @RestApiParams(params=[
+            @RestApiParam(name="id", type="long", paramType = RestApiParamType.PATH, description = "The storage id")
+    ])
+    def showUserByStorage() {
+        Storage storage = storageService.read(params.long('id'))
+        if (storage) {
+            responseSuccess(secUserService.listUsers(storage))
+        } else {
+            responseNotFound("User", "Storage", params.id)
+        }
+    }
+
     def listByGroup() {
         Group group = groupService.read(params.long('id'))
         if (group) {
@@ -193,12 +191,15 @@ class RestUserController extends RestController {
         @RestApiParam(name="publicKey", type="string", paramType = RestApiParamType.QUERY, description = "(Optional) If set, get only user with the public key in param"),
     ])
     def list() {
+        def result
+
         if (params.publicKey != null) {
             responseSuccess(secUserService.getByPublicKey(params.publicKey))
-        } else if (params.getBoolean("withRoles")) {
-            responseSuccess(secUserService.listWithRoles())
         } else {
-            responseSuccess(secUserService.list())
+            def extended = [:]
+            if(params.getBoolean("withRoles")) extended.put("withRoles",params.withRoles)
+            result = secUserService.list(extended, searchParameters, params.sort, params.order, params.long("max",0), params.long("offset",0))
+            responseSuccess([collection : result.data, size : result.total, offset: result.offset, perPage: result.perPage, totalPages: result.totalPages])
         }
     }
 
@@ -367,13 +368,40 @@ class RestUserController extends RestController {
         response(secUserService.unlock(user))
     }
 
-    /**
-     * Add a user to project user list
-     */
+
+    @RestApiMethod(description="Get all project users. Online flag may be set to get only online users", listing = true)
+    @RestApiParams(params=[
+            @RestApiParam(name="id", type="long", paramType = RestApiParamType.PATH, description = "The project id"),
+            @RestApiParam(name="online", type="boolean", paramType = RestApiParamType.QUERY, description = "(Optional, default false) Get only online users for this project"),
+            @RestApiParam(name="showJob", type="boolean", paramType = RestApiParamType.QUERY, description = "(Optional, default false) Also show the users job for this project"),
+            @RestApiParam(name="withLastImage", type="boolean", paramType = RestApiParamType.QUERY, description = "(Optional, default false) Show the last image seen by each user in this project"),
+            @RestApiParam(name="withLastConsultation", type="boolean", paramType = RestApiParamType.QUERY, description = "(Optional, default false) Show the last consultation of this project by each user"),
+            @RestApiParam(name="withNumberConsultations", type="boolean", paramType = RestApiParamType.QUERY, description = "(Optional, default false) Show the number of consultations of this project by each user"),
+    ])
+    def showByProject() {
+
+        Project project = projectService.read(params.long('project'))
+        securityACLService.check(project,READ)
+
+        def extended = [:]
+        if(params.withLastImage) extended.put("withLastImage",params.withLastImage)
+        if(params.withLastConnection) extended.put("withLastConnection",params.withLastConnection)
+        if(params.withNumberConnections) extended.put("withNumberConnections",params.withNumberConnections)
+        if(params.withUserJob) extended.put("withUserJob",params.withUserJob)
+        String sortColumn = params.sort ?: "created"
+        String sortDirection = params.order ?: "desc"
+
+        def results = secUserService.listUsersExtendedByProject(project, extended, searchParameters, sortColumn, sortDirection, params.long('max',0), params.long('offset',0))
+
+        responseSuccess([collection : results.data, size:results.total, offset: results.offset, perPage: results.perPage, totalPages: results.totalPages])
+
+        //boolean showUserJob = params.boolean('showJob')
+    }
+
     @RestApiMethod(description="Add user in a project as simple 'user'")
     @RestApiParams(params=[
-        @RestApiParam(name="id", type="long", paramType = RestApiParamType.PATH, description = "The project id"),
-        @RestApiParam(name="idUser", type="long", paramType = RestApiParamType.PATH, description = "The user id")
+            @RestApiParam(name="id", type="long", paramType = RestApiParamType.PATH, description = "The project id"),
+            @RestApiParam(name="idUsers", type="long", paramType = RestApiParamType.PATH, description = "The user id")
     ])
     @RestApiResponseObject(objectIdentifier = "empty")
     def addUserToProject() {
@@ -385,12 +413,59 @@ class RestUserController extends RestController {
         response.status = 200
         def ret = [data: [message: "OK"], status: 200]
         response(ret)
-
     }
 
-    /**
-     * Delete a user from a project user list
-     */
+    @RestApiMethod(description="Add users in a project as simple 'user'")
+    @RestApiParams(params=[
+            @RestApiParam(name="project", type="long", paramType = RestApiParamType.PATH, description = "The project id"),
+            @RestApiParam(name="users", type="array", paramType = RestApiParamType.QUERY, description = "The users ids")
+    ])
+    @RestApiResponseObject(objectIdentifier = "empty")
+    def addUsersToProject() {
+        Project project = projectService.read(params.long('project'))
+        securityACLService.check(project,ADMINISTRATION)
+
+        def idUsers = params.users.toString().split(",")
+        def users = []
+        def wrongIds = []
+
+        def errorMessage = ""
+        def errors = []
+
+        for(def id : idUsers){
+            try{
+                users << Long.parseLong(id)
+            } catch(NumberFormatException e){
+                wrongIds << id
+            }
+        }
+
+        idUsers = users
+        log.info "addUserToProject project=${project} users=${users}"
+        users = User.findAllByIdInList(users)
+
+        wrongIds.addAll(idUsers- (users.collect{it.id}))
+
+        users.each { user ->
+            def code = secUserService.addUserToProject(user, project, false).status
+            if(code != 200 && code != 201) errors << user.id
+        }
+
+        if(!errors.isEmpty()) errorMessage += "Cannot add theses users to the project ${project.id} : "+errors.join(",")+". "
+        if(!wrongIds.isEmpty()) errorMessage += wrongIds.join(",")+" are not well formatted ids"
+
+        def result = [data: [message: "OK"], status: 200]
+        response.status = 200
+
+        if(!errors.isEmpty() || !wrongIds.isEmpty()) {
+            result.data.message = errorMessage
+            result.status = 206
+            response.status = 206
+        }
+
+        response(result)
+    }
+
     @RestApiMethod(description="Delete user from a project as simple 'user'")
     @RestApiParams(params=[
         @RestApiParam(name="id", type="long", paramType = RestApiParamType.PATH, description = "The project id"),
@@ -404,6 +479,58 @@ class RestUserController extends RestController {
         response.status = 200
         def ret = [data: [message: "OK"], status: 200]
         response(ret)
+    }
+
+    @RestApiMethod(description="Delete users from a project (also delete the manager role if the user was one)")
+    @RestApiParams(params=[
+            @RestApiParam(name="project", type="long", paramType = RestApiParamType.PATH, description = "The project id"),
+            @RestApiParam(name="users", type="array", paramType = RestApiParamType.QUERY, description = "The users ids")
+    ])
+    @RestApiResponseObject(objectIdentifier = "empty")
+    def deleteUsersFromProject() {
+
+        Project project = projectService.read(params.long('project'))
+        securityACLService.check(project,ADMINISTRATION)
+
+        def idUsers = params.users.toString().split(",")
+        def users = []
+        def wrongIds = []
+
+        def errorMessage = ""
+        def errors = []
+
+        for(def id : idUsers){
+            try{
+                users << Long.parseLong(id)
+            } catch(NumberFormatException e){
+                wrongIds << id
+            }
+        }
+        idUsers = users
+        users = User.findAllByIdInList(users)
+
+        users.each { user ->
+            secUserService.deleteUserFromProject(user, project, true)
+            def code = secUserService.deleteUserFromProject(user, project, false).status
+            if(code != 200 && code != 201) {
+                errors << user.id
+            }
+        }
+        wrongIds.addAll(idUsers- (users.collect{it.id}))
+
+        if(!errors.isEmpty()) errorMessage += "Cannot add theses users to the project ${project.id} : "+errors.join(",")+". "
+        if(!wrongIds.isEmpty()) errorMessage += wrongIds.join(",")+" are not well formatted ids"
+
+        def result = [data: [message: "OK"], status: 200]
+        response.status = 200
+
+        if(!errors.isEmpty() || !wrongIds.isEmpty()) {
+            result.data.message = errorMessage
+            result.status = 206
+            response.status = 206
+        }
+
+        response(result)
     }
 
     /**
@@ -437,16 +564,47 @@ class RestUserController extends RestController {
     def deleteUserAdminFromProject() {
         Project project = Project.get(params.id)
         SecUser user = SecUser.get(params.idUser)
+        if (cytomineService.currentUser.id!=user.id) {
+            securityACLService.check(project,ADMINISTRATION)
+        }
         secUserService.deleteUserFromProject(user, project, true)
         response.status = 200
         def ret = [data: [message: "OK"], status: 200]
         response(ret)
     }
 
+    @RestApiMethod(description="Add user in a storage")
+    @RestApiParams(params=[
+            @RestApiParam(name="id", type="long", paramType = RestApiParamType.PATH, description = "The storage id"),
+            @RestApiParam(name="idUser", type="long", paramType = RestApiParamType.PATH, description = "The user id")
+    ])
+    @RestApiResponseObject(objectIdentifier = "empty")
+    def addUserToStorage() {
+        Storage storage = storageService.read(params.long('id'))
+        SecUser user = secUserService.read(params.long('idUser'))
+        secUserService.addUserToStorage(user, storage)
+        response.status = 200
+        response([data: [message: "OK"], status: 200])
+    }
+    
+    @RestApiMethod(description="Delete user from a storage")
+    @RestApiParams(params=[
+            @RestApiParam(name="id", type="long", paramType = RestApiParamType.PATH, description = "The storage id"),
+            @RestApiParam(name="idUser", type="long", paramType = RestApiParamType.PATH, description = "The user id")
+    ])
+    @RestApiResponseObject(objectIdentifier = "empty")
+    def deleteUserFromStorage() {
+        Storage storage = storageService.read(params.long('id'))
+        SecUser user = secUserService.read(params.long('idUser'))
+        secUserService.deleteUserFromStorage(user, storage)
+        response.status = 200
+        response([data: [message: "OK"], status: 200])
+    }
+
     @RestApiMethod(description="Change a user password for a user")
     @RestApiParams(params=[
-        @RestApiParam(name="id", type="long", paramType = RestApiParamType.PATH, description = "The user id"),
-        @RestApiParam(name="password", type="string", paramType = RestApiParamType.QUERY, description = "The new password")
+            @RestApiParam(name="id", type="long", paramType = RestApiParamType.PATH, description = "The user id"),
+            @RestApiParam(name="password", type="string", paramType = RestApiParamType.QUERY, description = "The new password")
     ])
     def resetPassword () {
         try {
@@ -470,6 +628,21 @@ class RestUserController extends RestController {
             responseError(e)
         }
 
+    }
+
+    @RestApiMethod(description="Check a user password for the current user")
+    @RestApiParams(params=[
+            @RestApiParam(name="password", type="string", paramType = RestApiParamType.QUERY, description = "The password")
+    ])
+    def checkPassword () {
+        String password = request.JSON.password
+        def result = springSecurityService.encodePassword(password).equals(cytomineService.currentUser.password)
+
+        if(result) {
+            responseSuccess([:])
+        } else {
+            response([success: false, errors: "No matching password"], 401)
+        }
     }
 
     /**
@@ -530,30 +703,16 @@ class RestUserController extends RestController {
         def result = db.lastUserPosition.aggregate(
                 [$match : [ project : project.id, created:[$gt:thirtySecondsAgo.toDate()]]],
                 [$project:[user:1,image:1,imageName:1,created:1]],
-                [$group : [_id : [ user: '$user', image: '$image',imageName: '$imageName'], "date":[$max:'$created']]]
+                [$group : [_id : [ user: '$user', image: '$image',imageName: '$imageName'], "date":[$max:'$created']]],
+                [$group : [_id : [ user: '$_id.user'], "position":[$push: [id: '$_id.image',image: '$_id.image', filename: '$_id.imageName', originalFilename: '$_id.imageName', date: '$date']]]]
         )
 
         def usersWithPosition = []
-        def userInfo = [:]
-        long previousUser = -1
         result.results().each {
-
-            def userId = it["_id"]["user"]
-            def imageId = it["_id"]["image"]
-            def imageName = it["_id"]["imageName"]
-            def date = it["date"]
-
-            long currentUser = userId
-            if (previousUser != currentUser) {
-                //new user, create a new line
-                userInfo = [id: currentUser, position: []]
-                usersWithPosition << userInfo
-                usersId.remove(currentUser)
-            }
-            //add position to the current user
-            userInfo['position'] << [id: imageId,image: imageId, filename: imageName, originalFilename:imageName, date: date]
-            previousUser = currentUser
+            usersWithPosition << [id: it["_id"]["user"], position: it["position"]]
         }
+        usersId.remove(usersWithPosition.collect{it.id})
+
         //user online with no image open
         usersId.each {
             usersWithPosition << [id: it, position: []]
@@ -628,6 +787,7 @@ class RestUserController extends RestController {
         Integer offset = params.offset != null ? params.getInt('offset') : 0
         Integer max = (params.max != null && params.getInt('max')!=0) ? params.getInt('max') : Integer.MAX_VALUE
         def maxForCollection = Math.min(users.size() - offset, max)
+        long collectionSize = users.size()
 
         if(field && ["id","email","username"].contains(field)) {
             users.sort { a,b->
@@ -707,6 +867,12 @@ class RestUserController extends RestController {
             sorted = true;
         }
 
+        // to fit the pagination system
+        if(collectionSize > results.size()) {
+            def filler = Arrays.asList(new Object[collectionSize-results.size()-offset]);
+            results = Arrays.asList(new Object[offset]) + results + filler
+        }
+
         responseSuccess(results)
     }
 
@@ -764,7 +930,25 @@ class RestUserController extends RestController {
         result["lastConnection"] = PersistentProjectConnection.findAllByUserAndProject(user.id, project.id, [sort: 'created', order: 'desc', max: 1])[0]?.created
         result["totalAnnotations"] = userAnnotationService.count(user, project)
         result["totalConnections"] = PersistentProjectConnection.countByUserAndProject(user.id, project.id)
+        result["totalConsultations"] = PersistentImageConsultation.countByUserAndProject(user.id, project.id)
+        result["totalAnnotationSelections"] = AnnotationAction.countByUserAndProjectAndAction(user.id, project.id, "select")
 
         responseSuccess(result)
     }
+
+    @Override
+    protected boolean isFilterResponseEnabled() {
+        try{
+            securityACLService.checkAdmin(cytomineService.currentUser)
+            return false
+        } catch(ForbiddenException e){}
+        return true
+    }
+
+    @Override
+    protected void filterOneElement(JSONObject element){
+        if(element['id'] != cytomineService.currentUser.id)
+        element['email'] = null
+    }
+
 }

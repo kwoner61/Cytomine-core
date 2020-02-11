@@ -1,7 +1,7 @@
 package be.cytomine
 
 /*
-* Copyright (c) 2009-2017. Authors: see NOTICE file.
+* Copyright (c) 2009-2019. Authors: see NOTICE file.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -95,6 +95,31 @@ class ProjectRepresentativeUserTests {
         def id = refToDelete.id
         def idProject = refToDelete.project.id
         def result = ProjectRepresentativeUserAPI.delete(id, idProject, Infos.SUPERADMINLOGIN, Infos.SUPERADMINPASSWORD)
+        assert 200 == result.code
+
+        def showResult = ProjectRepresentativeUserAPI.show(id, idProject, Infos.SUPERADMINLOGIN, Infos.SUPERADMINPASSWORD)
+        assert 404 == showResult.code
+
+        result = ProjectRepresentativeUserAPI.undo()
+        assert 200 == result.code
+
+        result = ProjectRepresentativeUserAPI.show(id, idProject, Infos.SUPERADMINLOGIN, Infos.SUPERADMINPASSWORD)
+        assert 200 == result.code
+
+        result = ProjectRepresentativeUserAPI.redo()
+        assert 200 == result.code
+
+        result = ProjectRepresentativeUserAPI.show(id, idProject, Infos.SUPERADMINLOGIN, Infos.SUPERADMINPASSWORD)
+        assert 404 == result.code
+    }
+
+    void testDeleteProjectRepresentativeUserByProjectAndUser() {
+        ProjectRepresentativeUser refToDelete = BasicInstanceBuilder.getProjectRepresentativeUserNotExist()
+        assert refToDelete.save(flush: true)!= null
+        def id = refToDelete.id
+        def idProject = refToDelete.project.id
+        def idUser = refToDelete.user.id
+        def result = ProjectRepresentativeUserAPI.deleteByUser(idUser, idProject, Infos.SUPERADMINLOGIN, Infos.SUPERADMINPASSWORD)
         assert 200 == result.code
 
         def showResult = ProjectRepresentativeUserAPI.show(id, idProject, Infos.SUPERADMINLOGIN, Infos.SUPERADMINPASSWORD)
