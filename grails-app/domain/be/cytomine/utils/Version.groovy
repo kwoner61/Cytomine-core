@@ -64,6 +64,8 @@ class Version {
         } else {
             log.info "New version detected"
 
+            semantic = semantic.split("-")[0] // Remove pre-build
+
             Integer major = Integer.parseInt(semantic.split("\\.")[0])
             Integer minor = Integer.parseInt(semantic.split("\\.")[1])
             Integer patch = Integer.parseInt(semantic.split("\\.")[2])
