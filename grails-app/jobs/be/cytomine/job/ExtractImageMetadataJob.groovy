@@ -18,6 +18,7 @@ package be.cytomine.job
 
 import be.cytomine.image.AbstractImage
 import be.cytomine.image.UploadedFile
+import be.cytomine.utils.Version
 
 class ExtractImageMetadataJob {
 
@@ -29,23 +30,27 @@ class ExtractImageMetadataJob {
     }
 
     def execute() {
-        Collection<AbstractImage> abstractImages = AbstractImage.findAllBySamplePerPixelIsNullOrWidthIsNullOrWidth(-1, [max: 10, sort: "created", order: "desc"])
-        abstractImages.each { image ->
-            try {
-                UploadedFile.withNewSession {
-                    AbstractImage.withNewSession {
-                        image.attach()
-                        log.info "Regenerate properties for image $image - ${image.originalFilename}"
-                        imagePropertiesService.regenerate(image)
-                        if (image.bitPerSample > 8)
-                            sampleHistogramService.extractHistogram(image)
+        Version v = Version.getLastVersion()
+        if (v?.major >= 2) {
+            Collection<AbstractImage> abstractImages = AbstractImage.findAllBySamplePerPixelIsNullOrWidthIsNullOrWidth(-1, [max: 10, sort: "created", order: "desc"])
+            abstractImages.each { image ->
+                try {
+                    UploadedFile.withNewSession {
+                        AbstractImage.withNewSession {
+                            image.attach()
+                            log.info "Regenerate properties for image $image - ${image.originalFilename}"
+                            imagePropertiesService.regenerate(image)
+                            if (image.bitPerSample > 8)
+                                sampleHistogramService.extractHistogram(image)
+                        }
                     }
                 }
+                catch (Exception e) {
+                    log.error "Error during metadata extraction for image $image: ${e.printStackTrace()}"
+                }
             }
-            catch (Exception e) {
-                log.error "Error during metadata extraction for image $image: ${e.printStackTrace()}"
-            }
-
         }
+
+
     }
 }
