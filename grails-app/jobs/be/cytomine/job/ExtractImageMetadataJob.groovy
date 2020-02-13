@@ -18,6 +18,7 @@ package be.cytomine.job
 
 import be.cytomine.image.AbstractImage
 import be.cytomine.image.UploadedFile
+import be.cytomine.middleware.ImageServer
 import be.cytomine.utils.Version
 
 class ExtractImageMetadataJob {
@@ -36,6 +37,7 @@ class ExtractImageMetadataJob {
                 createAlias("uploadedFile", "uf")
                 and {
                     ne("uf.contentType", "virtual/stack")
+                    ne("uf.contentType", "application/zip")
                     or {
                         isNull("bitPerSample")
                         isNull("width")
@@ -47,13 +49,25 @@ class ExtractImageMetadataJob {
 
             abstractImages.each { image ->
                 try {
-                    UploadedFile.withNewSession {
-                        AbstractImage.withNewSession {
-                            image.attach()
-                            log.info "Regenerate properties for image $image - ${image.originalFilename}"
-                            imagePropertiesService.regenerate(image)
-                            if (image.bitPerSample > 8)
-                                sampleHistogramService.extractHistogram(image)
+                    ImageServer.withNewSession {
+                        UploadedFile.withNewSession {
+                            AbstractImage.withNewSession {
+                                image.attach()
+                                image.uploadedFile.attach()
+                                image.uploadedFile.imageServer.attach()
+
+                                log.info "Regenerate properties for image $image - ${image.originalFilename}"
+                                try {
+                                    imagePropertiesService.regenerate(image)
+                                    if (image.bitPerSample > 8)
+                                        sampleHistogramService.extractHistogram(image)
+                                }
+                                catch (Exception e) {
+                                    log.error "Error during metadata extraction for image $image: ${e.printStackTrace()}"
+                                    image.bitPerSample = 8
+                                    image.save(flush: true)
+                                }
+                            }
                         }
                     }
                 }

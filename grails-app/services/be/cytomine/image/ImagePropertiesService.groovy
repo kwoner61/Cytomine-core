@@ -56,6 +56,7 @@ class ImagePropertiesService implements Serializable {
         }
     }
 
+    @Transactional
     def populate(AbstractImage image) {
         try {
             def properties = imageServerService.properties(image)
@@ -63,19 +64,27 @@ class ImagePropertiesService implements Serializable {
                 String key = it?.key?.toString()?.trim()
                 String value = it?.value?.toString()?.trim()
                 if (key && value) {
+                    key = key.replaceAll("\u0000", "")
+                    value = value.replaceAll("\u0000", "")
                     def property = Property.findByDomainIdentAndKey(image.id, key)
                     if (!property) {
-                        log.info("New property: $key => $value for abstract image $image")
-                        property = new Property(key: key, value: value, domainIdent: image.id, domainClassName: image.class.name)
-                        property.save(failOnError: true)
+                        try {
+                            log.info("New property: $key => $value for abstract image $image")
+                            property = new Property(key: key, value: value, domainIdent: image.id, domainClassName: image.class.name)
+                            property.save(failOnError: true)
+                        } catch(Exception e) {
+                            log.error(e)
+                        }
                     }
                 }
             }
         } catch(Exception e) {
             log.error(e)
+            log.error(e.printStackTrace())
         }
     }
 
+    @Transactional
     def extractUseful(AbstractImage image) {
         keys().each { k, v ->
             def property = Property.findByDomainIdentAndKey(image.id, v.name)
