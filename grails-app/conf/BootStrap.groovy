@@ -188,7 +188,7 @@ class BootStrap {
 
         log.info "init change for old version..."
         // TODO : delete this sql in v2.1
-        exists = new Sql(dataSource).rows("SELECT column_name " +
+        def exists = new Sql(dataSource).rows("SELECT column_name " +
                 "FROM information_schema.columns " +
                 "WHERE table_name='version' and column_name='major';").size() == 1;
         if (!exists) {
