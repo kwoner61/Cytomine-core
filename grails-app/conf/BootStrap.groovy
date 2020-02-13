@@ -115,11 +115,12 @@ class BootStrap {
         }
 
         // TODO : delete this sql in v2.1
-        boolean exists = new Sql(dataSource).rows("SELECT column_name " +
-                "FROM information_schema.columns " +
-                "WHERE table_name='sec_user' and column_name='origin';").size() == 1;
-        if (!exists) {
+        if (!bootstrapUtilsService.checkSqlColumnExistence("sec_user", "origin")) {
             new Sql(dataSource).executeUpdate("ALTER TABLE sec_user ADD COLUMN origin VARCHAR;")
+        }
+
+        if (!bootstrapUtilsService.checkSqlColumnExistence("sec_user", "language")) {
+            new Sql(dataSource).executeUpdate("ALTER TABLE sec_user ADD COLUMN language VARCHAR;")
         }
 
         //Initialize marshallers and services

@@ -143,7 +143,7 @@ class User extends SecUser {
         returnArray['firstname'] = domain?.firstname
         returnArray['lastname'] = domain?.lastname
         returnArray['email'] = domain?.email
-        returnArray['language'] = domain?.language.toString()
+        returnArray['language'] = domain?.language?.toString()
         returnArray['isDeveloper'] = domain?.isDeveloper
         if (!(domain?.springSecurityService?.principal instanceof String) && domain?.id == domain?.springSecurityService?.currentUser?.id) {
             returnArray['publicKey'] = domain?.publicKey
