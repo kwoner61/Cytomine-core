@@ -32,7 +32,19 @@ class ExtractImageMetadataJob {
     def execute() {
         Version v = Version.getLastVersion()
         if (v?.major >= 2) {
-            Collection<AbstractImage> abstractImages = AbstractImage.findAllByPathIsNullAndBitPerSampleIsNull([max: 10, sort: "created", order: "desc"])
+            Collection<AbstractImage> abstractImages = AbstractImage.createCriteria().list(max: 10) {
+                createAlias("uploadedFile", "uf")
+                and {
+                    ne("uf.contentType", "virtual/stack")
+                    or {
+                        isNull("bitPerSample")
+                        isNull("width")
+                        eq("width", -1)
+                    }
+                }
+                order("created", "desc")
+            }
+
             abstractImages.each { image ->
                 try {
                     UploadedFile.withNewSession {
