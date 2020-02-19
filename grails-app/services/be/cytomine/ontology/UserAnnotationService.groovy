@@ -165,6 +165,29 @@ class UserAnnotationService extends ModelService {
         return annotations
     }
 
+    def list(SliceInstance slice, Geometry bbox, List<Long> termsIDS, List<Long> userIDS) {
+        //:to do use listlight and parse WKT instead ?
+        Collection<UserAnnotation> annotations = UserAnnotation.createCriteria()
+                .add(Restrictions.in("user.id", userIDS))
+                .add(Restrictions.eq("slice.id", slice.id))
+                .add(SpatialRestrictions.intersects("location", bbox))
+                .list()
+
+        if (!annotations.isEmpty() && termsIDS.size() > 0) {
+            annotations = (Collection<UserAnnotation>) AnnotationTerm.createCriteria().list {
+                inList("term.id", termsIDS)
+                join("userAnnotation")
+                createAlias("userAnnotation", "a")
+                projections {
+                    inList("a.id", annotations.collect { it.id })
+                    groupProperty("userAnnotation")
+                }
+            }
+        }
+
+        return annotations
+    }
+
     def count(User user, Project project = null) {
         if (project) return UserAnnotation.countByUserAndProject(user, project)
         return UserAnnotation.countByUser(user)

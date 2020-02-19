@@ -19,6 +19,14 @@ package be.cytomine.api.image
 import be.cytomine.api.RestController
 import be.cytomine.image.ImageInstance
 import be.cytomine.image.SliceInstance
+import be.cytomine.ontology.UserAnnotation
+import be.cytomine.sql.ReviewedAnnotationListing
+import be.cytomine.utils.GeometryUtils
+import com.vividsolutions.jts.geom.Geometry
+import com.vividsolutions.jts.geom.GeometryCollection
+import com.vividsolutions.jts.geom.GeometryFactory
+import com.vividsolutions.jts.io.WKTReader
+import com.vividsolutions.jts.io.WKTWriter
 import grails.converters.JSON
 import org.restapidoc.annotation.RestApi
 import org.restapidoc.annotation.RestApiMethod
@@ -157,6 +165,8 @@ class RestSliceInstanceController extends RestController {
     def window() {
         SliceInstance sliceInstance = sliceInstanceService.read(params.long("id"))
         if (sliceInstance) {
+            if (params.mask || params.alphaMask || params.alphaMask || params.draw || params.type in ['draw', 'mask', 'alphaMask', 'alphamask'])
+                params.location = getWKTGeometry(sliceInstance, params)
             responseByteArray(imageServerService.window(sliceInstance, params, false))
         } else {
             responseNotFound("SliceInstance", params.id)
@@ -182,6 +192,95 @@ class RestSliceInstanceController extends RestController {
         } else {
             responseNotFound("SliceInstance", params.id)
         }
+    }
+
+    //todo : move into a service
+    def userAnnotationService
+    def reviewedAnnotationService
+    def termService
+    def secUserService
+    def annotationListingService
+    public String getWKTGeometry(SliceInstance sliceInstance, params) {
+        def geometries = []
+        if (params.annotations && !params.reviewed) {
+            def idAnnotations = params.annotations.split(',')
+            idAnnotations.each { idAnnotation ->
+                geometries << userAnnotationService.read(idAnnotation).location
+            }
+        }
+        else if (params.annotations && params.reviewed) {
+            def idAnnotations = params.annotations.split(',')
+            idAnnotations.each { idAnnotation ->
+                geometries << reviewedAnnotationService.read(idAnnotation).location
+            }
+        }
+        else if (!params.annotations) {
+            def project = sliceInstance.image.project
+            List<Long> termsIDS = params.terms?.split(',')?.collect {
+                Long.parseLong(it)
+            }
+            if (!termsIDS) { //don't filter by term, take everything
+                termsIDS = termService.getAllTermId(project)
+            }
+
+            List<Long> userIDS = params.users?.split(",")?.collect {
+                Long.parseLong(it)
+            }
+            if (!userIDS) { //don't filter by users, take everything
+                userIDS = secUserService.listLayers(project).collect { it.id}
+            }
+            List<Long> sliceIDS = [sliceInstance.id]
+
+            log.info params
+            //Create a geometry corresponding to the ROI of the request (x,y,w,h)
+            int x
+            int y
+            int w
+            int h
+            try {
+                x = params.int('topLeftX')
+                y = params.int('topLeftY')
+                w = params.int('width')
+                h = params.int('height')
+            }catch (Exception e) {
+                x = params.int('x')
+                y = params.int('y')
+                w = params.int('w')
+                h = params.int('h')
+            }
+            Geometry roiGeometry = GeometryUtils.createBoundingBox(
+                    x,                                      //minX
+                    x + w,                                  //maxX
+                    sliceInstance.baseSlice.image.height - (y + h),    //minX
+                    sliceInstance.baseSlice.image.height - y           //maxY
+            )
+
+
+            //Fetch annotations with the requested term on the request image
+            if (params.review) {
+                ReviewedAnnotationListing ral = new ReviewedAnnotationListing(
+                        project: project.id, terms: termsIDS, reviewUsers: userIDS, slices:sliceIDS, bbox:roiGeometry,
+                        columnToPrint:['basic', 'meta', 'wkt', 'term']
+                )
+                def result = annotationListingService.listGeneric(ral)
+                log.info "annotations=${result.size()}"
+                geometries = result.collect {
+                    new WKTReader().read(it["location"])
+                }
+
+            } else {
+                log.info "roiGeometry=${roiGeometry}"
+                log.info "termsIDS=${termsIDS}"
+                log.info "userIDS=${userIDS}"
+                Collection<UserAnnotation> annotations = userAnnotationService.list(sliceInstance, roiGeometry, termsIDS, userIDS)
+                log.info "annotations=${annotations.size()}"
+                geometries = annotations.collect { geometry ->
+                    geometry.getLocation()
+                }
+            }
+        }
+        GeometryCollection geometryCollection = new GeometryCollection((Geometry[])geometries, new GeometryFactory())
+        return new WKTWriter().write(geometryCollection)
     }
 
 //    def download() {
