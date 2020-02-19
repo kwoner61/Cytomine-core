@@ -205,13 +205,17 @@ class RestSliceInstanceController extends RestController {
         if (params.annotations && !params.reviewed) {
             def idAnnotations = params.annotations.split(',')
             idAnnotations.each { idAnnotation ->
-                geometries << userAnnotationService.read(idAnnotation).location
+                def annot = userAnnotationService.read(idAnnotation)
+                if (annot)
+                    geometries << annot.location
             }
         }
         else if (params.annotations && params.reviewed) {
             def idAnnotations = params.annotations.split(',')
             idAnnotations.each { idAnnotation ->
-                geometries << reviewedAnnotationService.read(idAnnotation).location
+                def annot = reviewedAnnotationService.read(idAnnotation)
+                if (annot)
+                    geometries << annot.location
             }
         }
         else if (!params.annotations) {
