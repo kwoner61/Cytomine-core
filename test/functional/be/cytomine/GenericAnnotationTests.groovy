@@ -31,18 +31,14 @@ import be.cytomine.test.http.UserAnnotationAPI
 import be.cytomine.test.http.DomainAPI
 import be.cytomine.utils.JSONUtils
 import be.cytomine.utils.UpdateData
+import com.vividsolutions.jts.geom.Geometry
+import com.vividsolutions.jts.geom.MultiPolygon
+import com.vividsolutions.jts.geom.Polygon
 import com.vividsolutions.jts.io.WKTReader
 import grails.converters.JSON
 import org.codehaus.groovy.grails.web.json.JSONArray
 import org.codehaus.groovy.grails.web.json.JSONObject
 
-/**
- * Created by IntelliJ IDEA.
- * User: lrollus
- * Date: 8/02/11
- * Time: 9:01
- * To change this template use File | Settings | File Templates.
- */
 class GenericAnnotationTests  {
 
     void testGetAnnotationWithCredentialWithaAnnotationAlgo() {
@@ -867,8 +863,8 @@ class GenericAnnotationTests  {
         def result = UserAnnotationAPI.create(annotation.encodeAsJSON(), minPoint,maxPoint, Infos.SUPERADMINLOGIN, Infos.SUPERADMINPASSWORD)
         assert 200 == result.code
         annotation = result.data
-        assert annotation.location.numPoints <= maxPoint
-        assert annotation.location.numPoints >= minPoint
+        assert annotation.location.numPoints <= getPointMultiplyByGeometriesOrInteriorRings(annotation.location, maxPoint)
+        assert annotation.location.numPoints >= getPointMultiplyByGeometriesOrInteriorRings(annotation.location, minPoint)
 
         maxPoint = 150
         minPoint = 100
@@ -877,8 +873,8 @@ class GenericAnnotationTests  {
         result = UserAnnotationAPI.create(annotation.encodeAsJSON(), minPoint,maxPoint,Infos.SUPERADMINLOGIN, Infos.SUPERADMINPASSWORD)
         assert 200 == result.code
         annotation = result.data
-        assert annotation.location.numPoints <= maxPoint
-        assert annotation.location.numPoints >= minPoint
+        assert annotation.location.numPoints <= getPointMultiplyByGeometriesOrInteriorRings(annotation.location, maxPoint)
+        assert annotation.location.numPoints >= getPointMultiplyByGeometriesOrInteriorRings(annotation.location, minPoint)
 
         maxPoint = 1000
         minPoint = 400
@@ -887,8 +883,8 @@ class GenericAnnotationTests  {
         result = UserAnnotationAPI.create(annotation.encodeAsJSON(), minPoint,maxPoint,Infos.SUPERADMINLOGIN, Infos.SUPERADMINPASSWORD)
         assert 200 == result.code
         annotation = result.data
-        assert annotation.location.numPoints <= maxPoint
-        assert annotation.location.numPoints >= minPoint
+        assert annotation.location.numPoints <= getPointMultiplyByGeometriesOrInteriorRings(annotation.location, maxPoint)
+        assert annotation.location.numPoints >= getPointMultiplyByGeometriesOrInteriorRings(annotation.location, minPoint)
 
     }
 
@@ -909,8 +905,8 @@ class GenericAnnotationTests  {
         def result = AlgoAnnotationAPI.create(annotation.encodeAsJSON(), minPoint,maxPoint, user.username, 'PasswordUserJob')
         assert 200 == result.code
         annotation = result.data
-        assert annotation.location.numPoints <= maxPoint
-        assert annotation.location.numPoints >= minPoint
+        assert annotation.location.numPoints <= getPointMultiplyByGeometriesOrInteriorRings(annotation.location, maxPoint)
+        assert annotation.location.numPoints >= getPointMultiplyByGeometriesOrInteriorRings(annotation.location, minPoint)
 
         maxPoint = 150
         minPoint = 100
@@ -919,8 +915,8 @@ class GenericAnnotationTests  {
         result = AlgoAnnotationAPI.create(annotation.encodeAsJSON(), minPoint,maxPoint,user.username, 'PasswordUserJob')
         assert 200 == result.code
         annotation = result.data
-        assert annotation.location.numPoints <= maxPoint
-        assert annotation.location.numPoints >= minPoint
+        assert annotation.location.numPoints <= getPointMultiplyByGeometriesOrInteriorRings(annotation.location, maxPoint)
+        assert annotation.location.numPoints >= getPointMultiplyByGeometriesOrInteriorRings(annotation.location, minPoint)
 
         maxPoint = 1000
         minPoint = 400
@@ -929,8 +925,8 @@ class GenericAnnotationTests  {
         result = AlgoAnnotationAPI.create(annotation.encodeAsJSON(), minPoint,maxPoint,user.username, 'PasswordUserJob')
         assert 200 == result.code
         annotation = result.data
-        assert annotation.location.numPoints <= maxPoint
-        assert annotation.location.numPoints >= minPoint
+        assert annotation.location.numPoints <= getPointMultiplyByGeometriesOrInteriorRings(annotation.location, maxPoint)
+        assert annotation.location.numPoints >= getPointMultiplyByGeometriesOrInteriorRings(annotation.location, minPoint)
 
     }
 
@@ -958,8 +954,8 @@ class GenericAnnotationTests  {
 
         //check if points are ok
         annotation.refresh()
-        assert annotation.location.numPoints <= maxPoint
-        assert annotation.location.numPoints >= minPoint
+        assert annotation.location.numPoints <= getPointMultiplyByGeometriesOrInteriorRings(annotation.location, maxPoint)
+        assert annotation.location.numPoints >= getPointMultiplyByGeometriesOrInteriorRings(annotation.location, minPoint)
 
     }
 
@@ -987,11 +983,36 @@ class GenericAnnotationTests  {
 
         //check if points are ok
         annotation.refresh()
-        assert annotation.location.numPoints <= maxPoint
-        assert annotation.location.numPoints >= minPoint
+        assert annotation.location.numPoints <= getPointMultiplyByGeometriesOrInteriorRings(annotation.location, maxPoint)
+        assert annotation.location.numPoints >= getPointMultiplyByGeometriesOrInteriorRings(annotation.location, minPoint)
 
         println "BBB NUMBER OF POINT: " + annotation.location.numPoints
 
+    }
+
+    private long getPointMultiplyByGeometriesOrInteriorRings(Geometry geometry, int numberOfPoints){
+        long result = 0
+        if (geometry instanceof MultiPolygon) {
+            for (int i = 0; i < geometry.getNumGeometries(); i++) {
+                Geometry geom = geometry.getGeometryN(i)
+                int nbInteriorRing = 1
+                if(geom instanceof Polygon)
+                    nbInteriorRing = geom.getNumInteriorRing()
+                result +=  geom.getNumGeometries() * nbInteriorRing
+            }
+        } else {
+            int nbInteriorRing = 1
+            if(geometry instanceof Polygon)
+                nbInteriorRing = geometry.getNumInteriorRing()
+            result = geometry.getNumGeometries() * nbInteriorRing
+        }
+        result = Math.max(1, result)
+
+        if (result > 10) result/= 2
+        result = Math.min(10, result)
+
+        result*=numberOfPoints
+        return result
     }
 /*
     def testSimplifyServiceWithHole() {

@@ -57,8 +57,7 @@ class SimplifyGeometryService {
                     nbInteriorRing = geom.getNumInteriorRing()
                 numOfGeometry +=  geom.getNumGeometries() * nbInteriorRing
             }
-        }
-        else {
+        } else {
             int nbInteriorRing = 1
             if(geometry instanceof Polygon)
                 nbInteriorRing = geometry.getNumInteriorRing()
@@ -82,8 +81,7 @@ class SimplifyGeometryService {
         double rateLimitMax
         if (maxPoint) {
             rateLimitMax = maxPoint * numOfGeometry
-        }
-        else {
+        } else {
             rateLimitMax = Math.max(numberOfPoint / ratioMax, numOfGeometry * maxNumberOfPoint)
         }
 
@@ -91,8 +89,7 @@ class SimplifyGeometryService {
         double rateLimitMin
         if (minPoint) {
             rateLimitMin = minPoint * numOfGeometry
-        }
-        else {
+        } else {
             rateLimitMin = Math.min(Math.max(numberOfPoint / ratioMin, 10), numOfGeometry * minNumberOfPoint)
         }
 
@@ -104,15 +101,14 @@ class SimplifyGeometryService {
         /* Max number of loop (prevent infinite loop) */
         int maxLoop = 1000
 
-        Geometry newGeometry = null
+        Geometry newGeometry = geometry.clone()
         Boolean isPolygonAndNotValid = (geometry instanceof Polygon && !((Polygon) geometry).isValid())
         Boolean isMultiPolygon = (geometry instanceof MultiPolygon)
         while (numberOfPoint > rateLimitMax && maxLoop > 0) {
             rate = i
             if (isPolygonAndNotValid || isMultiPolygon) {
                 newGeometry = TopologyPreservingSimplifier.simplify(geometry, rate)
-            }
-            else {
+            } else {
                 newGeometry = DouglasPeuckerSimplifier.simplify(geometry, rate)
             }
 
@@ -120,6 +116,7 @@ class SimplifyGeometryService {
                 break;
 
             i = i + ((incrThreshold));
+            numberOfPoint = newGeometry.getNumPoints()
             maxLoop--;
         }
         return [geometry: newGeometry, rate: rate]
@@ -127,6 +124,7 @@ class SimplifyGeometryService {
 
 
     def simplifyPolygon(String form, double rate) {
+        simplifyPolygon(new WKTReader().read(form), rate)
     }
 
     def simplifyPolygon(Geometry geometry, double rate) {
