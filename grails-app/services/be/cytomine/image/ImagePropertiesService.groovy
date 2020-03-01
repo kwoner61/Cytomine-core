@@ -92,9 +92,9 @@ class ImagePropertiesService implements Serializable {
                 image[k] = v.parser(property.value)
             else
                 log.info "No property ${v.name} for abstract image $image"
-
-            image.save(flush: true, failOnError: true)
         }
+        image.extractedMetadata = new Date()
+        image.save(flush: true, failOnError: true)
     }
 
     def regenerate(AbstractImage image) {

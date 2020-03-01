@@ -94,6 +94,8 @@ class AbstractImage extends CytomineDomain implements Serializable {
     @RestApiObjectField(description = "The image owner", mandatory = false, defaultValue = "current user")
     SecUser user //owner
 
+    Date extractedMetadata
+
     static belongsTo = Sample
 
     @RestApiObjectFields(params=[
@@ -133,6 +135,7 @@ class AbstractImage extends CytomineDomain implements Serializable {
         user(nullable: true)
         bitPerSample(nullable: true)
         samplePerPixel(nullable: true)
+        extractedMetadata(nullable: true)
     }
 
     /**

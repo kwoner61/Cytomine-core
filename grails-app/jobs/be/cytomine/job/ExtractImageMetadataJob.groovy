@@ -27,7 +27,7 @@ class ExtractImageMetadataJob {
     def sampleHistogramService
 
     static triggers = {
-        simple name: 'extractImageMetadataJob', startDelay: 10000, repeatInterval: 1000*20
+        simple name: 'extractImageMetadataJob', startDelay: 10000, repeatInterval: 1000*15
     }
 
     def execute() {
@@ -43,6 +43,8 @@ class ExtractImageMetadataJob {
                         isNull("width")
                         eq("width", -1)
                     }
+                    isNull("deleted")
+                    isNull("extractedMetadata")
                 }
                 order("created", "desc")
             }
@@ -64,7 +66,7 @@ class ExtractImageMetadataJob {
                                 }
                                 catch (Exception e) {
                                     log.error "Error during metadata extraction for image $image: ${e.printStackTrace()}"
-                                    image.bitPerSample = 8
+                                    image.extractedMetadata = new Date()
                                     image.save(flush: true)
                                 }
                             }
