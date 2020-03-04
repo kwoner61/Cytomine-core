@@ -114,7 +114,8 @@ class SharedAnnotationService extends ModelService {
             params.geometry = annotation.location
             params.complete = true
             params.maxSize = 512
-            BufferedImage bufferedImage = imageServerService.crop(annotation, params)
+            InputStream is = new ByteArrayInputStream(imageServerService.crop(annotation, params));
+            BufferedImage bufferedImage = ImageIO.read(is)
 
             log.info "Image " + bufferedImage
 
