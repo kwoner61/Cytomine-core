@@ -175,10 +175,10 @@ class JSONUtils {
            return item
         } else if(item instanceof JSONArray) {
             return item
-        }else if(item instanceof String) {
+        }/*else if(item instanceof String) {
             return JSON.parse(item)
-        }
-        return item
+        }*/
+        return [item]
     }
 
 
