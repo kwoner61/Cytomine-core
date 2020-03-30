@@ -26,6 +26,7 @@ import be.cytomine.ontology.AlgoAnnotation
 import be.cytomine.ontology.AnnotationTerm
 import be.cytomine.meta.Property
 import be.cytomine.ontology.ReviewedAnnotation
+import be.cytomine.ontology.Track
 import be.cytomine.ontology.UserAnnotation
 import be.cytomine.project.Project
 import be.cytomine.security.SecUser

@@ -110,12 +110,6 @@ class SliceInstanceService extends ModelService {
         }
     }
 
-    def deleteDependentSampleHistogram(SliceInstance slice, Transaction transaction, Task task = null) {
-        SampleHistogram.findAllBySlice(slice).each {
-            it.delete()
-        }
-    }
-
     def getStringParamsI18n(Object domain) {
         return [domain.id, domain.baseSlice.channel, domain.baseSlice.zStack, domain.baseSlice.time]
     }
