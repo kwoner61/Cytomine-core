@@ -168,6 +168,7 @@ class UserAnnotationService extends ModelService {
     def list(SliceInstance slice, Geometry bbox, List<Long> termsIDS, List<Long> userIDS) {
         //:to do use listlight and parse WKT instead ?
         Collection<UserAnnotation> annotations = UserAnnotation.createCriteria()
+                .add(Restrictions.isNull("deleted"))
                 .add(Restrictions.in("user.id", userIDS))
                 .add(Restrictions.eq("slice.id", slice.id))
                 .add(SpatialRestrictions.intersects("location", bbox))
