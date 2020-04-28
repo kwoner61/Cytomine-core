@@ -89,19 +89,41 @@ class ImageServerService extends ModelService {
     }
 
     def profile(CompanionFile profile, AnnotationDomain annotation, def params) {
+        profile(profile, annotation.location, params)
+    }
+
+    def profile(CompanionFile profile, Geometry geometry, def params) {
         def (server, parameters) = imsParametersFromCompanionFile(profile)
-        parameters.location = annotation.location
+        parameters.location = geometry.toString()
         parameters.minSlice = params.minSlice
         parameters.maxSlice = params.maxSlice
         return JSON.parse(new URL(makeGetUrl("/profile.json", server, parameters)).text)
     }
 
-    def profile(CompanionFile profile, String geometry, def params) {
+    def profileProjections(CompanionFile profile, AnnotationDomain annotation, def params) {
+        profileProjections(profile, annotation.location, params)
+    }
+
+    def profileProjections(CompanionFile profile, Geometry geometry, def params) {
         def (server, parameters) = imsParametersFromCompanionFile(profile)
-        parameters.location = geometry
+        parameters.location = geometry.toString()
         parameters.minSlice = params.minSlice
         parameters.maxSlice = params.maxSlice
-        return JSON.parse(new URL(makeGetUrl("/profile.json", server, parameters)).text)
+        return JSON.parse(new URL(makeGetUrl("/profile/projections.json", server, parameters)).text)
+    }
+
+    def profileImageProjection(CompanionFile profile, AnnotationDomain annotation, def params) {
+        profileImageProjection(profile, annotation.location, params)
+    }
+
+    def profileImageProjection(CompanionFile profile, Geometry geometry, def params) {
+        def (server, parameters) = imsParametersFromCompanionFile(profile)
+        def format = checkFormat(params.format, ['jpg', 'png'])
+        parameters.location = geometry.toString()
+        parameters.minSlice = params.minSlice
+        parameters.maxSlice = params.maxSlice
+
+        return makeRequest("/profile/${params.projectionType}-projection.$format", server, parameters)
     }
 
     def associated(ImageInstance image) {

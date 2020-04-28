@@ -468,6 +468,27 @@ class RestImageInstanceController extends RestController {
     def window() {
         ImageInstance imageInstance = imageInstanceService.read(params.long("id"))
         if (imageInstance) {
+            if (params.projectionType in ['min', 'max', 'average'] ) {
+                if (!imageInstance.baseImage.hasProfile()) {
+                    throw new ObjectNotFoundException("No profile for abstract image ${imageInstance.baseImage}")
+                }
+
+                CompanionFile cf = CompanionFile.findByImageAndType(imageInstance.baseImage, "HDF5")
+
+                def x = params.int('x')
+                def y = params.int('y')
+                def w = params.int('w')
+                def h = params.int('h')
+
+                Geometry roiGeometry = GeometryUtils.createBoundingBox(
+                        x,                                      //minX
+                        x + w,                                  //maxX
+                        imageInstance.baseImage.getHeight() - (y + h),    //minX
+                        imageInstance.baseImage.getHeight() - y           //maxY
+                )
+
+                responseByteArray(imageServerService.profileImageProjection(cf, roiGeometry, params))
+            }
             if (params.mask || params.alphaMask || params.alphaMask || params.draw || params.type in ['draw', 'mask', 'alphaMask', 'alphamask'])
                 params.location = getWKTGeometry(imageInstance, params)
             responseByteArray(imageServerService.window(imageInstance.baseImage, params, false))
