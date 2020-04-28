@@ -93,7 +93,7 @@ grails.project.dependency.resolution = {
         runtime ':hibernate4:4.3.5.5'
         build ':tomcat:7.0.54'
         compile ':cache:1.1.7'
-        compile ":grails-melody:1.49.0"
+//        compile ":grails-melody:1.49.0"
         compile ":rest-api-doc:0.6"
         compile ":rest:0.8"
         compile ':spring-security-core:2.0-RC4'
