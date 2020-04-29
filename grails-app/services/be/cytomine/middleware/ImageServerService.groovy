@@ -88,8 +88,8 @@ class ImageServerService extends ModelService {
         return JSON.parse(new String(makeRequest("/profile.json", server, parameters, "POST")))
     }
 
-    def profile(CompanionFile profile, AnnotationDomain annotation, def params) {
-        profile(profile, annotation.location, params)
+    def profile(CompanionFile profileCf, AnnotationDomain annotation, def params) {
+        profile(profileCf, annotation.location, params)
     }
 
     def profile(CompanionFile profile, Geometry geometry, def params) {
