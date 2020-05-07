@@ -39,17 +39,22 @@ class CompanionFile extends CytomineDomain implements Serializable {
 
     String type
 
-    static belongsTo = [AbstractImage]
+    Integer progress = 0
+
+    static belongsTo = [AbstractImage, UploadedFile]
 
     static mapping = {
         id(generator: 'assigned', unique: true)
         sort('id')
-        cache(true)
+        cache(false)
+        uploadedFile fetch: 'join', cache: false
+        image fetch: 'join', cache: false
     }
 
     static constraints = {
         originalFilename(blank: false)
         filename(blank: false)
+        progress(nullable: true)
     }
 
     def getPath() {
@@ -77,6 +82,7 @@ class CompanionFile extends CytomineDomain implements Serializable {
         domain.originalFilename = JSONUtils.getJSONAttrStr(json, "originalFilename", true)
         domain.filename = JSONUtils.getJSONAttrStr(json, "filename", true)
         domain.type = JSONUtils.getJSONAttrStr(json, "type", true)
+        domain.progress = JSONUtils.getJSONAttrInteger(json, "progress", 0)
 
         domain
     }
@@ -90,6 +96,7 @@ class CompanionFile extends CytomineDomain implements Serializable {
         returnArray['filename'] = domain?.filename
         returnArray['type'] = domain?.type
 
+        returnArray['progress'] = domain?.progress
         returnArray['status'] = domain?.uploadedFile?.status
         returnArray['statusText'] = domain?.uploadedFile?.statusText
 
