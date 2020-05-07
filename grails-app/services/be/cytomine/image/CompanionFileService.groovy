@@ -1,5 +1,6 @@
 package be.cytomine.image
 
+import be.cytomine.Exception.InvalidRequestException
 import be.cytomine.command.AddCommand
 import be.cytomine.command.Command
 import be.cytomine.command.DeleteCommand
@@ -8,6 +9,8 @@ import be.cytomine.command.Transaction
 import be.cytomine.security.SecUser
 import be.cytomine.utils.ModelService
 import be.cytomine.utils.Task
+
+import java.nio.file.Paths
 
 import static org.springframework.security.acls.domain.BasePermission.READ
 import static org.springframework.security.acls.domain.BasePermission.WRITE
@@ -35,7 +38,7 @@ class CompanionFileService extends ModelService {
     def list(AbstractImage image) {
         if (!abstractImageService.hasRightToReadAbstractImageWithProject(image)) //TODO: improve
             securityACLService.checkAtLeastOne(image, READ)
-        CompanionFile.findAllByImage(image)
+        CompanionFile.findAllByImage(image, [cache: false])
     }
 
     def list(UploadedFile uploadedFile) {
@@ -75,4 +78,37 @@ class CompanionFileService extends ModelService {
     def getStringParamsI18n(def domain) {
         return [domain.id, domain.originalFilename]
     }
+
+    def addProfile(AbstractImage image) {
+        if (image.hasProfile()) {
+            throw new InvalidRequestException("Image $image already has a profile")
+        }
+
+        if (image.dimensions.size() != 3) {
+            throw new InvalidRequestException("Image $image is not a 3D image")
+        }
+
+        def filename = "profile.hdf5"
+        def extension = "hdf5"
+        def contentType = "application/x-hdf5"
+        def destinationPath = Paths.get(new Date().getTime().toString(), filename).toString()
+
+        UploadedFile parent = image.uploadedFile
+        UploadedFile uf = new UploadedFile(parent: parent, imageServer: parent.imageServer, contentType: contentType,
+                storage: parent.storage, user: cytomineService.currentUser, originalFilename: filename,
+                ext: extension, size: 0, status: UploadedFile.Status.UPLOADED.code, filename: destinationPath).save(flush: true, failOnError: true)
+        CompanionFile cf = new CompanionFile(uploadedFile: uf, image: image, originalFilename: filename,
+                filename: filename, type: "HDF5").save(flush: true, failOnError: true)
+
+        try {
+            imageServerService.profile(image.id, cf.id, uf.id)
+        }
+        catch (Exception e) {
+            uf.status = UploadedFile.Status.ERROR_CONVERSION.code
+            uf.save(flush: true)
+        }
+        return cf
+    }
+
+    def imageServerService
 }

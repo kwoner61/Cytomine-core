@@ -133,13 +133,7 @@ class RestCompanionFileController extends RestController {
 
         AbstractImage abstractImage = abstractImageService.read(id)
         if (abstractImage) {
-            if (abstractImage.dimensions.length() == 3 && !abstractImage.hasProfile()) {
-                //TODO: check image is greyscale
-                responseSuccess(imageServerService.profile(abstractImage).companionFile)
-            }
-            else {
-                responseError(new InvalidRequestException("Abstract image ${abstractImage.id} already has a profile or cannot have one."))
-            }
+            responseSuccess(companionFileService.addProfile(abstractImage))
         }
         else {
             responseNotFound("Image", id)

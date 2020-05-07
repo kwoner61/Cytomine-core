@@ -309,6 +309,7 @@ environments {
         grails.UIURL = "http://localhost"
         grails.serverURL = "http://localhost-core"
         grails.uploadURL = "http://localhost-upload"
+        grails.hyperspectralServerURL = "http://localhost-hms"
         grails.imageServerURL = ["http://localhost-ims"]
         grails.retrievalServerURL = ["http://localhost-retrieval"]
         grails.plugin.springsecurity.useBasicAuth = false

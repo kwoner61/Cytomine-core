@@ -89,6 +89,7 @@ class AbstractSlice extends CytomineDomain implements Serializable {
     static def getDataFromDomain(def domain) {
         def returnArray = CytomineDomain.getDataFromDomain(domain)
         returnArray['uploadedFile'] = domain?.uploadedFile?.id
+        returnArray['imageServerUrl'] = domain?.imageServerUrl
         returnArray['path'] = domain?.path
         returnArray['image'] = domain?.image?.id
         returnArray['mime'] = domain?.mime?.mimeType

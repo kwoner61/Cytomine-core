@@ -14,6 +14,7 @@ import be.cytomine.utils.ModelService
 import com.vividsolutions.jts.geom.Geometry
 import com.vividsolutions.jts.io.WKTReader
 import grails.converters.JSON
+import grails.util.Holders
 import groovyx.net.http.ContentType
 import groovyx.net.http.HTTPBuilder
 import org.apache.http.HttpEntity
@@ -77,15 +78,14 @@ class ImageServerService extends ModelService {
         return JSON.parse(new URL(makeGetUrl("/slice/histogram.json", server, parameters)).text)
     }
 
-    def profile(AbstractImage image) {
-        def server = image.getImageServerInternalUrl()
+    def profile(def imageId, def companionFileId, def uploadedFileId) {
+        def server = hmsInternalUrl()
         def parameters = [:]
-        parameters.mimeType = image.uploadedFile.contentType
-        parameters.abstractImage = image.id
-        parameters.uploadedFileParent = image.uploadedFile.id
-        parameters.user = cytomineService.currentUser.id
+        parameters.image= imageId
+        parameters.uploadedFile = uploadedFileId
+        parameters.companionFile = companionFileId
         parameters.core = UrlApi.serverUrl()
-        return JSON.parse(new String(makeRequest("/profile.json", server, parameters, "POST")))
+        return JSON.parse(new String(makeRequest("/hdf5.json", server, parameters, "POST")))
     }
 
     def profile(CompanionFile profileCf, AnnotationDomain annotation, def params) {
@@ -93,11 +93,11 @@ class ImageServerService extends ModelService {
     }
 
     def profile(CompanionFile profile, Geometry geometry, def params) {
-        def (server, parameters) = imsParametersFromCompanionFile(profile)
+        def (server, parameters) = hmsParametersFromCompanionFile(profile)
         parameters.location = geometry.toString()
         parameters.minSlice = params.minSlice
         parameters.maxSlice = params.maxSlice
-        return JSON.parse(new URL(makeGetUrl("/profile.json", server, parameters)).text)
+        return JSON.parse(new String(makeRequest("/profile.json", server, parameters)))
     }
 
     def profileProjections(CompanionFile profile, AnnotationDomain annotation, def params) {
@@ -105,11 +105,11 @@ class ImageServerService extends ModelService {
     }
 
     def profileProjections(CompanionFile profile, Geometry geometry, def params) {
-        def (server, parameters) = imsParametersFromCompanionFile(profile)
+        def (server, parameters) = hmsParametersFromCompanionFile(profile)
         parameters.location = geometry.toString()
         parameters.minSlice = params.minSlice
         parameters.maxSlice = params.maxSlice
-        return JSON.parse(new URL(makeGetUrl("/profile/projections.json", server, parameters)).text)
+        return JSON.parse(new String(makeRequest("/profile/projections.json", server, parameters)))
     }
 
     def profileImageProjection(CompanionFile profile, AnnotationDomain annotation, def params) {
@@ -117,7 +117,7 @@ class ImageServerService extends ModelService {
     }
 
     def profileImageProjection(CompanionFile profile, Geometry geometry, def params) {
-        def (server, parameters) = imsParametersFromCompanionFile(profile)
+        def (server, parameters) = hmsParametersFromCompanionFile(profile)
         def format = checkFormat(params.format, ['jpg', 'png'])
         parameters.location = geometry.toString()
         parameters.minSlice = params.minSlice
@@ -325,12 +325,17 @@ class ImageServerService extends ModelService {
         return [server, parameters]
     }
 
-    private static def imsParametersFromCompanionFile(CompanionFile cf) {
+    private static def hmsInternalUrl() {
+        def url = Holders.config.grails.hyperspectralServerURL
+        return (Holders.config.grails.useHTTPInternally) ? url.replace("https", "http") : url;
+    }
+
+    private static def hmsParametersFromCompanionFile(CompanionFile cf) {
         if (!cf.path) {
             throw new InvalidRequestException("Companion file has no valid path.")
         }
 
-        def server = cf.getImageServerInternalUrl()
+        def server = hmsInternalUrl()
         def parameters = [fif: cf.path]
         return [server, parameters]
     }
