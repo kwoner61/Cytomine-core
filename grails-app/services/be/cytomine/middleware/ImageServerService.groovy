@@ -78,7 +78,7 @@ class ImageServerService extends ModelService {
         return JSON.parse(new URL(makeGetUrl("/slice/histogram.json", server, parameters)).text)
     }
 
-    def profile(def imageId, def companionFileId, def uploadedFileId) {
+    def makeHDF5(def imageId, def companionFileId, def uploadedFileId) {
         def server = hmsInternalUrl()
         def parameters = [:]
         parameters.image= imageId

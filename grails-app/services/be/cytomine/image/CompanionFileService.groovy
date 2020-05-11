@@ -101,7 +101,7 @@ class CompanionFileService extends ModelService {
                 filename: filename, type: "HDF5").save(flush: true, failOnError: true)
 
         try {
-            imageServerService.profile(image.id, cf.id, uf.id)
+            imageServerService.makeHDF5(image.id, cf.id, uf.id)
         }
         catch (Exception e) {
             uf.status = UploadedFile.Status.ERROR_CONVERSION.code
