@@ -468,7 +468,7 @@ class RestImageInstanceController extends RestController {
     def window() {
         ImageInstance imageInstance = imageInstanceService.read(params.long("id"))
         if (imageInstance) {
-            if (params.projectionType in ['min', 'max', 'average'] ) {
+            if (params.projection in ['min', 'max', 'average'] ) {
                 if (!imageInstance.baseImage.hasProfile()) {
                     throw new ObjectNotFoundException("No profile for abstract image ${imageInstance.baseImage}")
                 }

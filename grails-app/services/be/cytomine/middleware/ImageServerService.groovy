@@ -123,7 +123,7 @@ class ImageServerService extends ModelService {
         parameters.minSlice = params.minSlice
         parameters.maxSlice = params.maxSlice
 
-        return makeRequest("/profile/${params.projectionType}-projection.$format", server, parameters)
+        return makeRequest("/profile/${params.projection}-projection.$format", server, parameters)
     }
 
     def associated(ImageInstance image) {
