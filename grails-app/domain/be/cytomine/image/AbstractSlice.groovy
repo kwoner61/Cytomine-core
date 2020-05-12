@@ -44,6 +44,8 @@ class AbstractSlice extends CytomineDomain implements Serializable {
     @RestApiObjectField(description = "The timepoint this plane is for. No unit. This is numbered from 0.")
     Integer time
 
+    String channelName
+
     @RestApiObjectFields(params = [
             @RestApiObjectField(apiFieldName = "rank", description = "The rank of the slice computed as ['channel' + 'image.channels' * ('zStack' + 'image.depth' * 'time')]", useForCreation = false)
     ])
@@ -59,6 +61,7 @@ class AbstractSlice extends CytomineDomain implements Serializable {
     }
 
     static constraints = {
+        channelName nullable: true, blank: true
     }
 
     void checkAlreadyExist() {
@@ -82,6 +85,7 @@ class AbstractSlice extends CytomineDomain implements Serializable {
         domain.channel = JSONUtils.getJSONAttrInteger(json, "channel", 0)
         domain.zStack = JSONUtils.getJSONAttrInteger(json, "zStack", 0)
         domain.time = JSONUtils.getJSONAttrInteger(json, "time", 0)
+        domain.channelName = JSONUtils.getJSONAttrStr(json, "channelName", false)
 
         domain
     }
@@ -97,6 +101,7 @@ class AbstractSlice extends CytomineDomain implements Serializable {
         returnArray['channel'] = domain?.channel
         returnArray['zStack'] = domain?.zStack
         returnArray['time'] = domain?.time
+        returnArray['channelName'] = domain?.channelName
 
         returnArray['rank'] = domain?.rank
 
