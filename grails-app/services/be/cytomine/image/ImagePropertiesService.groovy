@@ -17,7 +17,8 @@ package be.cytomine.image
 */
 
 import be.cytomine.meta.Property
-
+import grails.converters.JSON
+import grails.gorm.DetachedCriteria
 import grails.transaction.Transactional
 
 class ImagePropertiesService implements Serializable {
@@ -30,6 +31,7 @@ class ImagePropertiesService implements Serializable {
         def parseString = { x -> x }
         def parseInt = { x -> Integer.parseInt(x) }
         def parseDouble = { x -> Double.parseDouble(x) }
+        def parseJSON = { x -> JSON.parse(x) }
         return [
                 width        : [name: 'cytomine.width', parser: parseInt],
                 height       : [name: 'cytomine.height', parser: parseInt],
@@ -44,7 +46,8 @@ class ImagePropertiesService implements Serializable {
                 samplePerPixel: [name: 'cytomine.samplePerPixel', parser: parseInt],
                 colorspace   : [name: 'cytomine.colorspace', parser: parseString],
                 magnification: [name: 'cytomine.magnification', parser: parseInt],
-                resolution   : [name: 'cytomine.resolution', parser: parseDouble]
+                resolution   : [name: 'cytomine.resolution', parser: parseDouble],
+                channelNames : [name: 'cytomine.channelNames', parser: parseJSON]
         ]
     }
 
@@ -86,15 +89,30 @@ class ImagePropertiesService implements Serializable {
 
     @Transactional
     def extractUseful(AbstractImage image) {
+        def channelNames = [:]
         keys().each { k, v ->
             def property = Property.findByDomainIdentAndKey(image.id, v.name)
-            if (property)
-                image[k] = v.parser(property.value)
+            if (property) {
+                if (k == "channelNames") {
+                    channelNames = v.parser(property.value)
+                }
+                else {
+                    image[k] = v.parser(property.value)
+                }
+            }
             else
                 log.info "No property ${v.name} for abstract image $image"
         }
         image.extractedMetadata = new Date()
         image.save(flush: true, failOnError: true)
+
+        channelNames.each { channel, name ->
+            def  query = new DetachedCriteria(AbstractSlice).build {
+                eq 'image', image
+                eq 'channel', channel as Integer
+            }
+            query.updateAll(channelName: name as String)
+        }
     }
 
     def regenerate(AbstractImage image) {
