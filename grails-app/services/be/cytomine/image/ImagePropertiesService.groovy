@@ -88,12 +88,12 @@ class ImagePropertiesService implements Serializable {
     }
 
     @Transactional
-    def extractUseful(AbstractImage image) {
+    def extractUseful(AbstractImage image, boolean deep = false) {
         def channelNames = [:]
         keys().each { k, v ->
             def property = Property.findByDomainIdentAndKey(image.id, v.name)
             if (property) {
-                if (k == "channelNames") {
+                if (k == "channelNames" && deep) {
                     channelNames = v.parser(property.value)
                 }
                 else {
@@ -106,18 +106,20 @@ class ImagePropertiesService implements Serializable {
         image.extractedMetadata = new Date()
         image.save(flush: true, failOnError: true)
 
-        channelNames.each { channel, name ->
-            def  query = new DetachedCriteria(AbstractSlice).build {
-                eq 'image', image
-                eq 'channel', channel as Integer
+        if (deep) {
+            channelNames.each { channel, name ->
+                def  query = new DetachedCriteria(AbstractSlice).build {
+                    eq 'image', image
+                    eq 'channel', channel as Integer
+                }
+                query.updateAll(channelName: name as String)
             }
-            query.updateAll(channelName: name as String)
         }
     }
 
-    def regenerate(AbstractImage image) {
+    def regenerate(AbstractImage image, boolean deep = false) {
         clear(image)
         populate(image)
-        extractUseful(image)
+        extractUseful(image, deep)
     }
 }
