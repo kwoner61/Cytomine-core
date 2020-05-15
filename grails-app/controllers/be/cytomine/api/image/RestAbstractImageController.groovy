@@ -338,6 +338,17 @@ class RestAbstractImageController extends RestController {
         responseSuccess([:])
     }
 
+    @RestApiMethod(description="Regenerate main image field from image properties")
+    @RestApiParams(params=[
+            @RestApiParam(name="id", type="long", paramType = RestApiParamType.PATH, description = "The image id")
+    ])
+    @RestApiResponseObject(objectIdentifier = "empty")
+    def regenerateProperties () {
+        AbstractImage abstractImage = abstractImageService.read(params.long('id'))
+        imagePropertiesService.regenerate(abstractImage)
+        responseSuccess([:])
+    }
+
     @RestApiMethod(description = "Compute histogram for the whole image")
     @RestApiParams(params=[
             @RestApiParam(name="id", type="long", paramType = RestApiParamType.PATH, description = "The image id")
