@@ -807,15 +807,15 @@ class ImageInstanceService extends ModelService {
     def delete(ImageInstance domain, Transaction transaction = null, Task task = null, boolean printMessage = true) {
         securityACLService.checkFullOrRestrictedForOwner(domain.container(), domain.user)
         SecUser currentUser = cytomineService.getCurrentUser()
-        Command c = new DeleteCommand(user: currentUser, transaction: transaction)
-        return executeCommand(c, domain, null)
+//        Command c = new DeleteCommand(user: currentUser, transaction: transaction)
+//        return executeCommand(c, domain, null)
 
         //We don't delete domain, we juste change a flag
-//        def jsonNewData = JSON.parse(domain.encodeAsJSON())
-//        jsonNewData.deleted = new Date().time
-//        Command c = new EditCommand(user: currentUser)
-//        c.delete = true
-//        return executeCommand(c,domain,jsonNewData)
+        def jsonNewData = JSON.parse(domain.encodeAsJSON())
+        jsonNewData.deleted = new Date().time
+        Command c = new EditCommand(user: currentUser)
+        c.delete = true
+        return executeCommand(c,domain,jsonNewData)
     }
 
     def deleteDependentAlgoAnnotation(ImageInstance image, Transaction transaction, Task task = null) {

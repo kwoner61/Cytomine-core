@@ -12,6 +12,7 @@ import be.cytomine.project.Project
 import be.cytomine.security.SecUser
 import be.cytomine.utils.ModelService
 import be.cytomine.utils.Task
+import grails.converters.JSON
 
 import static org.springframework.security.acls.domain.BasePermission.READ
 
@@ -52,7 +53,7 @@ class TrackService extends ModelService {
 
     def list(ImageInstance image) {
         securityACLService.check(image, READ)
-        Track.findAllByImage(image)
+        Track.findAllByImageAndDeletedIsNull(image)
     }
 
     def list(SliceInstance slice) {
@@ -67,12 +68,12 @@ class TrackService extends ModelService {
 
     def list(Project project) {
         securityACLService.check(project, READ)
-        Track.findAllByProject(project)
+        Track.findAllByProjectAndDeletedIsNull(project)
     }
 
     def count(ImageInstance image) {
         securityACLService.check(image, READ)
-        return Track.countByImage(image)
+        return Track.countByImageAndDeletedIsNull(image)
     }
 
     def countByProject(Project project, Date startDate, Date endDate) {
@@ -117,11 +118,15 @@ class TrackService extends ModelService {
     }
 
     def delete(Track track, Transaction transaction = null, Task task = null, boolean printMessage = true) {
-//        securityACLService.checkAtLeastOne(track, READ)
-        //TODO security
+        securityACLService.check(track, READ)
+        securityACLService.checkisNotReadOnly(track)
+
         SecUser currentUser = cytomineService.getCurrentUser()
-        Command c = new DeleteCommand(user: currentUser, transaction: transaction)
-        executeCommand(c, track, null)
+        def jsonNewData = JSON.parse(track.encodeAsJSON())
+        jsonNewData.deleted = new Date().time
+        Command c = new EditCommand(user: currentUser)
+        c.delete = true
+        return executeCommand(c,track,jsonNewData)
     }
 
     def annotationTrackService

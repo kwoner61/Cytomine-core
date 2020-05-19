@@ -79,7 +79,7 @@ class AbstractImageService extends ModelService {
 
     boolean hasRightToReadAbstractImageWithProject(AbstractImage image) {
         if(currentRoleServiceProxy.isAdminByNow(cytomineService.currentUser)) return true
-        List<ImageInstance> imageInstances = ImageInstance.findAllByBaseImage(image)
+        List<ImageInstance> imageInstances = ImageInstance.findAllByBaseImageAndDeletedIsNull(image)
         List<Project> projects = imageInstances.collect{it.project}
         for(Project project : projects) {
             if(project.hasACLPermission(project,READ)) return true

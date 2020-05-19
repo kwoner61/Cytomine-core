@@ -640,7 +640,7 @@ class RestImageInstanceController extends RestController {
 
         Project project = Project.read(params.projectId)
         securityACLService.check(project, READ)
-        images = ImageInstance.findAllByProject(project)
+        images = ImageInstance.findAllByProjectAndDeletedIsNull(project)
 
         def bounds = statsService.bounds(ImageInstance, images)
 

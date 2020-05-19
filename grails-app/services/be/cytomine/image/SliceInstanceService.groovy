@@ -12,6 +12,7 @@ import be.cytomine.security.SecUser
 import be.cytomine.utils.ModelService
 import be.cytomine.utils.SQLUtils
 import be.cytomine.utils.Task
+import grails.converters.JSON
 import groovy.sql.Sql
 import org.hibernate.FetchMode
 
@@ -89,11 +90,15 @@ class SliceInstanceService extends ModelService {
     }
 
     def delete(SliceInstance slice, Transaction transaction = null, Task task = null, boolean printMessage = true) {
-//        securityACLService.checkAtLeastOne(slice, READ)
-        //TODO security
+        securityACLService.check(slice.container(),READ)
+        securityACLService.checkisNotReadOnly(slice.container())
         SecUser currentUser = cytomineService.getCurrentUser()
-        Command c = new DeleteCommand(user: currentUser, transaction: transaction)
-        executeCommand(c, slice, null)
+        def jsonNewData = JSON.parse(slice.encodeAsJSON())
+        println jsonNewData
+        jsonNewData.deleted = new Date().time
+        Command c = new EditCommand(user: currentUser)
+        c.delete = true
+        return executeCommand(c,slice,jsonNewData)
     }
 
     def annotationTrackService

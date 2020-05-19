@@ -93,7 +93,7 @@ class UserAnnotation extends AnnotationDomain implements Serializable {
 
     def tracks() {
         if (this.version != null) {
-            AnnotationTrack.findAllByAnnotationIdent(this.id).collect { it.track }
+            AnnotationTrack.findAllByAnnotationIdentAndDeletedIsNull(this.id).collect { it.track }
         } else {
             return []
         }

@@ -56,7 +56,7 @@ class SliceInstance extends CytomineDomain implements Serializable {
         }
     }
 
-    static AbstractSlice insertDataIntoDomain(def json, def domain = new SliceInstance()) {
+    static SliceInstance insertDataIntoDomain(def json, def domain = new SliceInstance()) {
         domain.id = JSONUtils.getJSONAttrLong(json,'id',null)
         domain.created = JSONUtils.getJSONAttrDate(json,'created')
         domain.updated = JSONUtils.getJSONAttrDate(json,'updated')
@@ -73,6 +73,8 @@ class SliceInstance extends CytomineDomain implements Serializable {
         def returnArray = CytomineDomain.getDataFromDomain(domain)
         returnArray['uploadedFile'] = domain?.baseSlice?.uploadedFile?.id
         returnArray['imageServerUrl'] = domain?.imageServerUrl
+        returnArray['project'] = domain?.project?.id
+        returnArray['baseSlice'] = domain?.baseSlice?.id
         returnArray['path'] = domain?.path
         returnArray['image'] = domain?.image?.id
         returnArray['mime'] = domain?.baseSlice?.mime?.mimeType

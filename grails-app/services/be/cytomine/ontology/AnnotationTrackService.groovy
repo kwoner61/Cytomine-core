@@ -89,12 +89,13 @@ class AnnotationTrackService extends ModelService {
         return executeCommand(new AddCommand(user: currentUser, transaction: transaction), null,json)
     }
 
-    def delete(AnnotationTrack annotationTrack, Transaction transaction = null, Task task = null, boolean printMessage = true) {
-//        securityACLService.checkAtLeastOne(track, READ)
-        //TODO security
+    def delete(AnnotationTrack domain, Transaction transaction = null, Task task = null, boolean printMessage = true) {
+        AnnotationDomain annotation = AnnotationDomain.getAnnotationDomain(domain.annotationIdent, domain.annotationClassName)
+        securityACLService.check(annotation .project, READ)
+        securityACLService.checkisNotReadOnly(annotation.project)
         SecUser currentUser = cytomineService.getCurrentUser()
         Command c = new DeleteCommand(user: currentUser, transaction: transaction)
-        executeCommand(c, annotationTrack, null)
+        executeCommand(c, domain, null)
     }
 
     def getStringParamsI18n(def domain) {

@@ -262,8 +262,11 @@ class AlgoAnnotationService extends ModelService {
     def delete(AlgoAnnotation domain, Transaction transaction = null, Task task = null, boolean printMessage = true) {
         SecUser currentUser = cytomineService.getCurrentUser()
         securityACLService.checkIsCreator(domain,currentUser)
-        Command c = new DeleteCommand(user: currentUser,transaction:transaction)
-        return executeCommand(c,domain,null)
+        def jsonNewData = JSON.parse(domain.encodeAsJSON())
+        jsonNewData.deleted = new Date().time
+        Command c = new EditCommand(user: currentUser)
+        c.delete = true
+        return executeCommand(c,domain,jsonNewData)
     }
 
 
