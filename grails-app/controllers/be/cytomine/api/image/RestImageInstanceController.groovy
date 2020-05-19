@@ -20,6 +20,7 @@ import be.cytomine.Exception.CytomineException
 import be.cytomine.Exception.ForbiddenException
 import be.cytomine.Exception.InvalidRequestException
 import be.cytomine.Exception.ObjectNotFoundException
+import be.cytomine.Exception.WrongArgumentException
 import be.cytomine.api.RestController
 import be.cytomine.image.CompanionFile
 import be.cytomine.image.ImageInstance
@@ -663,7 +664,13 @@ class RestImageInstanceController extends RestController {
 
                 CompanionFile cf = CompanionFile.findByImageAndType(imageInstance.baseImage, "HDF5")
 
-                responseSuccess(imageServerService.profile(cf, params.geometry, params))
+                try {
+                    Geometry geometry = new WKTReader().read(params.geometry)
+                    responseSuccess(imageServerService.profile(cf, geometry, params))
+                }
+                catch (com.vividsolutions.jts.io.ParseException ex) {
+                    throw new WrongArgumentException(ex.toString())
+                }
             } else {
                 responseNotFound("Image", params.id)
             }
