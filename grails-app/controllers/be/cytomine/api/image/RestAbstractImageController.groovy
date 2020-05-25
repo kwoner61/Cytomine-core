@@ -312,8 +312,12 @@ class RestAbstractImageController extends RestController {
     @RestApiResponseObject(objectIdentifier = "empty")
     def clearProperties () {
         AbstractImage abstractImage = abstractImageService.read(params.long('id'))
-        imagePropertiesService.clear(abstractImage)
-        responseSuccess([:])
+        if (abstractImage) {
+            imagePropertiesService.clear(abstractImage)
+            responseSuccess([:])
+        } else {
+            responseNotFound("Image", params.id)
+        }
     }
 
     @RestApiMethod(description="Get all image properties (metadata) from underlying file")
@@ -323,8 +327,12 @@ class RestAbstractImageController extends RestController {
     @RestApiResponseObject(objectIdentifier = "empty")
     def populateProperties () {
         AbstractImage abstractImage = abstractImageService.read(params.long('id'))
-        imagePropertiesService.populate(abstractImage)
-        responseSuccess([:])
+        if (abstractImage) {
+            imagePropertiesService.populate(abstractImage)
+            responseSuccess([:])
+        } else {
+            responseNotFound("Image", params.id)
+        }
     }
 
     @RestApiMethod(description="Fill main image field from image properties")
@@ -335,8 +343,12 @@ class RestAbstractImageController extends RestController {
     @RestApiResponseObject(objectIdentifier = "empty")
     def extractProperties () {
         AbstractImage abstractImage = abstractImageService.read(params.long('id'))
-        imagePropertiesService.extractUseful(abstractImage, params.boolean('deep', false))
-        responseSuccess([:])
+        if (abstractImage) {
+            imagePropertiesService.extractUseful(abstractImage, params.boolean('deep', false))
+            responseSuccess([:])
+        } else {
+            responseNotFound("Image", params.id)
+        }
     }
 
     @RestApiMethod(description="Regenerate main image field from image properties")
@@ -347,8 +359,12 @@ class RestAbstractImageController extends RestController {
     @RestApiResponseObject(objectIdentifier = "empty")
     def regenerateProperties () {
         AbstractImage abstractImage = abstractImageService.read(params.long('id'))
-        imagePropertiesService.regenerate(abstractImage, params.boolean('deep', false))
-        responseSuccess([:])
+        if (abstractImage) {
+            imagePropertiesService.regenerate(abstractImage, params.boolean('deep', false))
+            responseSuccess([:])
+        } else {
+            responseNotFound("Image", params.id)
+        }
     }
 
     @RestApiMethod(description = "Compute histogram for the whole image")
@@ -358,8 +374,12 @@ class RestAbstractImageController extends RestController {
     @RestApiResponseObject(objectIdentifier = "empty")
     def extractHistogram() {
         AbstractImage abstractImage = abstractImageService.read(params.long('id'))
-        sampleHistogramService.extractHistogram(abstractImage)
-        responseSuccess([:])
+        if (abstractImage) {
+            sampleHistogramService.extractHistogram(abstractImage)
+            responseSuccess([:])
+        } else {
+            responseNotFound("Image", params.id)
+        }
     }
 
     @RestApiMethod(description = "Get histogram statistics for the whole image")
@@ -369,7 +389,11 @@ class RestAbstractImageController extends RestController {
     @RestApiResponseObject(objectIdentifier = "empty")
     def showHistogramStats() {
         AbstractImage abstractImage = abstractImageService.read(params.long('id'))
-        responseSuccess(sampleHistogramService.histogramStats(abstractImage))
+        if (abstractImage) {
+            responseSuccess(sampleHistogramService.histogramStats(abstractImage))
+        } else {
+            responseNotFound("Image", params.id)
+        }
     }
 
 }
