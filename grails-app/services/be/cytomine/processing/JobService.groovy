@@ -338,7 +338,9 @@ class JobService extends ModelService {
     }
 
     def markAsFavorite(Job job, boolean favorite) {
-        new Sql(dataSource).executeUpdate("UPDATE job SET favorite = ${favorite} WHERE id = ${job.id}");
+        def sql = new Sql(dataSource)
+        sql.executeUpdate("UPDATE job SET favorite = ${favorite} WHERE id = ${job.id}");
+        sql.close()
         job.favorite = favorite
         return job
     }

@@ -74,6 +74,7 @@ class SearchEngineService extends ModelService {
         sql.eachRow(req) {
             results << [id: it[0], className: it[1]]
         }
+        sql.close()
         return results
     }
 
@@ -116,6 +117,7 @@ class SearchEngineService extends ModelService {
             }
             lastDomainId = it.id
         }
+        sql.close()
         return results
     }
 

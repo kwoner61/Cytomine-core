@@ -89,7 +89,7 @@ class GroupService extends ModelService {
             group.put("users", users)
             groups << group
         }
-
+        sql.close()
 
         return groups
     }

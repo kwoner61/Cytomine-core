@@ -85,6 +85,7 @@ class SampleHistogramService extends ModelService {
         sql.eachRow(query) { row ->
             data << [sample: row.sample, min: row.minimum, max: row.maximum]
         }
+        sql.close()
         return data
     }
 
