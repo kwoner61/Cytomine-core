@@ -33,5 +33,9 @@ class SampleHistogramUrlMappings {
         "/api/sliceinstance/$id/samplehistogram.$format"(controller: "restSampleHistogram"){
             action = [GET:"listBySliceInstance"]
         }
+
+        "/api/imageinstance/$id/samplehistogram/count.$format"(controller: "restSampleHistogram"){
+            action = [GET: "countByImageInstance"]
+        }
     }
 }

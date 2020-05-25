@@ -3,6 +3,7 @@ package be.cytomine.api.image
 import be.cytomine.api.RestController
 import be.cytomine.image.AbstractImage
 import be.cytomine.image.AbstractSlice
+import be.cytomine.image.ImageInstance
 import be.cytomine.image.SampleHistogram
 import be.cytomine.image.SliceInstance
 import be.cytomine.image.UploadedFile
@@ -45,6 +46,17 @@ class RestSampleHistogramController extends RestController {
         }
         else {
             responseNotFound("SampleHistogram", "SliceInstance", params.id)
+        }
+    }
+
+    def imageInstanceService
+    def countByImageInstance() {
+        ImageInstance image = imageInstanceService.read(params.long("id"))
+        if (image) {
+            responseSuccess([total: sampleHistogramService.countByImageInstance(image)])
+        }
+        else {
+            responseNotFound("SampleHistogram", "ImageInstance", params.id)
         }
     }
 

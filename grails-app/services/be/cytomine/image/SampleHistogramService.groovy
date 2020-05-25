@@ -74,6 +74,15 @@ class SampleHistogramService extends ModelService {
         return [domain.id, domain.slice.id, domain.sample]
     }
 
+    def countByImageInstance(ImageInstance image) {
+        AbstractImage ai = image.baseImage
+        def count = SampleHistogram.createCriteria().count {
+            createAlias("slice", "s")
+            eq("s.image", ai)
+        }
+        return count
+    }
+
     def histogramStats(AbstractImage image) {
         String query = "SELECT sample, MIN(min) as minimum, MAX(max) as maximum " +
                 "FROM sample_histogram sh LEFT JOIN abstract_slice asl ON asl.id = sh.slice_id " +
