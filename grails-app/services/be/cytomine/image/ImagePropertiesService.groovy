@@ -96,7 +96,7 @@ class ImagePropertiesService implements Serializable {
                 if (k == "channelNames" && deep) {
                     channelNames = v.parser(property.value)
                 }
-                else {
+                else if (k != "channelNames") {
                     image[k] = v.parser(property.value)
                 }
             }
