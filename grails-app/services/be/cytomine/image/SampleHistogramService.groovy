@@ -10,6 +10,7 @@ import be.cytomine.security.SecUser
 import be.cytomine.utils.ModelService
 import be.cytomine.utils.Task
 import groovy.sql.Sql
+import groovyx.gpars.GParsExecutorsPool
 
 import static org.springframework.security.acls.domain.BasePermission.READ
 import static org.springframework.security.acls.domain.BasePermission.WRITE
@@ -98,15 +99,25 @@ class SampleHistogramService extends ModelService {
         return data
     }
 
+    def executorService
     def extractHistogram(AbstractImage image) {
         log.info "Extract histogram"
-        AbstractSlice.findAllByImage(image).each { slice ->
-            def sampleHistograms = imageServerService.sampleHistograms(slice)
-            sampleHistograms.each { data ->
-                data.slice = slice.id
-                SampleHistogram sh = new SampleHistogram(data)
-                sh.checkAlreadyExist()
-                sh.save(flush: true, failOnError: true)
+        runAsync {
+            GParsExecutorsPool.withPool {
+                try {
+                    AbstractSlice.findAllByImage(image).eachParallel { slice ->
+                        def sampleHistograms = imageServerService.sampleHistograms(slice)
+                        sampleHistograms.each { data ->
+                            data.slice = slice.id
+                            SampleHistogram sh = new SampleHistogram(data)
+                            sh.checkAlreadyExist()
+                            sh.save(flush: true, failOnError: true)
+                        }
+                    }
+                }
+                catch (Exception e) {
+                    e.printStackTrace()
+                }
             }
         }
     }
