@@ -743,10 +743,10 @@ class ProjectService extends ModelService {
 
 
     protected def beforeUpdate(Project domain) {
-        domain.countAnnotations = UserAnnotation.countByProjectAndDeletedIsNotNull(domain)
-        domain.countImages = ImageInstance.countByProjectAndDeletedIsNotNull(domain)
-        domain.countJobAnnotations = AlgoAnnotation.countByProjectAndDeletedIsNotNull(domain)
-        domain.countReviewedAnnotations = ReviewedAnnotation.countByProjectAndDeletedIsNotNull(domain)
+        domain.countAnnotations = UserAnnotation.countByProjectAndDeletedIsNull(domain)
+        domain.countImages = ImageInstance.countByProjectAndDeletedIsNull(domain)
+        domain.countJobAnnotations = AlgoAnnotation.countByProjectAndDeletedIsNull(domain)
+        domain.countReviewedAnnotations = ReviewedAnnotation.countByProjectAndDeletedIsNull(domain)
     }
 
     protected def beforeDelete(Project domain) {
