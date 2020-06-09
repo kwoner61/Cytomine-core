@@ -90,6 +90,9 @@ class RestJobTemplateController extends RestController {
     }
 
     @RestApiMethod(description="Update a job template")
+    @RestApiParams(params=[
+            @RestApiParam(name="id", type="long", paramType = RestApiParamType.PATH, description = "The template id")
+    ])
     def update() {
         update(jobTemplateService, request.JSON)
     }

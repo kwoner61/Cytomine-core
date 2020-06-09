@@ -159,7 +159,8 @@ class RestProjectController extends RestController {
     @RestApiMethod(description="Get the last action for a project", listing = true)
     @RestApiResponseObject(objectIdentifier="command history")
     @RestApiParams(params=[
-        @RestApiParam(name="id", type="long", paramType = RestApiParamType.PATH,description = "The project id")
+        @RestApiParam(name="id", type="long", paramType = RestApiParamType.PATH,description = "The project id"),
+        @RestApiParam(name="max", type="long", paramType = RestApiParamType.PATH,description = "The maximum number of actions to return"),
     ])
     def lastAction() {
         Project project = projectService.read(params.long('id'))

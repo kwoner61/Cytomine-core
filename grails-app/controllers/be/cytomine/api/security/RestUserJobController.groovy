@@ -127,7 +127,7 @@ class RestUserJobController extends RestController {
      */
     @RestApiMethod(description="List user job for a project (in list or tree format)", listing = true)
     @RestApiParams(params=[
-    @RestApiParam(name="id", type="long", paramType = RestApiParamType.QUERY, description = "(Optional) The project id"),
+    @RestApiParam(name="id", type="long", paramType = RestApiParamType.PATH, description = "The project id"),
     @RestApiParam(name="tree", type="boolean", paramType = RestApiParamType.QUERY, description = "(Optional) Get a tree structure"),
     @RestApiParam(name="image", type="long", paramType = RestApiParamType.QUERY, description = "(Optional) Only get job having data on this image"),
      ])

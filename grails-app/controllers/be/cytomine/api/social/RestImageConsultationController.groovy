@@ -40,6 +40,9 @@ class RestImageConsultationController extends RestController {
     def secUserService
 
     @RestApiMethod(description="Add a new image consultation record")
+    @RestApiParams(params=[
+            @RestApiParam(name="id", type="long", paramType = RestApiParamType.PATH, description = "The image instance id")
+    ])
     def add() {
         try {
             responseSuccess(imageConsultationService.add(request.JSON))

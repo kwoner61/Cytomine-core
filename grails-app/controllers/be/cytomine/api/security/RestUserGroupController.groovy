@@ -73,6 +73,9 @@ class RestUserGroupController extends RestController {
      * Add a new user to a group
      */
     @RestApiMethod(description="Get a user-group relation")
+    @RestApiParams(params=[
+            @RestApiParam(name="user", type="long", paramType = RestApiParamType.PATH, description = "The user id")
+    ])
     def add() {
         add(userGroupService, request.JSON)
     }

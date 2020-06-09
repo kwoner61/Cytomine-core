@@ -70,8 +70,8 @@ class SearchEngineController extends RestController {
     @RestApiMethod(description="Get a preview image for a domain. For image = thumb, for annotation = crop, for project = the last image...", listing = true)
     @RestApiResponseObject(objectIdentifier = "[search_engine_step2]")
     @RestApiParams(params=[
-    @RestApiParam(name="id", type="List<Long>", paramType = RestApiParamType.QUERY, description = "Search only on these domain ids"),
-    @RestApiParam(name="className", type="List<string>", paramType = RestApiParamType.QUERY, description = "List of words to search (AND search). Max 5 words and each words must have at least 3 characters."),
+    @RestApiParam(name="id", type="long", paramType = RestApiParamType.PATH, description = "The domain id"),
+    @RestApiParam(name="className", type="string", paramType = RestApiParamType.PATH, description = "The domain class name"),
     @RestApiParam(name="maxSize", type="int", paramType = RestApiParamType.QUERY, description = "(Optional) Max size of the image (default: 256)")])
     public String redirectToImageURL() {
         //http://localhost:8080/searchEngine/buildGotoLink?className=be.cytomine.project.Project&id=57

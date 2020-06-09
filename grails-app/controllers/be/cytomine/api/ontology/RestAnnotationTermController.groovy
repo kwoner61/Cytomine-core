@@ -172,6 +172,10 @@ class RestAnnotationTermController extends RestController {
     }
 
     @RestApiMethod(description="Add an annotation term")
+    @RestApiParams(params=[
+            @RestApiParam(name="idannotation", type="long", paramType = RestApiParamType.PATH, description = "The annotation id"),
+            @RestApiParam(name="idterm", type="long", paramType = RestApiParamType.PATH, description = "The term id"),
+    ])
     def add() {
         def json = request.JSON
         try {

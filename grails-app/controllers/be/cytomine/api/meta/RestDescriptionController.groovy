@@ -63,6 +63,10 @@ class RestDescriptionController extends RestController {
      * Add a new description to a domain
      */
     @RestApiMethod(description="Add a new description to a domain")
+    @RestApiParams(params=[
+            @RestApiParam(name="domainClassName", type="string", paramType = RestApiParamType.PATH,description = "The domain class name"),
+            @RestApiParam(name="domainIdent", type="long", paramType = RestApiParamType.PATH,description = "The domain id")
+    ])
     def add() {
         add(descriptionService, request.JSON)
     }

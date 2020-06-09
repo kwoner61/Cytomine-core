@@ -49,7 +49,8 @@ class RestNestedImageInstanceController extends RestController {
 
     @RestApiMethod(description="Get a nested image")
     @RestApiParams(params=[
-        @RestApiParam(name="id", type="long", paramType = RestApiParamType.PATH, description = "The nested image id")
+            @RestApiParam(name="id", type="long", paramType = RestApiParamType.PATH, description = "The nested image id"),
+            @RestApiParam(name="idImage", type="long", paramType = RestApiParamType.PATH, description = "The image instance id")
     ])
     def show() {
         ImageInstance image = nestedImageInstanceService.read(params.long('id'))
@@ -75,6 +76,9 @@ class RestNestedImageInstanceController extends RestController {
     }
 
     @RestApiMethod(description="Add a new nested image (from an image instance)")
+    @RestApiParams(params=[
+            @RestApiParam(name="idImage", type="long", paramType = RestApiParamType.PATH, description = "The image instance id")
+    ])
     def add() {
         try {
             responseResult(nestedImageInstanceService.add(request.JSON))
@@ -85,13 +89,18 @@ class RestNestedImageInstanceController extends RestController {
     }
 
     @RestApiMethod(description="Update a nested image instance")
+    @RestApiParams(params=[
+            @RestApiParam(name="id", type="long", paramType = RestApiParamType.PATH, description = "The nested image id"),
+            @RestApiParam(name="idImage", type="long", paramType = RestApiParamType.PATH, description = "The image instance id")
+    ])
     def update() {
         update(nestedImageInstanceService, request.JSON)
     }
 
     @RestApiMethod(description="Delete a nested image instance)")
     @RestApiParams(params=[
-        @RestApiParam(name="id", type="long", paramType = RestApiParamType.PATH,description = "The nested image id")
+            @RestApiParam(name="id", type="long", paramType = RestApiParamType.PATH, description = "The nested image id"),
+            @RestApiParam(name="idImage", type="long", paramType = RestApiParamType.PATH, description = "The image instance id")
     ])
     def delete() {
         delete(nestedImageInstanceService, JSON.parse("{id : $params.id}"),null)

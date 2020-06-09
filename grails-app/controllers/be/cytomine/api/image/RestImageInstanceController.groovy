@@ -84,6 +84,9 @@ class RestImageInstanceController extends RestController {
     }
 
     @RestApiMethod(description="Get all image instance available for the current user", listing = true)
+    @RestApiParams(params=[
+            @RestApiParam(name="user", type="long", paramType = RestApiParamType.PATH, description = "The user id")
+    ])
     def listByUser() {
         String sortColumn = params.sort ? params.sort : "created"
         String sortDirection = params.order ? params.order : "desc"
@@ -93,6 +96,9 @@ class RestImageInstanceController extends RestController {
     }
 
     @RestApiMethod(description="Get a lighted list of all image instance available for the current user", listing = true)
+    @RestApiParams(params=[
+            @RestApiParam(name="user", type="long", paramType = RestApiParamType.PATH, description = "The user id")
+    ])
     def listLightByUser() {
         responseSuccess(imageInstanceService.listLight(cytomineService.currentUser))
     }

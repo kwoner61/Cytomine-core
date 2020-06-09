@@ -61,7 +61,8 @@ class RestAmqpQueueController extends RestController{
      */
     @RestApiMethod(description="Get a queue based on an id")
     @RestApiParams(params=[
-            @RestApiParam(name="id", type="long", paramType = RestApiParamType.PATH, description = "The queue id")
+            @RestApiParam(name="id", type="long", paramType = RestApiParamType.PATH, description = "The queue id"),
+            @RestApiParam(name="name", type="string", paramType = RestApiParamType.PATH, description = "The queue name"),
     ])
     def show () {
         AmqpQueue amqpQueue

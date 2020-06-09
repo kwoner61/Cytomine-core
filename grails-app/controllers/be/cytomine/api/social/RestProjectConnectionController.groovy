@@ -43,6 +43,9 @@ class RestProjectConnectionController extends RestController {
     def securityACLService
 
     @RestApiMethod(description = "Add a new user connection record to a project")
+    @RestApiParams(params=[
+            @RestApiParam(name="project", type="long", paramType = RestApiParamType.PATH, description = "The project id")
+    ])
     def add() {
         try {
             responseSuccess(projectConnectionService.add(request.JSON))
@@ -133,6 +136,7 @@ class RestProjectConnectionController extends RestController {
 
     @RestApiMethod(description = "Get the number of connections to all projects")
     @RestApiParams(params=[
+            @RestApiParam(name="project", type="long", paramType = RestApiParamType.PATH, description = "The project id"),
             @RestApiParam(name="afterThan", type="date", paramType = RestApiParamType.QUERY, description = "The date when counting starts"),
             @RestApiParam(name="period", type="string", paramType = RestApiParamType.QUERY, description = "The period of connections (hour : by hours, day : by days, week : by weeks)"),
     ])
@@ -248,7 +252,7 @@ class RestProjectConnectionController extends RestController {
     @RestApiMethod(description="Get the details of a project connection including the actions done during a project connection of one user into a project.")
     @RestApiParams(params=[
             @RestApiParam(name="project", type="long", paramType = RestApiParamType.PATH, description = "The project id. Mandatory"),
-            @RestApiParam(name="activity", type="long", paramType = RestApiParamType.PATH, description = "The project connection id. Mandatory"),
+            @RestApiParam(name="id", type="long", paramType = RestApiParamType.PATH, description = "The project connection id. Mandatory"),
             //@RestApiParam(name="offset", type="integer", paramType = RestApiParamType.QUERY, description = "An offset. Default value = 0"),
             //@RestApiParam(name="limit", type="integer", paramType = RestApiParamType.QUERY, description = "Limit the project connections. Optionnal"),
     ])

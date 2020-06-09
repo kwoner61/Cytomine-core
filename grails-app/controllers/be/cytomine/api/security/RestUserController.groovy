@@ -371,7 +371,7 @@ class RestUserController extends RestController {
 
     @RestApiMethod(description="Get all project users. Online flag may be set to get only online users", listing = true)
     @RestApiParams(params=[
-            @RestApiParam(name="id", type="long", paramType = RestApiParamType.PATH, description = "The project id"),
+            @RestApiParam(name="project", type="long", paramType = RestApiParamType.PATH, description = "The project id"),
             @RestApiParam(name="online", type="boolean", paramType = RestApiParamType.QUERY, description = "(Optional, default false) Get only online users for this project"),
             @RestApiParam(name="showJob", type="boolean", paramType = RestApiParamType.QUERY, description = "(Optional, default false) Also show the users job for this project"),
             @RestApiParam(name="withLastImage", type="boolean", paramType = RestApiParamType.QUERY, description = "(Optional, default false) Show the last image seen by each user in this project"),
@@ -401,7 +401,7 @@ class RestUserController extends RestController {
     @RestApiMethod(description="Add user in a project as simple 'user'")
     @RestApiParams(params=[
             @RestApiParam(name="id", type="long", paramType = RestApiParamType.PATH, description = "The project id"),
-            @RestApiParam(name="idUsers", type="long", paramType = RestApiParamType.PATH, description = "The user id")
+            @RestApiParam(name="idUser", type="long", paramType = RestApiParamType.PATH, description = "The user id")
     ])
     @RestApiResponseObject(objectIdentifier = "empty")
     def addUserToProject() {
@@ -892,7 +892,7 @@ class RestUserController extends RestController {
 
     @RestApiMethod(description="Check if an user is in the LDAP", listing = true)
     @RestApiParams(params=[
-            @RestApiParam(name="username", type="long", paramType = RestApiParamType.QUERY, description = "The username in LDAP"),
+            @RestApiParam(name="username", type="long", paramType = RestApiParamType.PATH, description = "The username in LDAP"),
     ])
     def isInLdap() {
         def result = CASLdapUserDetailsService.isInLdap(params.username)

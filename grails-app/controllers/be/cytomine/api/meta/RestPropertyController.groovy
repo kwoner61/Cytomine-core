@@ -98,7 +98,8 @@ class RestPropertyController extends RestController {
 
     @RestApiMethod(description="Get all properties for a cytomine domain", listing=true)
     @RestApiParams(params=[
-    @RestApiParam(name="idDomain", type="long", paramType = RestApiParamType.PATH,description = "The abstract image id")
+            @RestApiParam(name="domainClassName", type="string", paramType = RestApiParamType.PATH,description = "The domain class name"),
+            @RestApiParam(name="domainIdent", type="long", paramType = RestApiParamType.PATH,description = "The domain id")
     ])
     def listByDomain() {
         CytomineDomain domain = cytomineService.getDomain(params.long('domainIdent'),params.get("domainClassName"))
@@ -196,7 +197,7 @@ class RestPropertyController extends RestController {
 
     @RestApiMethod(description="Get an abstract image property with its id or its key")
     @RestApiParams(params=[
-    @RestApiParam(name="domainIdent", type="string", paramType = RestApiParamType.PATH, description = "The domain id"),
+    @RestApiParam(name="domainIdent", type="long", paramType = RestApiParamType.PATH, description = "The domain id"),
     @RestApiParam(name="domainClassName", type="string", paramType = RestApiParamType.PATH, description = "The domain type"),
     @RestApiParam(name="id", type="long", paramType = RestApiParamType.PATH,description = "(Optional, if null key must be set) The property id"),
     @RestApiParam(name="key", type="long", paramType = RestApiParamType.PATH,description = "(Optional, if null id must be set) The property key")
@@ -330,9 +331,12 @@ class RestPropertyController extends RestController {
      */
     @RestApiMethod(description="Edit a property")
     @RestApiParams(params=[
-        @RestApiParam(name="idAnnotation", type="long", paramType = RestApiParamType.PATH,description = "(Optional) The annotation id"),
-        @RestApiParam(name="idImageInstance", type="long", paramType = RestApiParamType.PATH,description = "(Optional) The image instance id"),
-        @RestApiParam(name="idProject", type="long", paramType = RestApiParamType.PATH,description = "(Optional) The project id")
+            @RestApiParam(name="idAnnotation", type="long", paramType = RestApiParamType.PATH,description = "(Optional) The annotation id"),
+            @RestApiParam(name="idImageInstance", type="long", paramType = RestApiParamType.PATH,description = "(Optional) The image instance id"),
+            @RestApiParam(name="idProject", type="long", paramType = RestApiParamType.PATH,description = "(Optional) The project id"),
+            @RestApiParam(name="id", type="long", paramType = RestApiParamType.PATH,description = "The property id"),
+            @RestApiParam(name="domainIdent", type="long", paramType = RestApiParamType.PATH, description = "(Optional) The domain id"),
+            @RestApiParam(name="domainClassName", type="string", paramType = RestApiParamType.PATH, description = "(Optional) The domain type"),
     ])
     def update() {
         def json = request.JSON
@@ -345,7 +349,9 @@ class RestPropertyController extends RestController {
      */
     @RestApiMethod(description="Delete a property")
     @RestApiParams(params=[
-        @RestApiParam(name="id", type="long", paramType = RestApiParamType.PATH,description = "The property id")
+            @RestApiParam(name="id", type="long", paramType = RestApiParamType.PATH,description = "The property id"),
+            @RestApiParam(name="domainIdent", type="long", paramType = RestApiParamType.PATH, description = "(Optional) The domain id"),
+            @RestApiParam(name="domainClassName", type="string", paramType = RestApiParamType.PATH, description = "(Optional) The domain type"),
     ])
     def delete()  {
         def json = JSON.parse("{id : $params.id}")

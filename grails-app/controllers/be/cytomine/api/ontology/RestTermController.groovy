@@ -112,7 +112,7 @@ class RestTermController extends RestController {
      */
     @RestApiMethod(description="Get all term from an ontology", listing=true)
     @RestApiParams(params=[
-        @RestApiParam(name="id", type="long", paramType = RestApiParamType.PATH,description = "The ontology id")
+        @RestApiParam(name="idontology", type="long", paramType = RestApiParamType.PATH,description = "The ontology id")
     ])
     def listByOntology() {
         Ontology ontology = Ontology.read(params.idontology)
@@ -130,7 +130,7 @@ class RestTermController extends RestController {
      */
     @RestApiMethod(description="Get all term for a project", listing=true)
     @RestApiParams(params=[
-        @RestApiParam(name="id", type="long", paramType = RestApiParamType.PATH,description = "The project id")
+        @RestApiParam(name="idProject", type="long", paramType = RestApiParamType.PATH,description = "The project id")
     ])
     def listAllByProject() {
         Project project = Project.read(params.idProject)

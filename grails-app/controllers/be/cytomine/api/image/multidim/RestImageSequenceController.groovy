@@ -127,6 +127,9 @@ class RestImageSequenceController extends RestController {
     }
 
     @RestApiMethod(description="Update an image sequence (id must be defined in post data JSON)")
+    @RestApiParams(params=[
+            @RestApiParam(name="id", type="long", paramType = RestApiParamType.PATH, description = "The image sequence id")
+    ])
     def update () {
         update(imageSequenceService, request.JSON)
     }

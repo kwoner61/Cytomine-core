@@ -50,7 +50,8 @@ class RestProjectDefaultLayerController extends RestController {
 
     @RestApiMethod(description="Get a default layer")
     @RestApiParams(params=[
-            @RestApiParam(name="id", type="long", paramType = RestApiParamType.PATH, description = "The default layer id")
+            @RestApiParam(name="id", type="long", paramType = RestApiParamType.PATH, description = "The default layer id"),
+            @RestApiParam(name="idProject", type="long", paramType = RestApiParamType.PATH, description = "The id of project")
     ])
     def show () {
         ProjectDefaultLayer layer = projectDefaultLayerService.read(params.long('id'))
@@ -62,13 +63,17 @@ class RestProjectDefaultLayerController extends RestController {
     }
 
     @RestApiMethod(description="Add a default layer")
+    @RestApiParams(params=[
+            @RestApiParam(name="idProject", type="long", paramType = RestApiParamType.PATH, description = "The id of project")
+    ])
     def add () {
         add(projectDefaultLayerService, request.JSON)
     }
 
     @RestApiMethod(description="Update a default layer")
     @RestApiParams(params=[
-            @RestApiParam(name="id", type="long", paramType = RestApiParamType.PATH,description = "The default layer id")
+            @RestApiParam(name="id", type="long", paramType = RestApiParamType.PATH,description = "The default layer id"),
+            @RestApiParam(name="idProject", type="long", paramType = RestApiParamType.PATH, description = "The id of project")
     ])
     def update () {
         update(projectDefaultLayerService, request.JSON)
@@ -77,7 +82,8 @@ class RestProjectDefaultLayerController extends RestController {
     @RestApiMethod(description="Delete an default layer")
     @RestApiParams(params=[
             @RestApiParam(name="id", type="long", paramType = RestApiParamType.PATH,description = "The default layer id"),
-            @RestApiParam(name="task", type="long", paramType = RestApiParamType.PATH,description = "(Optional, default:null) The id of the task to update during process"),
+            @RestApiParam(name="idProject", type="long", paramType = RestApiParamType.PATH, description = "The id of project"),
+            @RestApiParam(name="task", type="long", paramType = RestApiParamType.QUERY,description = "(Optional, default:null) The id of the task to update during process"),
     ])
     def delete () {
         Task task = taskService.read(params.getLong("task"))

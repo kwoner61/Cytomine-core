@@ -152,8 +152,8 @@ class RestImageGroupHDF5Controller extends RestController {
             @RestApiParam(name="id", type="long", paramType= RestApiParamType.PATH, description="The HDF5 image group ID", required=true),
             @RestApiParam(name="x", type="int", paramType= RestApiParamType.PATH, description="The x coordinate (0 is left)", required=true),
             @RestApiParam(name="y", type="int", paramType= RestApiParamType.PATH, description="The y coordinate (0 is top)", required=true),
-            @RestApiParam(name="w", type="int", paramType= RestApiParamType.QUERY, description="The width of the rectangle"),
-            @RestApiParam(name="h", type="int", paramType= RestApiParamType.QUERY, description="The height of the rectangle"),
+            @RestApiParam(name="w", type="int", paramType= RestApiParamType.PATH, description="The width of the rectangle"),
+            @RestApiParam(name="h", type="int", paramType= RestApiParamType.PATH, description="The height of the rectangle"),
             @RestApiParam(name="minChannel", type="int", paramType=RestApiParamType.QUERY, description="The minimum channel", required=false),
             @RestApiParam(name="maxChannel", type="int", paramType=RestApiParamType.QUERY, description="The maximum channel", required=false),
     ])

@@ -71,6 +71,9 @@ class RestReviewedAnnotationController extends RestController {
 
     @RestApiMethod(description="Count the number of reviewed annotation for the current user")
     @RestApiResponseObject(objectIdentifier = "[total:x]")
+    @RestApiParams(params=[
+            @RestApiParam(name="id", type="long", paramType = RestApiParamType.PATH,description = "The user id")
+    ])
     def countByUser() {
         responseSuccess([total:reviewedAnnotationService.count(cytomineService.currentUser)])
     }
@@ -127,6 +130,9 @@ class RestReviewedAnnotationController extends RestController {
      * Its better to use 'addAnnotationReview' that needs only the annotation id and a list of term
      */
     @RestApiMethod(description="Add reviewed annotation. Only use to create a reviewed annotation with all json data. Use /annotation/x/review")
+    @RestApiParams(params=[
+            @RestApiParam(name="iduser", type="long", paramType = RestApiParamType.PATH, description = "The user id")
+    ])
     def add () {
         add(reviewedAnnotationService, request.JSON)
     }

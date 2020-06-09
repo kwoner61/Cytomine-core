@@ -364,13 +364,19 @@ class RestAnnotationDomainController extends RestController {
         if(params.getBoolean('includeAlgo')) return true;
 
         def idUser = params.getLong('user')
+        def idJob = params.getLong("job")
         if(idUser) {
            def user = SecUser.read(idUser)
            if(!user) {
                throw new ObjectNotFoundException("User $user not exist!")
            }
            return user.algo()
-        } else {
+        }
+        else if (idJob) {
+            def job = Job.read(idJob)
+            return job != null
+        }
+        else {
            def idUsers = params.get('users')
             if(idUsers) {
                 def ids= idUsers.replace("_",",").split(",").collect{Long.parseLong(it)}
@@ -560,7 +566,7 @@ class RestAnnotationDomainController extends RestController {
     @RestApiMethod(description="Get all annotation that intersect a geometry or another annotation. See /annotation/search for extra parameter (show/hide). ", listing=true)
     @RestApiResponseObject(objectIdentifier = "file")
     @RestApiParams(params=[
-        @RestApiParam(name="idImage", type="long", paramType = RestApiParamType.QUERY,description = "The image id"),
+        @RestApiParam(name="idImage", type="long", paramType = RestApiParamType.PATH,description = "The image id"),
         @RestApiParam(name="geometry", type="string", paramType = RestApiParamType.QUERY,description = "(Optional) WKT form of the geometry (if not set, set annotation param)"),
         @RestApiParam(name="annotation", type="long", paramType = RestApiParamType.QUERY,description = "(Optional) The annotation id for the geometry (if not set, set geometry param)"),
         @RestApiParam(name="user", type="long", paramType = RestApiParamType.QUERY,description = "The annotation user id (may be an algo) "),
@@ -573,7 +579,7 @@ class RestAnnotationDomainController extends RestController {
     @RestApiMethod(description="Get all annotation that intersect a geometry or another annotation. Unlike the simple list, extra parameter (show/hide) are not available. ")
     @RestApiResponseObject(objectIdentifier = "file")
     @RestApiParams(params=[
-        @RestApiParam(name="idImage", type="long", paramType = RestApiParamType.QUERY,description = "The image id"),
+        @RestApiParam(name="idImage", type="long", paramType = RestApiParamType.PATH,description = "The image id"),
         @RestApiParam(name="geometry", type="string", paramType = RestApiParamType.QUERY,description = "(Optional) WKT form of the geometry (if not set, set annotation param)"),
         @RestApiParam(name="annotation", type="long", paramType = RestApiParamType.QUERY,description = "(Optional) The annotation id for the geometry (if not set, set geometry param)"),
         @RestApiParam(name="user", type="long", paramType = RestApiParamType.QUERY,description = "The annotation user id (may be an algo) "),

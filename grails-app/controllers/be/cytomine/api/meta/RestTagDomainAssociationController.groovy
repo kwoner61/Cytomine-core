@@ -57,6 +57,10 @@ class RestTagDomainAssociationController extends RestController {
     }
 
     @RestApiMethod(description="Get all tag-domain association available in cytomine related to a specific domain", listing = true)
+    @RestApiParams(params=[
+            @RestApiParam(name="domainClassName", type="string", paramType = RestApiParamType.PATH,description = "The domain class name"),
+            @RestApiParam(name="domainId", type="long", paramType = RestApiParamType.PATH,description = "The domain id")
+    ])
     def listByDomain() {
         CytomineDomain domain
         if(params.domainClassName.contains("AnnotationDomain")) {
@@ -72,6 +76,10 @@ class RestTagDomainAssociationController extends RestController {
     }
 
     @RestApiMethod(description="Add a new tag-domain association to cytomine.")
+    @RestApiParams(params=[
+            @RestApiParam(name="domainClassName", type="string", paramType = RestApiParamType.PATH,description = "The domain class name"),
+            @RestApiParam(name="domainId", type="long", paramType = RestApiParamType.PATH,description = "The domain id")
+    ])
     def add() {
         SecUser currentUser = cytomineService.getCurrentUser()
         securityACLService.checkUser(currentUser)
