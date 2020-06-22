@@ -176,7 +176,7 @@ class SoftwareParameter extends CytomineDomain {
      * @return Domain with json data filled
      */    
     static SoftwareParameter insertDataIntoDomain(def json, def domain = new SoftwareParameter()) {
-        log.info(json)
+        log.debug(json)
         domain.id = JSONUtils.getJSONAttrLong(json,'id',null)
         domain.name = JSONUtils.getJSONAttrStr(json, 'name', true)
         domain.software = JSONUtils.getJSONAttrDomain(json, "software", new Software(), true)

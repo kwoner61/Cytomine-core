@@ -143,7 +143,7 @@ class RestACLController extends RestController {
                     "      AND sec_user.username = acl_sid.sid\n" +
                     "      ${selectOnlyACLWhereCurrentUserIsAdmin};"
 
-            log.info request
+            log.debug request
 
             def sql = new Sql(dataSource)
              sql.eachRow(request) {

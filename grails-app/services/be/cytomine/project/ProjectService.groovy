@@ -730,11 +730,11 @@ class ProjectService extends ModelService {
     def afterAdd(Project domain, def response) {
         log.info("Add permission on " + domain + " to " + springSecurityService.authentication.name)
         if(!domain.hasACLPermission(READ)) {
-            log.info("force to put it in list")
+            log.debug("force to put it in list")
             permissionService.addPermission(domain, cytomineService.currentUser.username, BasePermission.READ)
         }
         if(!domain.hasACLPermission(ADMINISTRATION)) {
-            log.info("force to put it in list")
+            log.debug("force to put it in list")
             permissionService.addPermission(domain, cytomineService.currentUser.username, BasePermission.ADMINISTRATION)
         }
     }

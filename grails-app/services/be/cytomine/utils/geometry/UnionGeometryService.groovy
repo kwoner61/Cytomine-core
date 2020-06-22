@@ -51,7 +51,7 @@ class UnionGeometryService {
         def unionedAnnotation = []
 
          areas.eachWithIndex { it, i ->
-             log.info("******************** ${i}/${areas.size()}")
+             log.debug("******************** ${i}/${areas.size()}")
              boolean restart = true
 
              int max = 100
@@ -101,21 +101,21 @@ class UnionGeometryService {
 //     }
 
      private def computeArea(ImageInstance image, Integer maxW, Integer maxH) {
-         log.info "computeArea..."
+         log.debug "computeArea..."
          Double width = image.baseImage.width
          Double height = image.baseImage.height
 
-         log.info "width=$width"
-         log.info "height=$height"
+         log.debug "width=$width"
+         log.debug "height=$height"
 
-         log.info "maxW=$maxW"
-         log.info "maxH=$maxH"
+         log.debug "maxW=$maxW"
+         log.debug "maxH=$maxH"
 
          Integer nbreAreaW =  Math.ceil(width/(double)maxW)
          Integer nbreAreaH = Math.ceil(height/(double)maxH)
 
-         log.info "nbreAreaW=$nbreAreaW"
-         log.info "height=$height"
+         log.debug "nbreAreaW=$nbreAreaW"
+         log.debug "height=$height"
 
          def areas = []
          for(int i=0;i<nbreAreaW;i++) {
@@ -126,7 +126,7 @@ class UnionGeometryService {
                  double topX = bottomX+maxW
                  double topY = bottomY+maxH
 
-                 log.info bottomX + "x" + bottomY +" => " + topX + "x" + topY
+                 log.debug bottomX + "x" + bottomY +" => " + topX + "x" + topY
 
                  Coordinate[] boundingBoxCoordinates = [new Coordinate(bottomX, bottomY), new Coordinate(bottomX, topY), new Coordinate(topX, topY), new Coordinate(topX, bottomY), new Coordinate(bottomX, bottomY)]
                  Geometry boundingbox = new GeometryFactory().createPolygon(new GeometryFactory().createLinearRing(boundingBoxCoordinates), null)
@@ -139,7 +139,7 @@ class UnionGeometryService {
 
 
      private def unionArea(ImageInstance image, SecUser user, Term term, Geometry bbox, def bufferLength, def minIntersectLength) {
-         log.info "unionArea... ${bbox.toString()}"
+         log.debug "unionArea... ${bbox.toString()}"
          List intersectAnnotation = intersectAnnotation(image,user,term,bbox,bufferLength,minIntersectLength)
          boolean mustBeRestart = false
          def unionedAnnotation = []
@@ -256,7 +256,7 @@ class UnionGeometryService {
             request = request +  " AND ST_Perimeter(ST_Intersection(annotation1.location, annotation2.location))>=$minIntersectLength\n"
          }
 
-         log.info request
+         log.debug request
 
          def sql = new Sql(dataSource)
 
@@ -268,7 +268,7 @@ class UnionGeometryService {
          try {
              sql.close()
          }catch (Exception e) {}
-         log.info "find intersect annotation... ${data.size()}"
+         log.debug "find intersect annotation... ${data.size()}"
          data
      }
 
@@ -287,10 +287,10 @@ class UnionGeometryService {
                     " AND ST_Intersects(annotation1.location,ST_GeometryFromText('" + bbox.toString() + "',0)) \n" +
                     " AND ST_Intersects(annotation2.location,ST_GeometryFromText('" + bbox.toString() + "',0)) "
 
-        log.info request
+        log.debug request
         def sql = new Sql(dataSource)
         sql.eachRow(request) {
-            log.info it[2] + "\t" + it[0] + "\t" + it[1]  + "\t" + it[3]  + "\t" + it[4]
+            log.debug it[2] + "\t" + it[0] + "\t" + it[1]  + "\t" + it[3]  + "\t" + it[4]
         }
         try {
             sql.close()

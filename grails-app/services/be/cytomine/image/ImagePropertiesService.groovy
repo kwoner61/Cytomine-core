@@ -72,7 +72,7 @@ class ImagePropertiesService implements Serializable {
                     def property = Property.findByDomainIdentAndKey(image.id, key)
                     if (!property) {
                         try {
-                            log.info("New property: $key => $value for abstract image $image")
+                            log.debug("New property: $key => $value for abstract image $image")
                             property = new Property(key: key, value: value, domainIdent: image.id, domainClassName: image.class.name)
                             property.save(failOnError: true)
                         } catch(Exception e) {

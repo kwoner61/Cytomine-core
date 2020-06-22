@@ -163,10 +163,10 @@ class ReviewedAnnotationService extends ModelService {
 
                 boolean zoomToLow = ratio > 50
 
-                log.info "imageWidth=$imageWidth"
-                log.info "bboxWidth=$bboxWidth"
-                log.info "ratio=$ratio"
-                log.info  "zoomToLow="+zoomToLow
+                log.debug "imageWidth=$imageWidth"
+                log.debug "bboxWidth=$bboxWidth"
+                log.debug "ratio=$ratio"
+                log.debug  "zoomToLow="+zoomToLow
                 String subRequest
                 if (zoomToLow) {
                     subRequest = "(SELECT SUM(ST_CoveredBy(ga.location,gb.location )::integer) "

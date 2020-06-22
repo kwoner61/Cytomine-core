@@ -197,7 +197,7 @@ class ImageServerService extends ModelService {
     }
 
     def crop(AbstractSlice slice, def params, def urlOnly = false, def parametersOnly = false) {
-        log.info params
+        log.debug params
         def (server, parameters) = imsParametersFromAbstractSlice(slice)
 
         def geometry = params.geometry

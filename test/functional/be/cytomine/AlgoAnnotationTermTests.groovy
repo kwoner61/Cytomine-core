@@ -75,9 +75,9 @@ class AlgoAnnotationTermTests  {
         String jsonAnnotationTerm = annotationTermToAdd.encodeAsJSON()
         def result = AnnotationTermAPI.createAnnotationTerm(jsonAnnotationTerm,annotationTermToAdd.userJob.username,"PasswordUserJob")
         assert 200 == result.code
-        log.info "1="+annotationTermToAdd.retrieveAnnotationDomain().id
-        log.info "2="+annotationTermToAdd.term.id
-        log.info "3="+annotationTermToAdd.userJob.id
+        log.debug "1="+annotationTermToAdd.retrieveAnnotationDomain().id
+        log.debug "2="+annotationTermToAdd.term.id
+        log.debug "3="+annotationTermToAdd.userJob.id
         result = AnnotationTermAPI.showAnnotationTerm(
                 annotationTermToAdd.retrieveAnnotationDomain().id,
                 annotationTermToAdd.term.id,

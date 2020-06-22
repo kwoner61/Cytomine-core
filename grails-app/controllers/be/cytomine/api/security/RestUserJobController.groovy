@@ -187,7 +187,7 @@ class RestUserJobController extends RestController {
 
             } else if (params.getLong("image")) {
                 //just get user job that add data to images
-                log.info "filter by image = " + params.getLong("image")
+                log.debug "filter by image = " + params.getLong("image")
                 def image = imageInstanceService.read(params.getLong("image"))
                 if (!image) {
                     throw new ObjectNotFoundException("Image ${params.image} was not found!")

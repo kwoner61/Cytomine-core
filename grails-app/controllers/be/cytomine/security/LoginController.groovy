@@ -53,7 +53,7 @@ class LoginController extends RestController {
     def notificationService
 
     def loginWithoutSSO () {
-        log.info "loginWithoutSSO"
+        log.debug "loginWithoutSSO"
         if (springSecurityService.isLoggedIn()) {
             redirect uri: SpringSecurityUtils.securityConfig.successHandler.defaultTargetUrl
         }
@@ -120,7 +120,7 @@ class LoginController extends RestController {
      * Callback after a failed login. Redirects to the auth page with a warning message.
      */
     def authfail () {
-        log.info "springSecurityService.isLoggedIn()="+springSecurityService.isLoggedIn()
+        log.debug "springSecurityService.isLoggedIn()="+springSecurityService.isLoggedIn()
         def msg = ''
         Throwable exception = session[AbstractAuthenticationProcessingFilter.SPRING_SECURITY_LAST_EXCEPTION_KEY]
         if(exception.getCause()) exception = exception.getCause()
@@ -172,7 +172,7 @@ class LoginController extends RestController {
         User user = User.read(springSecurityService.currentUser.id)
 
         //log.info springSecurityService.principal.id
-        log.info RequestContextHolder.currentRequestAttributes().getSessionId()
+        log.debug RequestContextHolder.currentRequestAttributes().getSessionId()
         render([success: true, id: user.id, fullname: user.firstname + " " + user.lastname] as JSON)
     }
 

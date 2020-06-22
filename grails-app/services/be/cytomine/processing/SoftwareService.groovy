@@ -125,7 +125,7 @@ class SoftwareService extends ModelService {
      * @return Response structure (code, old domain,..)
      */
     def delete(Software domain, Transaction transaction = null, Task task = null, boolean printMessage = true) {
-        log.info "delete software"
+        log.info "delete software $domain.name ($domain.id)"
         SecUser currentUser = cytomineService.getCurrentUser()
         securityACLService.check(domain.container(),DELETE)
         Command c = new DeleteCommand(user: currentUser,transaction:transaction)

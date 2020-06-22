@@ -784,7 +784,7 @@ class SecUserService extends ModelService {
      */
     def addUserToProject(SecUser user, Project project, boolean admin) {
         securityACLService.check(project,ADMINISTRATION)
-        log.info "service.addUserToProject"
+        log.debug "service.addUserToProject"
         if (project) {
             log.info "addUserToProject project=" + project + " username=" + user?.username + " ADMIN=" + admin
             synchronized (this.getClass()) {

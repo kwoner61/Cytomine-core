@@ -136,7 +136,7 @@ class SearchService extends ModelService {
                     request += ") "
                 }
             }
-            log.info request
+            log.debug request
             data = select(request)
         } else if (operator.equals(SearchOperator.AND)) {
             for (int a = 0; a < listTable.size(); a++) {
@@ -168,7 +168,7 @@ class SearchService extends ModelService {
                 }
                 request += ") "
             }
-            log.info request
+            log.debug request
             data = select(request)
         }
         data

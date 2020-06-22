@@ -44,7 +44,7 @@ class CustomUIController extends RestController {
 
 
     def retrieveUIConfig() {
-        log.info "retrieveUIConfig"
+        log.debug "retrieveUIConfig"
         Set<SecRole> roles = currentRoleServiceProxy.findCurrentRole(cytomineService.currentUser)
         Project project = projectService.read(params.long('project'))
 

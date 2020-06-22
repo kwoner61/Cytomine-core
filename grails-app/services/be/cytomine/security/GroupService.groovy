@@ -48,14 +48,14 @@ class GroupService extends ModelService {
 
     def listWithUser() {
         securityACLService.checkGuest(cytomineService.currentUser)
-        log.info "listWithUser"
+        log.debug "listWithUser"
 
         String request = "SELECT g.id as group_id, g.name as group_name, u.id as user_id, u.username as user_name, u.lastname as user_lastname, u.firstname  as user_firstname " +
                 "FROM user_group ug, \"group\" g, sec_user u " +
                 "WHERE ug.user_id=u.id AND g.id = ug.group_id " +
                 "ORDER BY g.name, u.lastname;";
 
-        log.info request
+        log.debug request
         def sql = new Sql(dataSource)
 
         def groups = [];
@@ -63,7 +63,7 @@ class GroupService extends ModelService {
         def idGroup = -1;
         def users = new JSONArray();
         sql.eachRow(request) {
-            log.info it
+            log.debug it
             if(idGroup != it.group_id) {
                 if(group != null) {
                     group.put("users", users)

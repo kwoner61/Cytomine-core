@@ -306,11 +306,11 @@ class RestController {
      * @param bytes Image
      */
     protected def responseByteArray(byte[] bytes) {
-        log.info params.format
+        log.debug params.format
         if (params.alphaMask || params.type == 'alphaMask')
             params.format = 'png'
 
-        log.info params.format
+        log.debug params.format
         if (params.format == 'jpg') {
             if (request.method == 'HEAD') {
                 render(text: "", contentType: "image/jpeg");

@@ -126,7 +126,7 @@ class ImageGroupHDF5Service  extends  ModelService{
         def body = [user: currentUser.id, files: imagesFilenames, dest: destination, id: id,
                     cytomine:UrlApi.serverUrl(), bpc:maxBits]
 
-        log.info body
+        log.debug body
 
         String imageServerURL = grailsApplication.config.grails.imageServerURL[0]
         String url = "/multidim/convert.json"

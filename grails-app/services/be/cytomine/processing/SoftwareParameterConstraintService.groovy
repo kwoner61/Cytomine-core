@@ -101,7 +101,7 @@ class SoftwareParameterConstraintService extends ModelService {
                 .replaceAll("\\[separator]", separator)
                 .replaceAll("\\[parameterValue]", parameterValue as String)
 
-        log.info("Expression ${expression}")
+        log.debug("Expression ${expression}")
 
         return Eval.me(expression)
     }

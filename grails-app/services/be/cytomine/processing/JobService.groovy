@@ -281,7 +281,7 @@ class JobService extends ModelService {
             def params = json.params;
             if (params) {
                 params.each { param ->
-                    log.info "add param = " + param
+                    log.info "Job $job - Add parameter: " + param
                     jobParameterService.addJobParameter(job,param.softwareParameter,param.value, currentUser, transaction)
                 }
             }
@@ -297,10 +297,10 @@ class JobService extends ModelService {
      * @return  Response structure (new domain data, old domain data..)
      */
     def update(Job job, def jsonNewData) {
-        log.info "update"
+        log.debug "update"
         securityACLService.check(job.container(),READ)
         securityACLService.checkisNotReadOnly(job.container())
-        log.info "securityACLService.check"
+        log.debug "securityACLService.check"
         SecUser currentUser = cytomineService.getCurrentUser()
         return executeCommand(new EditCommand(user: currentUser),job, jsonNewData)
     }

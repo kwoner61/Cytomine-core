@@ -146,15 +146,15 @@ class HttpClient {
     }
 
     public void printCookies() {
-        log.info "############# PRINT COOKIE #############"
+        log.debug "############# PRINT COOKIE #############"
         List<Cookie> cookies = client.getCookieStore().getCookies();
-        log.info cookies
+        log.debug cookies
         if(cookies != null)
         {
             for(Cookie cookie : cookies)
             {
                 String cookieString = cookie.getName() + "=" + cookie.getValue() + "; domain=" + cookie.getDomain();
-                log.info cookieString
+                log.debug cookieString
             }
         }
     }
@@ -187,7 +187,7 @@ class HttpClient {
      * Response is saved and can be retrieved with getResponseCode()/getResponseData()
      */
     void get() {
-        log.info("Get " + URL.toString())
+        log.debug("Get " + URL.toString())
         HttpGet httpGet = new HttpGet(URL.toString());
         response = client.execute(targetHost, httpGet, localcontext);
     }
@@ -204,7 +204,7 @@ class HttpClient {
         HttpGet httpGet = new HttpGet(URL.toString());
         httpGet.getParams().setParameter("http.socket.timeout", new Integer(timeout));
         response = client.execute(targetHost, httpGet, localcontext);
-        log.info("url=" + URL.toString() + " is " + response.getStatusLine().statusCode);
+        log.debug("url=" + URL.toString() + " is " + response.getStatusLine().statusCode);
 
         boolean isOK = (response.getStatusLine().statusCode == HttpURLConnection.HTTP_OK);
         boolean isFound = (response.getStatusLine().statusCode == HttpURLConnection.HTTP_MOVED_TEMP);
@@ -224,7 +224,7 @@ class HttpClient {
      * Response is saved and can be retrieved with getResponseCode()/getResponseData()
      */
     void delete() {
-        log.info("Delete " + URL.toString())
+        log.debug("Delete " + URL.toString())
         HttpDelete httpDelete = new HttpDelete(URL.toString());
         response = client.execute(targetHost, httpDelete, localcontext);
     }
@@ -254,7 +254,7 @@ class HttpClient {
 
     public void post(String data, String contentType = null) throws Exception {
         HttpPost httpPost = new HttpPost(URL.toString());
-        log.info URL.toString()
+        log.debug URL.toString()
 //        println "###"+data
 //        httpPost.addHeader("Content-Type","application/json")
 //        httpPost.addHeader("host",this.host)
@@ -497,7 +497,7 @@ class HttpClient {
         HttpResponse response = client.execute(targetHost, httpPost, localcontext);
 
         int code = response.getStatusLine().getStatusCode();
-        log.info("url=" + url + " is " + code + "(OK=" + HttpURLConnection.HTTP_OK + ",MOVED=" + HttpURLConnection.HTTP_MOVED_TEMP + ")");
+        log.debug("url=" + url + " is " + code + "(OK=" + HttpURLConnection.HTTP_OK + ",MOVED=" + HttpURLConnection.HTTP_MOVED_TEMP + ")");
 
         boolean isOK = (code == HttpURLConnection.HTTP_OK);
         boolean isFound = (code == HttpURLConnection.HTTP_MOVED_TEMP || code == HttpURLConnection.HTTP_MOVED_PERM);
@@ -539,7 +539,7 @@ class HttpClient {
        HttpGet httpGet = new HttpGet(URL.toString());
        HttpResponse response = client.execute(targetHost, httpGet, localcontext);
        int code = response.getStatusLine().getStatusCode();
-       log.info("url=" + encoded + " is " + code + "(OK=" + HttpURLConnection.HTTP_OK + ",MOVED=" + HttpURLConnection.HTTP_MOVED_TEMP + ")");
+       log.debug("url=" + encoded + " is " + code + "(OK=" + HttpURLConnection.HTTP_OK + ",MOVED=" + HttpURLConnection.HTTP_MOVED_TEMP + ")");
 
        boolean isOK = (code == HttpURLConnection.HTTP_OK);
        boolean isFound = (code == HttpURLConnection.HTTP_MOVED_TEMP);
@@ -555,7 +555,7 @@ class HttpClient {
 
     public BufferedImage readBufferedImageFromURLWithoutKey(String url, String loginHTTP, String passHTTP) throws MalformedURLException, IOException {
        HttpEntity entity = readDataFromURLWithoutKey(url,loginHTTP,passHTTP);
-         log.info "entity="+entity
+         log.debug "entity="+entity
         BufferedImage img = null;
         if (entity != null) {
             img = ImageIO.read(entity.getContent());

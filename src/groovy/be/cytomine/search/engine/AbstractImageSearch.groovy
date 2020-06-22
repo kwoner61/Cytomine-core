@@ -76,7 +76,7 @@ class AbstractImageSearch extends EngineSearch {
     }
 
     public String createRequestOnDescription(List<String> words) {
-        log.info "PROJECT.createRequestOnDescription"
+        log.debug "PROJECT.createRequestOnDescription"
         if (idProject) return "" //if inside a project, no need to search in abstract image (just image instance)
         return """
             SELECT description.domain_ident as id, description.domain_class_name as type ${

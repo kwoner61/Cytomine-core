@@ -51,11 +51,11 @@ class JobRuntimeService {
         def values = [:]
 
         parameters.each { parameter ->
-            println parameter.name
+            log.debug parameter.name
 
             JobParameter jobParameter = JobParameter.findByJobAndSoftwareParameter(job, parameter as SoftwareParameter)
 
-            println jobParameter
+            log.debug jobParameter
 
             String value = parameter.defaultValue
             if (jobParameter)

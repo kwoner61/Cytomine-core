@@ -113,7 +113,7 @@ class CASLdapUserDetailsService extends GormUserDetailsService {
 
 
         if(user==null && (casDisabled || ldapDisabled))  {
-            log.info "getUserByUsername return null"
+            log.error "getUserByUsername return null"
             throw new UsernameNotFoundException("User not found")
         }
 

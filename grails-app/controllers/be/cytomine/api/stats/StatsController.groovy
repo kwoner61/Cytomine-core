@@ -262,8 +262,8 @@ class StatsController extends RestController {
             responseNotFound("Term", params.term)
             return
         }
-        log.info(params.term)
-        log.info(term)
+        log.debug(params.term)
+        log.debug(term)
 
         responseSuccess(statsService.statReviewedAnnotationEvolution(project, term, daysRange, startDate, endDate, reverseOrder, accumulate))
     }

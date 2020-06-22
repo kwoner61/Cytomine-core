@@ -151,7 +151,7 @@ class AlgoAnnotationTermService extends ModelService {
      * Compute Success rate AVG for all algo annotation term of userJob
      */
     double computeAVG(def userJob) {
-        log.info "userJob=" + userJob?.id
+        log.debug "userJob=" + userJob?.id
 
         def nbTermTotal = AlgoAnnotationTerm.createCriteria().count {
             eq("userJob", userJob)
