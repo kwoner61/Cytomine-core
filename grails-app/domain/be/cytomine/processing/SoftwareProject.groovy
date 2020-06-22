@@ -37,7 +37,11 @@ class SoftwareProject extends CytomineDomain implements Serializable{
     Project project
 
     @RestApiObjectFields(params=[
-        @RestApiObjectField(apiFieldName = "name", description = "The name of the software",allowedType = "string",useForCreation = false)
+        @RestApiObjectField(apiFieldName = "name", description = "The name of the software",allowedType = "string",useForCreation = false),
+        @RestApiObjectField(apiFieldName = "fullName", description = "Full name, including version.", allowedType = "string", useForCreation = false),
+        @RestApiObjectField(apiFieldName = "softwareVersion", description = "The software version.", allowedType = "string", useForCreation = false),
+        @RestApiObjectField(apiFieldName = "executable", description = "True if it can be executed by Cytomine", allowedType = "boolean", useForCreation = false),
+        @RestApiObjectField(apiFieldName = "deprecated", description = "Flag used to identify the validity of a piece of software", allowedType = "boolean", useForCreation = false),
     ])
     static transients = []
 

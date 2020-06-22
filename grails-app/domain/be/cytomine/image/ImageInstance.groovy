@@ -84,17 +84,28 @@ class ImageInstance extends CytomineDomain implements Serializable {
     Double fps
 
     @RestApiObjectFields(params = [
-            @RestApiObjectField(apiFieldName = "filename", description = "Abstract image filename (see Abstract Image)", allowedType = "string", useForCreation = false),
-            @RestApiObjectField(apiFieldName = "originalFilename", description = "Abstract image original filename (see Abstract Image)", allowedType = "string", useForCreation = false),
-            @RestApiObjectField(apiFieldName = "path", description = "Abstract image path (see Abstract Image)", allowedType = "string", useForCreation = false),
+            @RestApiObjectField(apiFieldName = "filename", description = "Similar to originalFilename", allowedType = "string", useForCreation = false),
+            @RestApiObjectField(apiFieldName = "originalFilename", description = "Original filename", allowedType = "string", useForCreation = false),
             @RestApiObjectField(apiFieldName = "sample", description = "Abstract image sample (see Abstract Image)", allowedType = "long", useForCreation = false),
             @RestApiObjectField(apiFieldName = "width", description = "Abstract image width (see Abstract Image)", allowedType = "int", useForCreation = false),
             @RestApiObjectField(apiFieldName = "height", description = "Abstract image height (see Abstract Image)", allowedType = "int", useForCreation = false),
-            @RestApiObjectField(apiFieldName = "preview", description = "Abstract image preview (see Abstract Image)", allowedType = "string", useForCreation = false),
-            @RestApiObjectField(apiFieldName = "thumb", description = "Abstract image thumb (see Abstract Image)", allowedType = "string", useForCreation = false),
             @RestApiObjectField(apiFieldName = "reviewed", description = "Image has been reviewed", allowedType = "boolean", useForCreation = false),
             @RestApiObjectField(apiFieldName = "inReview", description = "Image currently reviewed", allowedType = "boolean", useForCreation = false),
-            @RestApiObjectField(apiFieldName = "depth", description = "?", allowedType = "long", useForCreation = false)
+            @RestApiObjectField(apiFieldName = "thumb", description = "URL to get abstract image short view (thumb)",allowedType = "string",useForCreation = false),
+            @RestApiObjectField(apiFieldName = "path", description = "The internal path of the file", allowedType = "string", useForCreation = false),
+            @RestApiObjectField(apiFieldName = "contentType", description = "The image content type", allowedType = "string", useForCreation = false),
+            @RestApiObjectField(apiFieldName = "zoom", description = "The number of zooms available in the image", allowedType = "int", useForCreation = false),
+            @RestApiObjectField(apiFieldName = "macroURL", description = "URL to get image macros", allowedType = "string", useForCreation = false),
+            @RestApiObjectField(apiFieldName = "sample", description = "The source of the image (human, animal,...)", allowedType = "long", mandatory = false),
+            @RestApiObjectField(apiFieldName = "width", description = "The N-dimensional image width, in pixels (X)", allowedType = "int", useForCreation = false, mandatory = false, defaultValue = "-1"),
+            @RestApiObjectField(apiFieldName = "height", description = "The N-dimensional image height, in pixels (Y)", allowedType = "int", useForCreation = false, mandatory = false, defaultValue = "-1"),
+            @RestApiObjectField(apiFieldName = "depth", description = "The N-dimensional image depth, in z-slices (Z)", allowedType = "int", useForCreation = false, mandatory = false, defaultValue = "1"),
+            @RestApiObjectField(apiFieldName = "duration", description = "The N-dimensional image duration, in frames (T)", allowedType = "int", useForCreation = false, mandatory = false, defaultValue = "1"),
+            @RestApiObjectField(apiFieldName = "channels", description = "The N-dimensional image channels (C)", allowedType = "int", useForCreation = false, mandatory = false, defaultValue = "1"),
+            @RestApiObjectField(apiFieldName = "bitPerSample", description = "The number of bits per sample (color)", allowedType = "int", useForCreation = false, mandatory = false),
+            @RestApiObjectField(apiFieldName = "samplePerPixel", description = "The number of samples (colors) per pixel", allowedType = "int", useForCreation = false, mandatory = false),
+            @RestApiObjectField(apiFieldName = "colorspace", description = "The image colorspace", allowedType = "string", useForCreation = false, mandatory = false),
+            @RestApiObjectField(apiFieldName = "preview", description = "URL to get image preview", allowedType = "string", useForCreation = false),
     ])
     static transients = []
 

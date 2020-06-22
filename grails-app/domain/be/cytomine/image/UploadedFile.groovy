@@ -115,7 +115,8 @@ class UploadedFile extends CytomineDomain implements Serializable {
     String lTree
 
     @RestApiObjectFields(params=[
-        @RestApiObjectField(apiFieldName = "statusText", description = "Textual file status", useForCreation = false),
+            @RestApiObjectField(apiFieldName = "path", description = "The internal path of the file", allowedType = "string", useForCreation = false),
+            @RestApiObjectField(apiFieldName = "statusText", description = "Textual file status", allowedType = "string", useForCreation = false),
     ])
 
     static belongsTo = [ImageServer, Storage]

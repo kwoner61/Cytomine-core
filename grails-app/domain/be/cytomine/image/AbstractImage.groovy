@@ -100,7 +100,15 @@ class AbstractImage extends CytomineDomain implements Serializable {
 
     @RestApiObjectFields(params=[
         @RestApiObjectField(apiFieldName = "metadataUrl", description = "URL to get image file metadata",allowedType = "string",useForCreation = false),
-        @RestApiObjectField(apiFieldName = "thumb", description = "URL to get abstract image short view (htumb)",allowedType = "string",useForCreation = false)
+        @RestApiObjectField(apiFieldName = "thumb", description = "URL to get abstract image short view (htumb)",allowedType = "string",useForCreation = false),
+        @RestApiObjectField(apiFieldName = "filename", description = "Similar to original filename.", allowedType = "string", useForCreation = false),
+        @RestApiObjectField(apiFieldName = "path", description = "The internal path of the file", allowedType = "string", useForCreation = false),
+        @RestApiObjectField(apiFieldName = "dimensions", description = "Textual dimensions of the image: XY, XYZ, XYC, XYT, XYZC, XYZT, XYCT, XYCZT", allowedType = "string", useForCreation = false),
+        @RestApiObjectField(apiFieldName = "contentType", description = "The image content type", allowedType = "string", useForCreation = false),
+        @RestApiObjectField(apiFieldName = "zoom", description = "The number of zooms available in the image", allowedType = "int", useForCreation = false),
+        @RestApiObjectField(apiFieldName = "preview", description = "URL to get image preview", allowedType = "string", useForCreation = false),
+        @RestApiObjectField(apiFieldName = "macroURL", description = "URL to get image macros", allowedType = "string", useForCreation = false),
+
     ])
 
     static mapping = {

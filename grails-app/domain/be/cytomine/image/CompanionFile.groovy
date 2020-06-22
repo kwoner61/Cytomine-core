@@ -5,6 +5,7 @@ import be.cytomine.Exception.AlreadyExistException
 import be.cytomine.utils.JSONUtils
 import org.restapidoc.annotation.RestApiObject
 import org.restapidoc.annotation.RestApiObjectField
+import org.restapidoc.annotation.RestApiObjectFields
 
 /*
 * Copyright (c) 2009-2019. Authors: see NOTICE file.
@@ -37,9 +38,18 @@ class CompanionFile extends CytomineDomain implements Serializable {
     @RestApiObjectField(description = "A user-friendly filename")
     String filename
 
+    @RestApiObjectField(description = "The type of file")
     String type
 
+    @RestApiObjectField(description = "The file conversion progress", mandatory = false)
     Integer progress = 0
+
+    @RestApiObjectFields(params = [
+            @RestApiObjectField(apiFieldName = "path", description = "The internal path of the file", allowedType = "string", useForCreation = false),
+            @RestApiObjectField(apiFieldName = "status", description = "File status", allowedType = "int", useForCreation = false),
+            @RestApiObjectField(apiFieldName = "statusText", description = "Textual file status", allowedType = "string", useForCreation = false)
+    ])
+    static transients = []
 
     static belongsTo = [AbstractImage, UploadedFile]
 

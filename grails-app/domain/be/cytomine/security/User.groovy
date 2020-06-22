@@ -38,9 +38,10 @@ class User extends SecUser {
     @RestApiObjectField(description = "The email of the user")
     String email
 
+    @RestApiObjectField(description = "NOT USED.")
     String color //deprecated
 
-    @RestApiObjectField(description = "The language of the user")
+    @RestApiObjectField(description = "The language of the user", allowedType = "string")
     Language language
 
     @RestApiObjectField(description = "True if user is in developer mode")
