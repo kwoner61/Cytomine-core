@@ -261,7 +261,7 @@ class RestJobController extends RestController {
         if (data) {
             responseSuccess(data)
         } else {
-            responseNotFound("Job", params.id)
+            responseNotFound("Job log", params.id)
         }
     }
 
