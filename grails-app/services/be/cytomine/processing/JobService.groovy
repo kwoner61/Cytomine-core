@@ -192,7 +192,16 @@ class JobService extends ModelService {
             }
         }
 
-        mapParams += usernameParams
+        // https://stackoverflow.com/a/42080302
+        if (mapParams.isEmpty() && usernameParams.isEmpty()) {
+            mapParams = []
+        }
+        else if (mapParams.isEmpty()) {
+            mapParams = usernameParams
+        }
+        else {
+            mapParams += usernameParams
+        }
 
         sql.eachRow(request, mapParams) {
             def map = [:]
