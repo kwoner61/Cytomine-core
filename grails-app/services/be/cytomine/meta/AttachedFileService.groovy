@@ -1,5 +1,8 @@
 package be.cytomine.meta
 
+import be.cytomine.Exception.ServerException
+import be.cytomine.command.AddCommand
+
 /*
 * Copyright (c) 2009-2019. Authors: see NOTICE file.
 *
@@ -23,13 +26,11 @@ import be.cytomine.meta.AttachedFile
 import be.cytomine.security.SecUser
 import be.cytomine.utils.ModelService
 import be.cytomine.utils.Task
+import org.springframework.web.multipart.MultipartFile
 
 class AttachedFileService extends ModelService {
 
     static transactional = true
-    def transactionService
-    def commandService
-    def cytomineService
 
     def currentDomain() {
         return AttachedFile
@@ -51,14 +52,25 @@ class AttachedFileService extends ModelService {
         AttachedFile.read(id)
     }
 
-    def add(String filename,byte[] data,Long domainIdent,String domainClassName) {
-        AttachedFile file = new AttachedFile()
-        file.domainIdent =  domainIdent
-        file.domainClassName = domainClassName
-        file.filename = filename
-        file.data = data
-        saveDomain(file)
-        file
+    def add(def json, MultipartFile file) {
+        SecUser currentUser = cytomineService.getCurrentUser()
+        def result = executeCommand(new AddCommand(user: currentUser),null,json)
+        AttachedFile af = result?.object
+
+        if (!af) {
+            return result
+        }
+
+        // Copy file to filesystem
+        try {
+            file.transferTo(af.getFile())
+        }
+        catch (IOException e) {
+            delete(af)
+            throw new ServerException("File cannot be stored")
+        }
+
+        return af // TODO: to be consistent with previous API, no command is returned (to be changed and syc with clients)
     }
 
     /**

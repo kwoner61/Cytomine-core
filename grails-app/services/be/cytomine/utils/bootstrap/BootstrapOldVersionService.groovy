@@ -9,6 +9,7 @@ import be.cytomine.image.SliceInstance
 import be.cytomine.image.multidim.ImageGroup
 import be.cytomine.image.multidim.ImageGroupHDF5
 import be.cytomine.image.multidim.ImageSequence
+import be.cytomine.meta.AttachedFile
 import be.cytomine.middleware.ImageServer
 
 /*
@@ -114,8 +115,23 @@ class BootstrapOldVersionService {
         Version.setCurrentVersion(Long.parseLong(grailsApplication.metadata.'app.versionDate'), grailsApplication.metadata.'app.version')
     }
 
-    def initv2_0_1() {
+    def initv2_2_0() {
+        log.info "Migration to V2.2.0"
 
+        log.info "Migrate attached files from DB to file system"
+        bootstrapUtilsService.updateSqlColumnConstraint("attached_file", "data", "DROP NOT NULL")
+        AttachedFile.findAllByDataIsNotNull().each { af ->
+            af.getFile().withOutputStream {
+                it.write(af.data)
+            }
+        }
+
+        def sql = new Sql(dataSource)
+        sql.executeUpdate("UPDATE attached_file SET data = NULL;")
+        sql.close()
+
+        // For next version:
+        //bootstrapUtilsService.dropSqlColumn("attached_file", "data")
     }
 
     def initv2_0_0() {

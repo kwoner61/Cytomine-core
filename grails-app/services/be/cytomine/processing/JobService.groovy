@@ -338,11 +338,11 @@ class JobService extends ModelService {
     def getLog(Job job) {
         def log = AttachedFile.findByDomainClassNameAndDomainIdentAndFilename("be.cytomine.processing.Job", job.id, "log.out")
 
-        if (!log) {
+        if (!log || !log.getFile().exists()) {
             return null
         }
         def ret = AttachedFile.getDataFromDomain(log)
-        ret['data'] = new String(log.data);
+        ret['data'] = new String(log.getFile().bytes);
         return ret
     }
 

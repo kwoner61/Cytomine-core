@@ -444,6 +444,7 @@ grails.client = "NO"
 storage_path="/data/images" //default path for image locations
 fast_data_path="/data/images" //default path for HDF5 files location (for ex: a SSD)
 cytomine.software.path.softwareImages = "/data/softwares/images"
+cytomine.attachedFiles.path = "/data/attached"
 
 cytomine.middleware.rabbitmq.user = "router"
 cytomine.middleware.rabbitmq.password = "router"
