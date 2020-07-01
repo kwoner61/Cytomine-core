@@ -120,15 +120,18 @@ class BootstrapOldVersionService {
 
         log.info "Migrate attached files from DB to file system"
         bootstrapUtilsService.updateSqlColumnConstraint("attached_file", "data", "DROP NOT NULL")
-        AttachedFile.findAllByDataIsNotNull().each { af ->
+
+        // We need to fetch attached files one by one to avoid OOM error as all attached files content would be retrieved
+        // the database in a single request !
+        AttachedFile af = AttachedFile.findByDataIsNotNull()
+        while (af != null) {
             af.getFile().withOutputStream {
                 it.write(af.data)
             }
+            af.data = null
+            af.save()
+            af = AttachedFile.findByDataIsNotNull()
         }
-
-        def sql = new Sql(dataSource)
-        sql.executeUpdate("UPDATE attached_file SET data = NULL;")
-        sql.close()
 
         // For next version:
         //bootstrapUtilsService.dropSqlColumn("attached_file", "data")
