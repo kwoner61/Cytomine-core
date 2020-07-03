@@ -1,4 +1,6 @@
-package be.cytomine.Exception;
+package be.cytomine.Exception
+
+import groovy.util.logging.Log4j;
 
 /*
 * Copyright (c) 2009-2019. Authors: see NOTICE file.
@@ -19,18 +21,17 @@ package be.cytomine.Exception;
 /**
  * User: lrollus
  * Date: 17/11/11
- * This exception means that a domain already exist in database
- * For exemple: we try to add a project with same name
- * It correspond to the HTTP code 409 (Conflict)
+ * This exception means that some argument from request are not valid
  */
-public class AlreadyExistException extends CytomineException {
+@Log4j
+public class WrongArgumentException extends CytomineException {
 
-    public static int CODE = 409;
     /**
      * Message map with this exception
      * @param message Message
      */
-    public AlreadyExistException(String message) {
-             super(message,CODE);
+    public WrongArgumentException(String message) {
+        super(message,400);
+        log.warn(message)
     }
 }

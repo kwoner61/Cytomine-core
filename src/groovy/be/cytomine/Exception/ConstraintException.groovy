@@ -1,4 +1,6 @@
-package be.cytomine.Exception;
+package be.cytomine.Exception
+
+import groovy.util.logging.Log4j
 
 /*
 * Copyright (c) 2009-2019. Authors: see NOTICE file.
@@ -17,18 +19,23 @@ package be.cytomine.Exception;
 */
 
 /**
- * Created by julien
- * Date : 12/03/15
- * Time : 14:18
+ * User: lrollus
+ * Date: 17/11/11
+ * This exception means that a domain is not valid
+ * For exemple: we try to add a project without name
+ * It correspond to the HTTP code 400 (Bad request)
  */
-public class MiddlewareException extends CytomineException {
+@Log4j
+public class ConstraintException extends CytomineException {
+
+    public static int CODE = 400;
 
     /**
      * Message map with this exception
      * @param message Message
      */
-    public MiddlewareException(String message) {
-        super(message,500);
+    public ConstraintException(String message) {
+        super(message,CODE);
+        log.warn(message)
     }
-
 }

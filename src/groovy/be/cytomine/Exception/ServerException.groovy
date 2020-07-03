@@ -1,4 +1,6 @@
-package be.cytomine.Exception;
+package be.cytomine.Exception
+
+import groovy.util.logging.Log4j;
 
 /*
 * Copyright (c) 2009-2019. Authors: see NOTICE file.
@@ -19,17 +21,18 @@ package be.cytomine.Exception;
 /**
  * User: lrollus
  * Date: 17/11/11
- * This exception means that the content of the request in not valid
- * E.g. The project we want to add has no ontology
+ * This exception means that the server failed
  */
-public class InvalidRequestException extends CytomineException {
+@Log4j
+public class ServerException extends CytomineException {
 
     /**
      * Message map with this exception
      * @param message Message
      */
-    public InvalidRequestException(String message) {
-             super(message,400);
+    public ServerException(String message) {
+        super(message,500);
+        log.error(message)
     }
 
 }

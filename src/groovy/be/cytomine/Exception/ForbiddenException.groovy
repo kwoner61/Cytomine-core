@@ -1,4 +1,6 @@
-package be.cytomine.Exception;
+package be.cytomine.Exception
+
+import groovy.util.logging.Log4j;
 
 /*
 * Copyright (c) 2009-2019. Authors: see NOTICE file.
@@ -16,20 +18,28 @@ package be.cytomine.Exception;
 * limitations under the License.
 */
 
+import java.util.LinkedHashMap;
+
 /**
  * User: lrollus
  * Date: 17/11/11
- * This exception means that the content of the request in not valid
- * E.g. The project we want to add has no ontology
+ * This exception means that a user cannot access to a specific service
+ * E.g. a user cannot access an image if its not a user from this project
+ * It correspond to the HTTP code 403 (Forbidden)
  */
-public class CytomineMethodNotYetImplementedException extends CytomineException {
+@Log4j
+public class ForbiddenException extends CytomineException {
 
     /**
      * Message map with this exception
      * @param message Message
      */
-    public CytomineMethodNotYetImplementedException(String message) {
-             super(message,501);
+    public ForbiddenException(String message) {
+        this(message, new LinkedHashMap<Object, Object> ());
+    }
+    public ForbiddenException(String message, LinkedHashMap<Object, Object> values) {
+        super(message,403, values);
+        log.warn("$message ($values)")
     }
 
 }
