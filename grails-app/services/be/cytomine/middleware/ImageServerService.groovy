@@ -2,6 +2,8 @@ package be.cytomine.middleware
 
 import be.cytomine.AnnotationDomain
 import be.cytomine.Exception.InvalidRequestException
+import be.cytomine.Exception.ObjectNotFoundException
+import be.cytomine.Exception.ServerException
 import be.cytomine.api.UrlApi
 import be.cytomine.image.AbstractImage
 import be.cytomine.image.AbstractSlice
@@ -17,8 +19,8 @@ import grails.converters.JSON
 import grails.util.Holders
 import groovyx.net.http.ContentType
 import groovyx.net.http.HTTPBuilder
-import org.apache.http.HttpEntity
-import org.apache.http.util.EntityUtils
+import groovyx.net.http.Method
+import org.apache.commons.io.IOUtils
 
 class ImageServerService extends ModelService {
     /* TODO: delete dependent objects - do we want to allow this ?
@@ -47,7 +49,7 @@ class ImageServerService extends ModelService {
     }
 
     def storageSpace(ImageServer is) {
-        return JSON.parse(new URL(makeGetUrl("/storage/size.json", is.internalUrl, [:])).text)
+        return JSON.parse(new String(makeRequest("/storage/size.json", is.internalUrl, [:], "GET")))
     }
 
     def downloadUri(UploadedFile uploadedFile) {
@@ -68,14 +70,14 @@ class ImageServerService extends ModelService {
 
     def properties(AbstractImage image) {
         def (server, parameters) = imsParametersFromAbstractImage(image)
-        return JSON.parse(new URL(makeGetUrl("/image/properties.json", server, parameters)).text)
+        return JSON.parse(new String(makeRequest("/image/properties.json", server, parameters, "GET")))
     }
 
     def sampleHistograms(AbstractSlice slice) {
         def (server, parameters) = imsParametersFromAbstractSlice(slice)
         parameters.samplePerPixel = slice?.image?.samplePerPixel
         parameters.bitPerSample = slice?.image?.bitPerSample
-        return JSON.parse(new URL(makeGetUrl("/slice/histogram.json", server, parameters)).text)
+        return JSON.parse(new String(makeRequest("/slice/histogram.json", server, parameters, "GET")))
     }
 
     def makeHDF5(def imageId, def companionFileId, def uploadedFileId) {
@@ -132,7 +134,7 @@ class ImageServerService extends ModelService {
 
     def associated(AbstractImage image) {
         def (server, parameters) = imsParametersFromAbstractImage(image)
-        return JSON.parse(new URL(makeGetUrl("/image/associated.json", server, parameters)).text)
+        return JSON.parse(new String(makeRequest("/image/associated.json", server, parameters, "GET")))
     }
 
     def label(ImageInstance image, def params) {
@@ -358,29 +360,54 @@ class ImageServerService extends ModelService {
         return "$server$uri?$query"
     }
 
-    private static byte[] makeRequest(def uri, def server, def parameters, def httpMethod=null) {
+    private static byte[] makeRequest(def path, def server, def parameters, def httpMethod=null) {
         def final GET_URL_MAX_LENGTH = 512
         parameters = filterParameters(parameters)
-        def url = makeGetUrl(uri, server, parameters)
+        def url = makeGetUrl(path, server, parameters)
         def http = new HTTPBuilder(server)
         if ((url.size() < GET_URL_MAX_LENGTH && httpMethod == null) || httpMethod == "GET") {
-            (byte[]) http.get(path: uri, requestContentType: ContentType.URLENC, query: parameters) { response ->
-                HttpEntity entity = response.getEntity()
-                if (entity != null) {
-                    return EntityUtils.toByteArray(entity)
+            http.request(Method.GET, ContentType.BINARY) {
+                uri.path = path
+                uri.query = parameters
+
+                response.success = { resp, stream ->
+                    return IOUtils.toByteArray(stream)
                 }
-                else
-                    return null
+
+                response.'400' = {
+                    throw new InvalidRequestException("$url returned a 400 Bad Request")
+                }
+
+                response.'404' = {
+                    throw new ObjectNotFoundException("$url returned a 404 Not found")
+                }
+
+                response.'500' = {
+                    throw new ServerException("$url returned a 500 Internal error")
+                }
             }
         }
         else {
-            (byte[]) http.post(path: uri, requestContentType: ContentType.URLENC, body: parameters) { response ->
-                HttpEntity entity = response.getEntity()
-                if (entity != null) {
-                    return EntityUtils.toByteArray(entity)
+            http.request(Method.POST, ContentType.BINARY) {
+                uri.path = path
+                uri.query = parameters
+                requestContentType = ContentType.URLENC
+
+                response.success = { resp, stream ->
+                    return IOUtils.toByteArray(stream)
                 }
-                else
-                    return null
+
+                response.'400' = {
+                    throw new InvalidRequestException("$url (with parameters $parameters) returned a 400 Bad Request")
+                }
+
+                response.'404' = {
+                    throw new ObjectNotFoundException("$url (with parameters $parameters) returned a 404 Not found")
+                }
+
+                response.'500' = {
+                    throw new ServerException("$url (with parameters $parameters) returned a 500 Internal error")
+                }
             }
         }
     }
