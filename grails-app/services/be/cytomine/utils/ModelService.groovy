@@ -27,6 +27,7 @@ import be.cytomine.command.Command
 import be.cytomine.command.DeleteCommand
 import be.cytomine.ontology.AlgoAnnotation
 import be.cytomine.ontology.UserAnnotation
+import org.springframework.dao.OptimisticLockingFailureException
 import org.springframework.util.ReflectionUtils
 import grails.util.GrailsNameUtils
 import org.springframework.transaction.annotation.Propagation
@@ -62,9 +63,16 @@ abstract class ModelService {
             log.error newObject.retrieveErrors().toString()
             throw new WrongArgumentException(newObject.retrieveErrors().toString())
         }
-        if (!newObject.save(flush: true, failOnError: true)) {
-            log.error "error"
-            throw new InvalidRequestException(newObject.retrieveErrors().toString())
+
+        try {
+            if (!newObject.save(flush: true, failOnError: true)) {
+                log.error "error"
+                throw new InvalidRequestException(newObject.retrieveErrors().toString())
+            }
+        }
+        catch (OptimisticLockingFailureException e) {
+            log.error "CANNOT SAVE OBJECT"
+            newObject = currentDomain().merge(newObject)
         }
     }
 
