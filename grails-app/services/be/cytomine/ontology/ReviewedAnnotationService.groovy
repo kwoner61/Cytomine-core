@@ -354,7 +354,7 @@ class ReviewedAnnotationService extends ModelService {
     }
 
     def deleteDependentAlgoAnnotationTerm(ReviewedAnnotation annotation, Transaction transaction, Task task = null) {
-        AlgoAnnotationTerm.findAllByAnnotationIdent(annotation.id).each {
+        AlgoAnnotationTerm.findAllByAnnotationIdentAndDeletedIsNull(annotation.id).each {
             algoAnnotationTermService.delete(it,transaction,null,false)
         }
     }

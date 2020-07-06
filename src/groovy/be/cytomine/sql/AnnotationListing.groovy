@@ -280,6 +280,9 @@ abstract class AnnotationListing {
             if (track || tracks)
                 request += "LEFT OUTER JOIN annotation_track atr ON a.id = atr.annotation_ident "
 
+            request += "WHERE true "
+            if (term || terms) request += "AND at.deleted IS NULL "
+
             request += "ORDER BY "
             request += (track || tracks) ? "a.rank asc" : "a.id desc "
             request += ((term || terms) ? ", at.term_id " : "")
@@ -722,18 +725,19 @@ class UserAnnotationListing extends AnnotationListing {
         if (multipleTerm) {
             from += "LEFT OUTER JOIN annotation_term at ON a.id = at.user_annotation_id "
             from += "LEFT OUTER JOIN annotation_term at2 ON a.id = at2.user_annotation_id "
-            where += "AND at.id <> at2.id AND at.term_id <> at2.term_id "
+            where += "AND at.id <> at2.id AND at.term_id <> at2.term_id AND at.deleted IS NULL AND at2.deleted IS NULL "
         }
         else if (noTerm && !(term || terms)) {
-            from += "LEFT JOIN (SELECT * from annotation_term x ${users ? "where x.user_id IN (${users.join(",")})" : ""}) at ON a.id = at.user_annotation_id "
+            from += "LEFT JOIN (SELECT * from annotation_term x ${users ? "where x.deleted IS NULL AND x.user_id IN (${users.join(",")})" : ""}) at ON a.id = at.user_annotation_id "
             where += "AND at.id IS NULL \n"
         }
         else if (noAlgoTerm) {
-            from += "LEFT JOIN (SELECT * from algo_annotation_term x ${users ? "where x.user_id IN (${users.join(",")})" : ""}) aat ON a.id = aat.annotation_ident "
+            from += "LEFT JOIN (SELECT * from algo_annotation_term x ${users ? "where x.deleted IS NULL AND x.user_id IN (${users.join(",")})" : ""}) aat ON a.id = aat.annotation_ident "
             where += "AND aat.id IS NULL \n"
         }
         else if (columnToPrint.contains('term')) {
             from += "LEFT OUTER JOIN annotation_term at ON a.id = at.user_annotation_id "
+            where += "AND at.deleted IS NULL "
         }
 
         if (multipleTrack) {
@@ -758,6 +762,7 @@ class UserAnnotationListing extends AnnotationListing {
 
         if (columnToPrint.contains('algo')) {
             from += "INNER JOIN algo_annotation_term aat ON aat.annotation_ident = a.id "
+            where += "AND aat.deleted IS NULL "
         }
 
         if (columnToPrint.contains('slice') || tracks || track) {
@@ -874,14 +879,15 @@ class AlgoAnnotationListing extends AnnotationListing {
         if (multipleTerm) {
             from += "LEFT OUTER JOIN algo_annotation_term aat ON a.id = aat.annotation_ident "
             from += "LEFT OUTER JOIN algo_annotation_term aat2 ON a.id = aat2.annotation_ident "
-            where += "AND aat.id <> aat2.id AND aat.term_id <> aat2.term_id "
+            where += "AND aat.id <> aat2.id AND aat.term_id <> aat2.term_id AND aat.deleted IS NULL AND aat2.deleted IS NULL "
         }
         else if ((noTerm || noAlgoTerm) && !(term || terms)) {
-            from = "$from LEFT JOIN (SELECT * from algo_annotation_term x ${users ? "where x.user_job_id IN (${users.join(",")})" : ""}) aat ON a.id = aat.annotation_ident "
+            from = "$from LEFT JOIN (SELECT * from algo_annotation_term x ${users ? "where x.deleted IS NULL AND x.user_job_id IN (${users.join(",")})" : ""}) aat ON a.id = aat.annotation_ident "
             where = "$where AND aat.id IS NULL \n"
 
         } else if (columnToPrint.contains('term')) {
             from += "LEFT JOIN algo_annotation_term aat ON a.id = aat.annotation_ident "
+            where += "AND aat.deleted IS NULL "
         }
 
         if (columnToPrint.contains('track')) {

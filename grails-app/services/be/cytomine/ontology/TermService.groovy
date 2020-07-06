@@ -90,7 +90,7 @@ class TermService extends ModelService {
 
     def list(UserAnnotation annotation, User user) {
         securityACLService.check(annotation.container(),READ)
-        return AnnotationTerm.findAllByUserAndUserAnnotation(user, annotation).collect {it.term.id}
+        return AnnotationTerm.findAllByUserAndUserAnnotationAndDeletedIsNull(user, annotation).collect {it.term.id}
     }
 
     /**

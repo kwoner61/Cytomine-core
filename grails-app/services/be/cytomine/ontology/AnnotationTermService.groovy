@@ -90,8 +90,21 @@ class AnnotationTermService extends ModelService {
     def add(def json) {
         SecUser currentUser = cytomineService.getCurrentUser()
         SecUser creator = SecUser.read(json.user)
-        if (!creator)
+        if (!creator) {
             json.user = currentUser.id
+            creator = currentUser
+        }
+
+        Term term = Term.read(json.term)
+        UserAnnotation ua = UserAnnotation.read(json.userannotation)
+        AnnotationTerm alreadyExist = AnnotationTerm.findByTermAndUserAnnotationAndUser(term, ua, creator)
+        if (alreadyExist && alreadyExist.checkDeleted()) {
+            //was previously deleted, restore it
+            def jsonNewData = JSON.parse(alreadyExist.encodeAsJSON())
+            jsonNewData.deleted = null
+            Command c = new EditCommand(user: currentUser)
+            return executeCommand(c, alreadyExist, jsonNewData)
+        }
         return executeCommand(new AddCommand(user: currentUser),null,json)
     }
 
@@ -117,8 +130,21 @@ class AnnotationTermService extends ModelService {
 
 
     def addAnnotationTerm(def idUserAnnotation, def idTerm, def idExpectedTerm, def idUser, SecUser currentUser, Transaction transaction) {
-        def json = JSON.parse("{userannotation: $idUserAnnotation, term: $idTerm, expectedTerm: $idExpectedTerm, user: $idUser}")
-        return executeCommand(new AddCommand(user: currentUser, transaction: transaction), null,json)
+        Term term = Term.read(idTerm)
+        UserAnnotation ua = UserAnnotation.read(idUserAnnotation)
+        SecUser creator = SecUser.read(idUser)
+        AnnotationTerm alreadyExist = AnnotationTerm.findByTermAndUserAnnotationAndUser(term, ua, creator)
+        if (alreadyExist && alreadyExist.checkDeleted()) {
+            //was previously deleted, restore it
+            def jsonNewData = JSON.parse(alreadyExist.encodeAsJSON())
+            jsonNewData.deleted = null
+            Command c = new EditCommand(user: currentUser, transaction: transaction)
+            return executeCommand(c, alreadyExist, jsonNewData)
+        }
+        else {
+            def json = JSON.parse("{userannotation: $idUserAnnotation, term: $idTerm, expectedTerm: $idExpectedTerm, user: $idUser}")
+            return executeCommand(new AddCommand(user: currentUser, transaction: transaction), null,json)
+        }
     }
 
     /**
@@ -176,6 +202,7 @@ class AnnotationTermService extends ModelService {
         if (!relation) {
             throw new ObjectNotFoundException("Annotation term not found ($annotation,$term,$user)")
         }
+        checkDeleted(relation)
         return relation
     }
 }

@@ -166,6 +166,7 @@ class RetrievalSuggestStatsController extends RestController {
         def algoAnnotationsTerm = AlgoAnnotationTerm.createCriteria().list {
             eq("userJob", userJob)
             neProperty("term", "expectedTerm")
+            isNull("deleted")
         }
 
         //increment the value for each term
@@ -194,7 +195,7 @@ class RetrievalSuggestStatsController extends RestController {
         def allCouple = AlgoAnnotationTerm.executeQuery("SELECT at1.expectedTerm.id, at2.term.id, count(*) as sumterm  " +
                 "FROM AlgoAnnotationTerm at1, AlgoAnnotationTerm at2  " +
                 "WHERE at1.id = at2.id " +
-                "AND at1.userJob.id = :userJob " +
+                "AND at1.userJob.id = :userJob AND at1.deleted IS NULL AND at2.deleted IS NULL " +
                 "GROUP BY at1.expectedTerm.id, at2.term.id " +
                 "ORDER BY at1.expectedTerm.id, sumterm desc, at2.term.id",[userJob:userJob.id])
 
@@ -276,6 +277,7 @@ class RetrievalSuggestStatsController extends RestController {
         def results = []
 
         def algoAnnotationsTerm = AlgoAnnotationTerm.createCriteria().list {
+            isNull("deleted")
             eq("userJob", userJob)
             neProperty("term", "expectedTerm")
             order "rate", "desc"

@@ -59,7 +59,7 @@ class AlgoAnnotationTermService extends ModelService {
         long total = 0
         List<UserJob> users = UserJob.findAllByJob(job)
         users.each {
-            total = total + AlgoAnnotationTerm.countByUserJob(it)
+            total = total + AlgoAnnotationTerm.countByUserJobAndDeletedIsNull(it)
         }
         total
     }
@@ -156,6 +156,7 @@ class AlgoAnnotationTermService extends ModelService {
         def nbTermTotal = AlgoAnnotationTerm.createCriteria().count {
             eq("userJob", userJob)
             isNotNull("expectedTerm")
+            isNull("deleted")
         }
         if (nbTermTotal == 0) {
             throw new ServerException("UserJob has no algo-annotation-term!")
@@ -166,6 +167,7 @@ class AlgoAnnotationTermService extends ModelService {
             isNotNull("term")
             isNotNull("expectedTerm")
             eqProperty("term", "expectedTerm")
+            isNull("deleted")
         }
         return (double) (nbTermCorrect / nbTermTotal)
     }
@@ -178,6 +180,7 @@ class AlgoAnnotationTermService extends ModelService {
         def nbTermTotal = AlgoAnnotationTerm.createCriteria().count {
             eq("userJob", userJob)
             eq("expectedTerm", term)
+            isNull("deleted")
         }
         if (nbTermTotal == 0) {
             throw new ServerException("UserJob has no algo-annotation-term!")
@@ -187,6 +190,7 @@ class AlgoAnnotationTermService extends ModelService {
             eq("userJob", userJob)
             eq("expectedTerm", term)
             eqProperty("term", "expectedTerm")
+            isNull("deleted")
         }
         return (double) (nbTermCorrect / nbTermTotal)
     }
@@ -206,10 +210,12 @@ class AlgoAnnotationTermService extends ModelService {
                 eq("userJob", userJob)
                 eq("expectedTerm", term)
                 eqProperty("term", "expectedTerm")
+                isNull("deleted")
             }
             def nbTermTotal = AlgoAnnotationTerm.createCriteria().count {
                 eq("userJob", userJob)
                 eq("expectedTerm", term)
+                isNull("deleted")
             }
 
             if (nbTermTotal != 0) {
@@ -230,7 +236,7 @@ class AlgoAnnotationTermService extends ModelService {
         Collections.sort(projectTerms);
         def projectTermsId = projectTerms.collect {it.id + ""}
         ConfusionMatrix matrix = new ConfusionMatrix(projectTermsId);
-        def algoAnnotationsTerm = AlgoAnnotationTerm.findAllByUserJob(userJob);
+        def algoAnnotationsTerm = AlgoAnnotationTerm.findAllByUserJobAndDeletedIsNull(userJob);
         algoAnnotationsTerm.each {
             if (it.term && it.expectedTerm) matrix.incrementEntry(it.expectedTerm?.id + "", it.term?.id + "")
         }
@@ -264,7 +270,7 @@ class AlgoAnnotationTermService extends ModelService {
             annotations = UserAnnotation.executeQuery("select a.created from UserAnnotation a where a.project = ?  order by a.created desc", [project])
         }
         else {
-            annotations = UserAnnotation.executeQuery("select b.created from UserAnnotation b where b.project = ? and b.id in (select x.userAnnotation.id from AnnotationTerm x where x.term = ?)  order by b.created desc", [project, term])
+            annotations = UserAnnotation.executeQuery("select b.created from UserAnnotation b where b.project = ? and b.id in (select x.userAnnotation.id from AnnotationTerm x where x.term = ? and x.deleted is null)  order by b.created desc", [project, term])
         }
         userJobs.each {
             def userJobIt = it
