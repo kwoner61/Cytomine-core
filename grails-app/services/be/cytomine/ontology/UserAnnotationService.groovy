@@ -152,6 +152,7 @@ class UserAnnotationService extends ModelService {
 
         if (!annotations.isEmpty() && termsIDS.size() > 0) {
             annotations = (Collection<UserAnnotation>) AnnotationTerm.createCriteria().list {
+                isNull("deleted")
                 inList("term.id", termsIDS)
                 join("userAnnotation")
                 createAlias("userAnnotation", "a")
@@ -176,6 +177,7 @@ class UserAnnotationService extends ModelService {
 
         if (!annotations.isEmpty() && termsIDS.size() > 0) {
             annotations = (Collection<UserAnnotation>) AnnotationTerm.createCriteria().list {
+                isNull("deleted")
                 inList("term.id", termsIDS)
                 join("userAnnotation")
                 createAlias("userAnnotation", "a")

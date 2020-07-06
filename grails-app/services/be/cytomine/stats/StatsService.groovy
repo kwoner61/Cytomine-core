@@ -78,7 +78,7 @@ class StatsService extends ModelService {
         String request = "SELECT created " +
                 "FROM UserAnnotation " +
                 "WHERE project = $project.id " +
-                (term ? "AND id IN (SELECT userAnnotation.id FROM AnnotationTerm WHERE term = $term.id) " : "") +
+                (term ? "AND id IN (SELECT userAnnotation.id FROM AnnotationTerm WHERE term = $term.id AND deleted IS NULL) " : "") +
                 (startDate ? "AND created > '$startDate'" : "") +
                 (endDate ? "AND created < '$endDate'" : "") +
                 "ORDER BY created ASC"
@@ -97,7 +97,7 @@ class StatsService extends ModelService {
         String request = "SELECT created " +
                 "FROM AlgoAnnotation " +
                 "WHERE project = $project.id " +
-                (term ? "AND id IN (SELECT annotationIdent FROM AlgoAnnotationTerm WHERE term = $term.id) " : "") +
+                (term ? "AND id IN (SELECT annotationIdent FROM AlgoAnnotationTerm WHERE term = $term.id AND deleted IS NULL) " : "") +
                 (startDate ? "AND created > '$startDate' " : "") +
                 (endDate ? "AND created < '$endDate' " : "") +
                 "ORDER BY created ASC"
@@ -196,7 +196,7 @@ class StatsService extends ModelService {
                 "FROM user_annotation ua " +
                 "LEFT JOIN annotation_term at " +
                 "ON at.user_annotation_id = ua.id " +
-                "WHERE ua.project_id = $project.id " +
+                "WHERE ua.project_id = $project.id AND at.deleted IS NULL" +
                 (startDate ? "AND ua.created > '$startDate' " : "") +
                 (endDate ? "AND ua.created < '$endDate' " : "") +
                 "GROUP BY at.term_id ") {
@@ -235,7 +235,7 @@ class StatsService extends ModelService {
                 "FROM user_annotation ua " +
                 "LEFT JOIN annotation_term at " +
                 "ON at.user_annotation_id = ua.id " +
-                "WHERE ua.project_id = $project.id " +
+                "WHERE ua.project_id = $project.id AND at.deleted IS NULL" +
                 (startDate ? "AND ua.created > '$startDate' " : "") +
                 (endDate ? "AND ua.created < '$endDate' " : "") +
                 "GROUP BY at.term_id ") {
@@ -265,6 +265,7 @@ class StatsService extends ModelService {
 
         //compute number of annotation for each user and each term
         def nbAnnotationsByUserAndTerms = AnnotationTerm.createCriteria().list {
+            isNull("deleted")
             inList("term", terms)
             join("userAnnotation")
             createAlias("userAnnotation", "a")
