@@ -111,6 +111,8 @@ class ImageServerService extends ModelService {
         parameters.location = geometry.toString()
         parameters.minSlice = params.minSlice
         parameters.maxSlice = params.maxSlice
+        parameters.axis = params.axis
+        parameters.dimension = params.dimension
         return JSON.parse(new String(makeRequest("/profile/projections.json", server, parameters)))
     }
 
