@@ -1044,7 +1044,7 @@ class ReviewedAnnotationListing extends AnnotationListing {
         if (multipleTerm) {
             from += "LEFT OUTER JOIN reviewed_annotation_term at ON a.id = at.reviewed_annotation_terms_id "
             from += "LEFT OUTER JOIN reviewed_annotation_term at2 ON a.id = at2.reviewed_annotation_terms_id "
-            where += "AND at.term_id <> at2.term_id "
+            where += "AND at.term_id <> at2.term_id AND at.deleted IS NULL AND at2.deleted IS NULL "
         }
         else if (noTerm && !(term || terms)) {
             from = "$from LEFT OUTER JOIN reviewed_annotation_term at ON a.id = at.reviewed_annotation_terms_id "
