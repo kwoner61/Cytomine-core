@@ -392,8 +392,8 @@ class ImageServerService extends ModelService {
         else {
             http.request(Method.POST, ContentType.BINARY) {
                 uri.path = path
-                uri.query = parameters
                 requestContentType = ContentType.URLENC
+                body = parameters
 
                 response.success = { resp, stream ->
                     return IOUtils.toByteArray(stream)
