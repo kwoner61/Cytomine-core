@@ -196,7 +196,7 @@ class StatsService extends ModelService {
                 "FROM user_annotation ua " +
                 "LEFT JOIN annotation_term at " +
                 "ON at.user_annotation_id = ua.id " +
-                "WHERE ua.project_id = $project.id AND at.deleted IS NULL" +
+                "WHERE ua.project_id = $project.id AND at.deleted IS NULL " +
                 (startDate ? "AND ua.created > '$startDate' " : "") +
                 (endDate ? "AND ua.created < '$endDate' " : "") +
                 "GROUP BY at.term_id ") {
@@ -235,7 +235,7 @@ class StatsService extends ModelService {
                 "FROM user_annotation ua " +
                 "LEFT JOIN annotation_term at " +
                 "ON at.user_annotation_id = ua.id " +
-                "WHERE ua.project_id = $project.id AND at.deleted IS NULL" +
+                "WHERE ua.project_id = $project.id AND at.deleted IS NULL " +
                 (startDate ? "AND ua.created > '$startDate' " : "") +
                 (endDate ? "AND ua.created < '$endDate' " : "") +
                 "GROUP BY at.term_id ") {
