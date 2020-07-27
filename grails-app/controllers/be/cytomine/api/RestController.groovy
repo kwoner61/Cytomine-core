@@ -310,44 +310,35 @@ class RestController {
         if (params.alphaMask || params.type == 'alphaMask')
             params.format = 'png'
 
-        log.debug params.format
+        String contentType
         if (params.format == 'jpg') {
-            if (request.method == 'HEAD') {
-                render(text: "", contentType: "image/jpeg");
-            }
-            else {
-                response.contentLength = bytes.length
-                response.setHeader("Connection", "Keep-Alive")
-                response.setHeader("Accept-Ranges", "bytes")
-                response.setHeader("Content-Type", "image/jpeg")
-                response.getOutputStream() << bytes
-                response.getOutputStream().flush()
-            }
+            contentType = "image/jpeg"
+        } else if (params.format == 'tiff' || params.format == 'tif') {
+            contentType = "image/tiff"
+        } else {
+            contentType = "image/png"
         }
-        else if (params.format == 'tiff' || params.format == 'tif') {
-            if (request.method == 'HEAD') {
-                render(text: "", contentType: "image/tiff")
-            }
-            else {
-                response.contentLength = bytes.length
-                response.setHeader("Connection", "Keep-Alive")
-                response.setHeader("Accept-Ranges", "bytes")
-                response.setHeader("Content-Type", "image/tiff")
-                response.getOutputStream() << bytes
-                response.getOutputStream().flush()
-            }
-        }
-        else {
-            if (request.method == 'HEAD') {
-                render(text: "", contentType: "image/png")
-            }
-            else {
-                response.contentLength = bytes.length
-                response.setHeader("Connection", "Keep-Alive")
-                response.setHeader("Accept-Ranges", "bytes")
-                response.setHeader("Content-Type", "image/png")
-                response.getOutputStream() << bytes
-                response.getOutputStream().flush()
+
+        if (request.method == 'HEAD') {
+            render(text: "", contentType: contentType)
+        } else {
+            response.contentLength = bytes.length
+            response.setHeader("Connection", "Keep-Alive")
+            response.setHeader("Accept-Ranges", "bytes")
+            response.setHeader("Content-Type", contentType)
+            def outputStream = response.outputStream
+            try {
+                outputStream << bytes
+            } catch (IOException ignored) {
+                null
+            } finally {
+                if (outputStream != null) {
+                    try {
+                        outputStream.close()
+                    } catch (IOException ignored) {
+                        null
+                    }
+                }
             }
         }
     }
