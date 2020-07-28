@@ -20,6 +20,7 @@ import be.cytomine.image.AbstractImage
 import be.cytomine.image.UploadedFile
 import be.cytomine.middleware.ImageServer
 import be.cytomine.utils.Version
+import org.joda.time.DateTime
 
 class ExtractImageMetadataJob {
 
@@ -33,6 +34,7 @@ class ExtractImageMetadataJob {
     def execute() {
         Version v = Version.getLastVersion()
         if (v?.major >= 2) {
+            Date yesterday = new DateTime().minusDays(1).toDate()
             Collection<AbstractImage> abstractImages = AbstractImage.createCriteria().list(max: 10) {
                 createAlias("uploadedFile", "uf")
                 and {
@@ -45,6 +47,7 @@ class ExtractImageMetadataJob {
                     }
                     isNull("deleted")
                     isNull("extractedMetadata")
+                    lt("created", yesterday) //to avoid conflict with running image conversions
                 }
                 order("created", "desc")
             }
