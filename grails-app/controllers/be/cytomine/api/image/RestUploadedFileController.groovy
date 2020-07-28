@@ -46,7 +46,8 @@ class RestUploadedFileController extends RestController {
 
     @RestApiMethod(description = "Get all uploaded files made by the current user")
     @RestApiParams(params = [
-            @RestApiParam(name = "onlyRootsWithDetails", type = "boolean", paramType = RestApiParamType.QUERY, description = "If set, only return uploaded files which are roots (no parent) with supplementary details such global size."),
+            @RestApiParam(name = "onlyRootsWithDetails", type = "boolean", paramType = RestApiParamType.QUERY, description = "If set, only return uploaded files which are roots (no parent) with supplementary details such associated abstract image."),
+            @RestApiParam(name = "withTreeDetails", type = "boolean", paramType = RestApiParamType.QUERY, description = "If set with onlyRootsWithDetails, return supplementary details from underlying tree such as global size and number of children."),
             @RestApiParam(name = "onlyRoots", type = "boolean", paramType = RestApiParamType.QUERY, description = "If set, only return uploaded files which are roots (no parent)."),
             @RestApiParam(name = "parent", type = "long", paramType = RestApiParamType.QUERY, description = "If set, only return uploaded files having the given parent."),
             @RestApiParam(name = "root", type = "long", paramType = RestApiParamType.QUERY, description = "If set, only return uploaded files which are children of the given root. Returned attributes are a subset of uploaded files attributes."),
@@ -62,7 +63,8 @@ class RestUploadedFileController extends RestController {
             def allowedSearchParameters = [
                     [field: "originalFilename", allowedOperators: equalsAndLikeAndIlikeOperators]
             ]
-            uploadedFiles = uploadedFileService.listWithDetails((User) cytomineService.getCurrentUser(), getSearchParameters(allowedSearchParameters), params.sort, params.order)
+            Boolean withTreeDetails = params.boolean('withTreeDetails', false)
+            uploadedFiles = uploadedFileService.listWithDetails((User) cytomineService.getCurrentUser(), getSearchParameters(allowedSearchParameters), params.sort, params.order, withTreeDetails)
         } else if (params.all) {
             def result = uploadedFileService.list()
             uploadedFiles = [collection : result.data, size : result.total, offset: result.offset, perPage: result.perPage, totalPages: result.totalPages]

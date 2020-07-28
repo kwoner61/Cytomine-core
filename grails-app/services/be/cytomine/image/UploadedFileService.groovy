@@ -77,7 +77,7 @@ class UploadedFileService extends ModelService {
 
     }
 
-    def listWithDetails(User user, def searchParameters = [], def sortedProperty = "created", def sortDirection = "desc") {
+    def listWithDetails(User user, def searchParameters = [], def sortedProperty = "created", def sortDirection = "desc", Boolean withTreeDetails = false) {
         securityACLService.checkIsSameUser(user, cytomineService.currentUser)
 
         String search = ""
@@ -89,12 +89,25 @@ class UploadedFileService extends ModelService {
         if (["content_type", "id", "created", "filename", "originalFilename", "size", "status"].contains(sortedProperty)) {
             sort += "uf.${SQLUtils.toSnakeCase(sortedProperty)}"
         }
-        else if(sortedProperty == "globalSize") {
+        else if(withTreeDetails && sortedProperty == "globalSize") {
             sort += "COALESCE(SUM(DISTINCT tree.size),0)+uf.size"
         }
 
         if (!sort.isEmpty()) {
             sort = "ORDER BY $sort $sortDirection"
+        }
+
+        String treeSelect = ""
+        String treeJoin = ""
+        if (withTreeDetails) {
+            treeSelect += "COUNT(DISTINCT tree.id) AS nb_children, "
+            treeSelect += "COALESCE(SUM(DISTINCT tree.size),0)+uf.size AS global_size, "
+
+            treeJoin = "LEFT JOIN (SELECT *  FROM uploaded_file t " +
+                    "WHERE EXISTS (SELECT 1 FROM acl_sid AS asi LEFT JOIN acl_entry AS ae ON asi.id = ae.sid " +
+                    "LEFT JOIN acl_object_identity AS aoi ON ae.acl_object_identity = aoi.id " +
+                    "WHERE aoi.object_id_identity = t.storage_id AND asi.sid = :username) AND t.deleted IS NULL) " +
+                    "AS tree ON (uf.l_tree @> tree.l_tree AND tree.id != uf.id) "
         }
 
         String request = "SELECT uf.id, " +
@@ -105,16 +118,11 @@ class UploadedFileService extends ModelService {
                 "uf.size, " +
                 "uf.status, " +
                 "CASE WHEN (nlevel(uf.l_tree) > 0) THEN ltree2text(subltree(uf.l_tree, 0, 1)) ELSE NULL END AS root, " +
-                "COUNT(DISTINCT tree.id) AS nb_children, " +
-                "COALESCE(SUM(DISTINCT tree.size),0)+uf.size AS global_size, " +
+                treeSelect +
                 "CASE WHEN (uf.status = ${UploadedFile.Status.CONVERTED.code} OR uf.status = ${UploadedFile.Status.DEPLOYED.code}) " +
                 "THEN ai.id ELSE NULL END AS image " +
                 "FROM uploaded_file uf " +
-                "LEFT JOIN (SELECT *  FROM uploaded_file t " +
-                "WHERE EXISTS (SELECT 1 FROM acl_sid AS asi LEFT JOIN acl_entry AS ae ON asi.id = ae.sid " +
-                "LEFT JOIN acl_object_identity AS aoi ON ae.acl_object_identity = aoi.id " +
-                "WHERE aoi.object_id_identity = t.storage_id AND asi.sid = :username) AND t.deleted IS NULL) " +
-                "AS tree ON (uf.l_tree @> tree.l_tree AND tree.id != uf.id) " +
+                treeJoin +
                 "LEFT JOIN abstract_image AS ai ON ai.uploaded_file_id = uf.id " +
                 "LEFT JOIN uploaded_file AS parent ON parent.id = uf.parent_id " +
                 "WHERE EXISTS (SELECT 1 FROM acl_sid AS asi " +
