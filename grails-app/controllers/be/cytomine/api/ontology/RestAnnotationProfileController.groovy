@@ -24,7 +24,7 @@ class RestAnnotationProfileController extends RestController {
     }
 
     def averageProjection() {
-        forward(action: "profile", params: [type: "image-projection"], projection: "average", format: params.format)
+        forward(action: "profile", params: [type: "image-projection", projection: "average", format: params.format])
     }
 
     def profile() {
