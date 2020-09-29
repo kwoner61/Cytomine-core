@@ -95,6 +95,7 @@ class ImageInstance extends CytomineDomain implements Serializable {
             @RestApiObjectField(apiFieldName = "path", description = "The internal path of the file", allowedType = "string", useForCreation = false),
             @RestApiObjectField(apiFieldName = "contentType", description = "The image content type", allowedType = "string", useForCreation = false),
             @RestApiObjectField(apiFieldName = "zoom", description = "The number of zooms available in the image", allowedType = "int", useForCreation = false),
+            @RestApiObjectField(apiFieldName = "tileSize", description = "The size of the tiles in the image", allowedType = "int", useForCreation = false),
             @RestApiObjectField(apiFieldName = "macroURL", description = "URL to get image macros", allowedType = "string", useForCreation = false),
             @RestApiObjectField(apiFieldName = "sample", description = "The source of the image (human, animal,...)", allowedType = "long", mandatory = false),
             @RestApiObjectField(apiFieldName = "width", description = "The N-dimensional image width, in pixels (X)", allowedType = "int", useForCreation = false, mandatory = false, defaultValue = "-1"),
@@ -219,6 +220,7 @@ class ImageInstance extends CytomineDomain implements Serializable {
         returnArray['fps'] = image?.fps
 
         returnArray['zoom'] = image?.baseImage?.getZoomLevels()
+        returnArray['tileSize'] = image?.baseImage?.tileSize
 
         returnArray['resolution'] = image?.resolution
         returnArray['magnification'] = image?.magnification

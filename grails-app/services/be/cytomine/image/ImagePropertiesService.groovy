@@ -47,7 +47,8 @@ class ImagePropertiesService implements Serializable {
                 colorspace   : [name: 'cytomine.colorspace', parser: parseString],
                 magnification: [name: 'cytomine.magnification', parser: parseInt],
                 resolution   : [name: 'cytomine.resolution', parser: parseDouble],
-                channelNames : [name: 'cytomine.channelNames', parser: parseJSON]
+                channelNames : [name: 'cytomine.channelNames', parser: parseJSON],
+                tileSize     : [name: 'cytomine.tileSize', parser: parseInt]
         ]
     }
 

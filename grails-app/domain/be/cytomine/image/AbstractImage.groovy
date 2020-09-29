@@ -94,6 +94,9 @@ class AbstractImage extends CytomineDomain implements Serializable {
     @RestApiObjectField(description = "The image owner", mandatory = false, defaultValue = "current user")
     SecUser user //owner
 
+    @RestApiObjectField(description = "The image tile size", defaultValue = "256")
+    Integer tileSize = 256
+
     Date extractedMetadata
 
     static belongsTo = Sample
@@ -144,6 +147,7 @@ class AbstractImage extends CytomineDomain implements Serializable {
         bitPerSample(nullable: true)
         samplePerPixel(nullable: true)
         extractedMetadata(nullable: true)
+        tileSize(nullable: true)
     }
 
     /**
@@ -180,6 +184,7 @@ class AbstractImage extends CytomineDomain implements Serializable {
         domain.bitPerSample = JSONUtils.getJSONAttrInteger(json, 'bitPerSample', null)
         domain.samplePerPixel = JSONUtils.getJSONAttrInteger(json, 'samplePerPixel', null)
         domain.colorspace = JSONUtils.getJSONAttrStr(json, 'colorspace', false)
+        domain.tileSize = JSONUtils.getJSONAttrInteger(json, 'tileSize', 256)
         return domain;
     }
 
@@ -210,6 +215,7 @@ class AbstractImage extends CytomineDomain implements Serializable {
         returnArray['fps'] = image?.fps
 
         returnArray['zoom'] = image?.getZoomLevels()
+        returnArray['tileSize'] = image?.tileSize
 
         returnArray['resolution'] = image?.resolution
         returnArray['magnification'] = image?.magnification
@@ -265,7 +271,7 @@ class AbstractImage extends CytomineDomain implements Serializable {
         double tmpWidth = width
         double tmpHeight = height
         def nbZoom = 0
-        while (tmpWidth > 256 || tmpHeight > 256) {
+        while (tmpWidth > tileSize || tmpHeight > tileSize) {
             nbZoom++
             tmpWidth /= 2
             tmpHeight /= 2

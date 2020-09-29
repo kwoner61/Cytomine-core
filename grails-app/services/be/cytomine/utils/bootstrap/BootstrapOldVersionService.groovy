@@ -115,6 +115,14 @@ class BootstrapOldVersionService {
         Version.setCurrentVersion(Long.parseLong(grailsApplication.metadata.'app.versionDate'), grailsApplication.metadata.'app.version')
     }
 
+    def initv2_2_1() {
+        log.info "Migration to v2.2.1"
+        def sql = new Sql(dataSource)
+        sql.executeUpdate("UPDATE abstract_image SET tile_size = 256 WHERE tile_size IS NULL;")
+        bootstrapUtilsService.updateSqlColumnConstraint("abstract_image", "tile_size", "SET DEFAULT 256")
+        sql.close()
+    }
+
     def initv2_2_0() {
         log.info "Migration to V2.2.0"
 
