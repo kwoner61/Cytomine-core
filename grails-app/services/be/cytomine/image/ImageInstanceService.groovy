@@ -573,6 +573,84 @@ class ImageInstanceService extends ModelService {
         return images
     }
 
+    def bounds(Project project) {
+        def select = "SELECT min(ai.width) as min_width, max(ai.width) as max_width, " +
+                "min(ai.height) as min_height, max(ai.height) as max_height, " +
+                "min(ai.magnification) as min_magnification, max(ai.magnification) as max_magnification, " +
+                "min(ai.physical_size_x) as min_resolution, max(ai.physical_size_x) as max_resolution, " +
+                "min(ii.count_image_annotations) as min_count_image_annotations, max(ii.count_image_annotations) as max_count_image_annotations, " +
+        "min(ii.count_image_job_annotations) as min_count_image_job_annotations, max(ii.count_image_job_annotations) as max_count_image_job_annotations, " +
+        "min(ii.count_image_reviewed_annotations) as min_count_image_reviewed_annotations, max(ii.count_image_reviewed_annotations) as max_count_image_reviewed_annotations "
+
+        def selectMagnification = "SELECT DISTINCT ai.magnification "
+        def selectResolution = "SELECT DISTINCT ai.physical_size_x as resolution "
+        def selectFormat = "SELECT DISTINCT uf.content_type "
+
+        def from = "FROM image_instance ii " +
+                "LEFT JOIN abstract_image ai ON ai.id = ii.base_image_id " +
+                "LEFT JOIN uploaded_file uf ON uf.id = ai.uploaded_file_id "
+
+        def where = "WHERE ii.project_id = ${project.id} AND ii.deleted IS NULL "
+
+        def sql = new Sql(dataSource)
+        def magnifications = []
+        sql.eachRow(selectMagnification + from + where) {
+            magnifications << it.magnification ?:  'null'
+        }
+
+        def resolutions = []
+        sql.eachRow(selectResolution + from + where) {
+            resolutions << it.resolution ?: 'null'
+        }
+
+        def formats = []
+        sql.eachRow(selectFormat + from + where) {
+            formats << it.content_type ?: 'null'
+        }
+
+        def bounds = [:]
+        sql.eachRow(select + from + where) {
+            bounds.width = [
+                min: it.min_width,
+                max: it.max_width
+            ]
+            bounds.height = [
+                    min: it.min_height,
+                    max: it.max_height
+            ]
+            bounds.magnification = [
+                    list: magnifications,
+                    min: it.min_magnification,
+                    max: it.max_magnification
+            ]
+            bounds.resolution = [
+                    list: resolutions,
+                    min: it.min_resolution,
+                    max: it.max_resolution
+            ]
+            bounds.format = [
+                    list: formats
+            ]
+            bounds.mimeType = [
+                    list: formats
+            ]
+            bounds.countImageAnnotations = [
+                    min: it.min_count_image_annotations,
+                    max: it.max_count_image_annotations
+            ]
+            bounds.countImageJobAnnotations = [
+                    min: it.min_count_image_job_annotations,
+                    max: it.max_count_image_job_annotations
+            ]
+            bounds.countImageReviewedAnnotations = [
+                    min: it.min_count_image_reviewed_annotations,
+                    max: it.max_count_image_reviewed_annotations
+            ]
+        }
+        sql.close()
+        return bounds
+    }
+
 //    private long copyAnnotationLayer(ImageInstance image, User user, ImageInstance based, def usersProject,Task task, double total, double alreadyDone,SecUser currentUser, Boolean giveMe ) {
 //        log.info "copyAnnotationLayer=$image | $user "
 //         def alreadyDoneLocal = alreadyDone

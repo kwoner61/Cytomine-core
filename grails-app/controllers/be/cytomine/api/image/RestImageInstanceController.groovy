@@ -646,17 +646,26 @@ class RestImageInstanceController extends RestController {
 
         Project project = Project.read(params.projectId)
         securityACLService.check(project, READ)
-        images = ImageInstance.findAllByProjectAndDeletedIsNull(project)
 
-        def bounds = statsService.bounds(ImageInstance, images)
+        def MAX_IMAGES = 100
+        def bounds
+        if (project.countImages < MAX_IMAGES) {
+            images = ImageInstance.findAllByProjectAndDeletedIsNull(project)
 
-        def abstractImages = images.collect{it.baseImage}
-        bounds.put("width", [min : abstractImages.min{it.width}?.width, max : abstractImages.max{it.width}?.width])
-        bounds.put("height", [min : abstractImages.min{it.height}?.height, max : abstractImages.max{it.height}?.height])
-        bounds.put("magnification", [list : images.collect{it.magnification}.unique(), min : bounds["magnification"]?.min, max : bounds["magnification"]?.max])
-        bounds.put("resolution", [list : images.collect{it.physicalSizeX}.unique(), min : bounds["resolution"]?.min, max : bounds["resolution"]?.max])
-        bounds.put("format", [list : abstractImages.collect{it?.uploadedFile?.contentType}.unique()])
-        bounds.put("mimeType", [list : abstractImages.collect{it?.uploadedFile?.contentType}.unique()])
+            bounds = statsService.bounds(ImageInstance, images)
+
+            def abstractImages = images.collect{it.baseImage}
+            bounds.put("width", [min : abstractImages.min{it.width}?.width, max : abstractImages.max{it.width}?.width])
+            bounds.put("height", [min : abstractImages.min{it.height}?.height, max : abstractImages.max{it.height}?.height])
+            bounds.put("magnification", [list : images.collect{it.magnification}.unique(), min : bounds["magnification"]?.min, max : bounds["magnification"]?.max])
+            bounds.put("resolution", [list : images.collect{it.physicalSizeX}.unique(), min : bounds["resolution"]?.min, max : bounds["resolution"]?.max])
+            bounds.put("format", [list : abstractImages.collect{it?.uploadedFile?.contentType}.unique()])
+            bounds.put("mimeType", [list : abstractImages.collect{it?.uploadedFile?.contentType}.unique()])
+        }
+        else {
+            bounds = imageInstanceService.bounds(project)
+        }
+
 
         responseSuccess(bounds)
     }
