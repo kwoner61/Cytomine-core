@@ -365,7 +365,7 @@ class ImageInstanceService extends ModelService {
         }
 
 
-        boolean joinAI = validatedSearchParameters.any {it.property.contains(abstractImageAlias+".")} || sortedProperty.contains(abstractImageAlias+".")
+        boolean joinAI = validatedSearchParameters.any {it.property.contains(abstractImageAlias+".")} || sortedProperty.contains(abstractImageAlias+".") || light
         boolean joinMime = validatedSearchParameters.any {it.property.contains(mimeAlias+".")} || sortedProperty.contains(mimeAlias+".")
         def sqlSearchConditions = searchParametersToSQLConstraints(validatedSearchParameters)
 
@@ -392,7 +392,7 @@ class ImageInstanceService extends ModelService {
         String request
 
 
-        select = "SELECT distinct $imageInstanceAlias.* "
+        select = (light) ? "SELECT distinct ${imageInstanceAlias}.id " : "SELECT distinct ${imageInstanceAlias}.* "
         from = "FROM image_instance $imageInstanceAlias "
         where = "WHERE ${imageInstanceAlias}.project_id = ${project.id} AND ${imageInstanceAlias}.parent_id IS NULL AND ${imageInstanceAlias}.deleted IS NULL "
         search = ""
@@ -424,6 +424,10 @@ class ImageInstanceService extends ModelService {
             search += abstractImageAlias+".id::text ILIKE :name "
         }
 
+        if (light) {
+            select += ", COALESCE(${imageInstanceAlias}.instance_filename, ${abstractImageAlias}.original_filename) AS coalesced_instance_filename "
+        }
+
         if (search.contains("${imageInstanceAlias}.instance_filename") || sortedProperty.contains("${imageInstanceAlias}.instance_filename")) {
             joinAI = true
             search = search.replaceAll("${imageInstanceAlias}\\.instance_filename", "COALESCE(${imageInstanceAlias}.instance_filename, ${abstractImageAlias}.original_filename)");
@@ -437,13 +441,16 @@ class ImageInstanceService extends ModelService {
 
         sort = " ORDER BY " + sortedProperty
         sort += (sortDirection.equals("desc")) ? " DESC " : " ASC "
+        if (light) {
+            select += ", $sortedProperty "
+        }
 
         if (joinAI) {
-            select += ", ${abstractImageAlias}.* "
+            if (!light) select += ", ${abstractImageAlias}.* "
             from += "JOIN abstract_image $abstractImageAlias ON ${abstractImageAlias}.id = ${imageInstanceAlias}.base_image_id "
         }
         if (joinMime) {
-            select += ", ${mimeAlias}.* "
+            if (!light) select += ", ${mimeAlias}.* "
             from += "JOIN uploaded_file $mimeAlias ON ${mimeAlias}.id = ${abstractImageAlias}.uploaded_file_id "
         }
 
@@ -461,35 +468,47 @@ class ImageInstanceService extends ModelService {
             mapParams.put("name", blindedNameSearch)
         }
 
-        sql.eachRow(request, mapParams) {
-            def map = [:]
+        println request
+        println mapParams
+        if (!light) {
+            sql.eachRow(request, mapParams) {
+                def map = [:]
 
-            for(int i =1; i<=((GroovyResultSet) it).getMetaData().getColumnCount(); i++){
-                String key = ((GroovyResultSet) it).getMetaData().getColumnName(i)
-                String objectKey = key.replaceAll( "(_)([A-Za-z0-9])", { Object[] test -> test[2].toUpperCase() } )
+                for(int i =1; i<=((GroovyResultSet) it).getMetaData().getColumnCount(); i++){
+                    String key = ((GroovyResultSet) it).getMetaData().getColumnName(i)
+                    String objectKey = key.replaceAll( "(_)([A-Za-z0-9])", { Object[] test -> test[2].toUpperCase() } )
 
 
-                map.putAt(objectKey, it[key])
+                    map.putAt(objectKey, it[key])
+                }
+
+                map['created'] = map['created'].getTime()
+                map['deleted'] = map['deleted']?.getTime()
+                map['updated'] = map['updated']?.getTime()
+                map['reviewUser'] = map['reviewUserId']
+                map['reviewStart'] = map['reviewStart']?.getTime()
+                map['reviewStop'] = map['reviewStop']?.getTime()
+                map['baseImage'] = map['baseImageId']
+                map['project'] = map['projectId']
+                map['user'] = map['userId']
+
+                //TODO improve perf !
+                def line = ImageInstance.getDataFromDomain(ImageInstance.insertDataIntoDomain(map))
+                line.putAt('numberOfAnnotations', map.countImageAnnotations)
+                line.putAt('numberOfJobAnnotations', map.countImageJobAnnotations)
+                line.putAt('numberOfReviewedAnnotations', map.countImageReviewedAnnotations)
+                line.putAt('projectBlind', map.projectBlind)
+                line.putAt('projectName', map.projectName)
+                data << line
             }
-
-            map['created'] = map['created'].getTime()
-            map['deleted'] = map['deleted']?.getTime()
-            map['updated'] = map['updated']?.getTime()
-            map['reviewUser'] = map['reviewUserId']
-            map['reviewStart'] = map['reviewStart']?.getTime()
-            map['reviewStop'] = map['reviewStop']?.getTime()
-            map['baseImage'] = map['baseImageId']
-            map['project'] = map['projectId']
-            map['user'] = map['userId']
-
-            //TODO improve perf !
-            def line = ImageInstance.getDataFromDomain(ImageInstance.insertDataIntoDomain(map))
-            line.putAt('numberOfAnnotations', map.countImageAnnotations)
-            line.putAt('numberOfJobAnnotations', map.countImageJobAnnotations)
-            line.putAt('numberOfReviewedAnnotations', map.countImageReviewedAnnotations)
-            line.putAt('projectBlind', map.projectBlind)
-            line.putAt('projectName', map.projectName)
-            data << line
+        }
+        else {
+            sql.eachRow(request, mapParams) {
+                def map = [:]
+                map['id'] = it.id
+                map['instanceFilename'] = it.coalesced_instance_filename
+                data << map
+            }
         }
 
         def size
@@ -499,14 +518,6 @@ class ImageInstanceService extends ModelService {
             size = it.count
         }
         sql.close()
-
-        if(light) {
-            def result = []
-            data.each { image ->
-                result << [id: image.id, instanceFilename: image.instanceFilename, blindedName: image.blindedName]
-            }
-            data = result
-        }
 
         def result = [data:data, total:size]
         max = (max > 0) ? max : Integer.MAX_VALUE
