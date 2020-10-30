@@ -23,7 +23,6 @@ import be.cytomine.Exception.ObjectNotFoundException
 import be.cytomine.Exception.WrongArgumentException
 import be.cytomine.api.RestController
 import be.cytomine.api.UrlApi
-import be.cytomine.image.AbstractImage
 import be.cytomine.image.CompanionFile
 import be.cytomine.image.ImageInstance
 import be.cytomine.ontology.AlgoAnnotation
@@ -172,8 +171,20 @@ class RestAnnotationDomainController extends RestController {
         }
 
          try {
-             def data = doSearch(params).result
-             responseSuccess(data)
+             def searchResult = doSearch(params)
+             if (searchResult.total == null) {
+                 responseSuccess(searchResult.result)
+             }
+             else {
+                 responseSuccess([
+                         collection : searchResult.result,
+                         size : searchResult.total,
+                         offset: searchResult.offset,
+                         perPage: searchResult.perPage,
+                         totalPages: searchResult.totalPages
+                 ])
+             }
+
         } catch (CytomineException e) {
             log.error(e)
             response([success: false, errors: e.msg], e.code)
@@ -251,32 +262,48 @@ class RestAnnotationDomainController extends RestController {
 
     private doSearch(def params) {
         AnnotationListing al
-        def result = []
+        def data = []
+        def size = null
 
         if(isReviewedAnnotationAsked(params)) {
-            al = new ReviewedAnnotationListing()
-            result = createRequest(al, params)
+            al = fillAnnotationListing(new ReviewedAnnotationListing(), params)
+            data = annotationListingService.listGeneric(al)
+            if (al.isHandlingPagination()) size = annotationListingService.countGenericAnnotation(al)
         }
         else if(isRoiAnnotationAsked(params)) {
-            al = new RoiAnnotationListing()
-            result = createRequest(al, params)
+            al = fillAnnotationListing(new RoiAnnotationListing(), params)
+            data = annotationListingService.listGeneric(al)
+            if (al.isHandlingPagination()) size = annotationListingService.countGenericAnnotation(al)
         }
         else if(isAlgoAnnotationAsked(params)) {
-            al = new AlgoAnnotationListing()
-            result.addAll(createRequest(al, params))
+            al = fillAnnotationListing(new AlgoAnnotationListing(), params)
+            al.doPagination = false
+            data.addAll(annotationListingService.listGeneric(al))
 
             //if algo, we look for user_annotation JOIN algo_annotation_term  too
             params.suggestedTerm = params.term
             params.term = null
             params.usersForTermAlgo = null
-            al = new UserAnnotationListing()
-            result.addAll(createRequest(al, params))
+            al = fillAnnotationListing(new UserAnnotationListing(), params)
+            al.doPagination = false
+            data.addAll(annotationListingService.listGeneric(al))
         }
         else {
-            al = new UserAnnotationListing()
-            result = createRequest(al, params)
+            al = fillAnnotationListing(new UserAnnotationListing(), params)
+            data = annotationListingService.listGeneric(al)
+            if (al.isHandlingPagination()) size = annotationListingService.countGenericAnnotation(al)
         }
-        [result: result, project: al.container().container()]
+
+        def result = [result: data, total: size, project: al.container().container()]
+
+        if (al.isHandlingPagination()) {
+            def max = (al.limit > 0) ? al.limit : Integer.MAX_VALUE
+            result.offset = (al.offset) ? al.offset : 0
+            result.perPage = Math.min(max, result.total)
+            result.totalPages = Math.ceil(result.total / max)
+        }
+
+        return result
     }
 
     private downloadDocument(def annotations, Project project) {
@@ -391,7 +418,13 @@ class RestAnnotationDomainController extends RestController {
     /**
      * Fill AnnotationListing al thanks to params data
      */
-    private def createRequest(AnnotationListing al, def params) {
+    private def fillAnnotationListing(AnnotationListing al, def params) {
+
+        def max = params.getLong('max') ?: 0
+        if (max > 0) al.limit = max
+
+        def offset = params.getLong('offset') ?: 0
+        if (offset > 0) al.offset = offset
 
         al.columnToPrint = paramsService.getPropertyGroupToShow(params)
 
@@ -525,7 +558,7 @@ class RestAnnotationDomainController extends RestController {
 
         al.excludedAnnotation = params.getLong('excludedAnnotation') // TODO ?
 
-        annotationListingService.listGeneric(al)
+        return al
     }
 
     /**

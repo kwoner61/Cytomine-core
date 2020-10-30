@@ -124,6 +124,14 @@ abstract class AnnotationListing {
 
     def orderBy = null
 
+    def limit = null
+    def offset = null
+    def doPagination = true
+
+    def isHandlingPagination() {
+        return doPagination && !kmeans
+    }
+
     def addExtraColumn(def propName, def column) {
         extraColmun[propName] = column
     }
@@ -193,6 +201,73 @@ abstract class AnnotationListing {
         throw new WrongArgumentException("There is no project or image or slice filter. We cannot check acl!")
     }
 
+    def getWhere() {
+        return getProjectConst() +
+                getUserConst() +
+                getUsersConst() +
+
+                getImageConst() +
+                getImagesConst() +
+
+                getSliceConst() +
+                getSlicesConst() +
+
+                getTagConst() +
+                getTagsConst() +
+
+                getTermConst() +
+                getTermsConst() +
+
+                getTrackConst() +
+                getTracksConst() +
+                getBeforeOrAfterSliceConst() +
+
+                getUsersForTermConst() +
+
+                getUserForTermAlgoConst() +
+                getUsersForTermAlgoConst() +
+
+                getSuggestedTermConst() +
+                getSuggestedTermsConst() +
+
+                getNotReviewedOnlyConst() +
+                getParentsConst() +
+                getAvoidEmptyCentroidConst() +
+                getReviewUsersConst() +
+
+                getIntersectConst() +
+                getIntersectAnnotationConst() +
+                getMaxDistanceAnnotationConst() +
+                getExcludedAnnotationConst() +
+
+                getBeforeThan() +
+                getAfterThan() +
+                getNotDeleted()
+    }
+
+    def getAnnotationCountRequest() {
+        return "SELECT COUNT(DISTINCT a.id) " + getFrom() + getWhere()
+    }
+
+    def getAnnotationsConst() {
+        if (isHandlingPagination() && (limit != null || offset != null)) {
+            def limitSql = (limit && limit > 0) ? " LIMIT $limit " : "";
+            def offsetSql = (offset && offset > 0) ? " OFFSET $offset " : "";
+
+            if (track || tracks) {
+                return "AND a.id IN (SELECT DISTINCT b.id FROM " +
+                        "(SELECT DISTINCT a.id as id, (asl.channel + ai.channels * (asl.z_stack + ai.depth * asl.time)) as rank " +
+                        getFrom() + getWhere() + " ORDER BY rank ASC " + limitSql + offsetSql + ") b ) "
+            }
+
+            return "AND a.id IN (SELECT DISTINCT a.id " + getFrom() + getWhere() +
+                    " ORDER BY a.id DESC "+ limitSql + offsetSql + ") "
+        }
+        else {
+            return ""
+        }
+    }
+
     /**
      * Generate SQL request string
      */
@@ -212,49 +287,7 @@ abstract class AnnotationListing {
             }
         }
 
-        String whereRequest =
-                getProjectConst() +
-                        getUserConst() +
-                        getUsersConst() +
-
-                        getImageConst() +
-                        getImagesConst() +
-
-                        getSliceConst() +
-                        getSlicesConst() +
-
-                        getTagConst() +
-                        getTagsConst() +
-
-                        getTermConst() +
-                        getTermsConst() +
-
-                        getTrackConst() +
-                        getTracksConst() +
-                        getBeforeOrAfterSliceConst() +
-
-                        getUsersForTermConst() +
-
-                        getUserForTermAlgoConst() +
-                        getUsersForTermAlgoConst() +
-
-                        getSuggestedTermConst() +
-                        getSuggestedTermsConst() +
-
-                        getNotReviewedOnlyConst() +
-                        getParentsConst() +
-                        getAvoidEmptyCentroidConst() +
-                        getReviewUsersConst() +
-
-                        getIntersectConst() +
-                        getIntersectAnnotationConst() +
-                        getMaxDistanceAnnotationConst() +
-                        getExcludedAnnotationConst() +
-
-                        getBeforeThan() +
-                        getAfterThan() +
-                        getNotDeleted() +
-                        createOrderBy()
+        String whereRequest = getWhere() + getAnnotationsConst() + createOrderBy()
 
         if (term || terms || track || tracks) {
             def request = "SELECT DISTINCT a.*, "

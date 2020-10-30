@@ -70,6 +70,17 @@ class AnnotationListingService extends ModelService {
 
     }
 
+    def countGenericAnnotation(AnnotationListing al) {
+        def sql = new Sql(dataSource)
+        def size
+        log.info al.getAnnotationCountRequest()
+        sql.eachRow(al.getAnnotationCountRequest()) {
+            size = it.count
+        }
+        sql.close()
+        return size
+    }
+
     /**
      * Execute request and format result into a list of map
      */
@@ -84,6 +95,7 @@ class AnnotationListingService extends ModelService {
 
         def realColumn = []
         def request = al.getAnnotationsRequest()
+        log.info(request)
 
         boolean termAsked = false
         boolean trackAsked = false
