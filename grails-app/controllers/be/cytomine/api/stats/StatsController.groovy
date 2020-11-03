@@ -145,6 +145,20 @@ class StatsController extends RestController {
         responseSuccess(statsService.statTermSlide(project, startDate, endDate))
     }
 
+    def statPerTermAndImage() {
+        //Get project
+        Project project = Project.read(params.id)
+        if (project == null) {
+            responseNotFound("Project", params.id)
+            return
+        }
+        securityACLService.check(project,READ)
+
+        Date startDate = params.startDate ? new Date(params.long("startDate")) : null
+        Date endDate = params.endDate ? new Date(params.long("endDate")) : null
+        responseSuccess(statsService.statPerTermAndImage(project, startDate, endDate))
+    }
+
     @RestApiMethod(description="Compute for each user the number of samples in which (s)he created annotation")
     @RestApiParams(params=[
             @RestApiParam(name="id", type="long", paramType = RestApiParamType.PATH, description = "The identifier of the project"),

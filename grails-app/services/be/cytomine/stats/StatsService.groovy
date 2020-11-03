@@ -207,6 +207,27 @@ class StatsService extends ModelService {
         return result.values()
     }
 
+    def statPerTermAndImage(Project project, Date startDate, Date endDate) {
+        def sql = new Sql(dataSource)
+        def results = []
+        sql.eachRow("SELECT ua.image_id, at.term_id, COUNT(ua.id) as count " +
+                "FROM user_annotation ua " +
+                "LEFT JOIN annotation_term at ON at.user_annotation_id = ua.id " +
+                "WHERE ua.deleted is NULL and at.deleted is NULL and ua.project_id = $project.id " +
+                (startDate ? "AND ua.created > '$startDate' " : "") +
+                (endDate ? "AND ua.created < '$endDate' " : "") +
+                "GROUP BY ua.image_id, at.term_id " +
+                "ORDER BY ua.image_id, at.term_id ") {
+            results << [
+                    image: it[0],
+                    term: it[1],
+                    countAnnotations: it[2]
+            ]
+        }
+        sql.close()
+        return results
+    }
+
     def statTerm(Project project, Date startDate, Date endDate, boolean leafsOnly) {
         //Get leaf term (parent term cannot be map with annotation)
         def terms = leafsOnly ? project.ontology.leafTerms() : project.ontology.terms()

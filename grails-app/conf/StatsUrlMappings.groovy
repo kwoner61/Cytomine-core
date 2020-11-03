@@ -33,6 +33,9 @@ class StatsUrlMappings {
         "/api/project/$id/stats/termslide.$format"(controller:"stats"){
             action = [GET:"statTermSlide"]
         }
+        "/api/project/$id/stats/termimage.$format"(controller:"stats"){
+            action = [GET:"statPerTermAndImage"]
+        }
         "/api/project/$id/stats/userslide.$format"(controller:"stats"){
             action = [GET:"statUserSlide"]
         }
