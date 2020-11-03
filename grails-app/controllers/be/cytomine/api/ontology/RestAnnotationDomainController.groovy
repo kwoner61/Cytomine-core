@@ -267,11 +267,13 @@ class RestAnnotationDomainController extends RestController {
 
         if(isReviewedAnnotationAsked(params)) {
             al = fillAnnotationListing(new ReviewedAnnotationListing(), params)
+            al.doPagination = false
             data = annotationListingService.listGeneric(al)
             if (al.isHandlingPagination()) size = annotationListingService.countGenericAnnotation(al)
         }
         else if(isRoiAnnotationAsked(params)) {
             al = fillAnnotationListing(new RoiAnnotationListing(), params)
+            al.doPagination = false
             data = annotationListingService.listGeneric(al)
             if (al.isHandlingPagination()) size = annotationListingService.countGenericAnnotation(al)
         }
@@ -290,6 +292,7 @@ class RestAnnotationDomainController extends RestController {
         }
         else {
             al = fillAnnotationListing(new UserAnnotationListing(), params)
+            al.doPagination = false
             data = annotationListingService.listGeneric(al)
             if (al.isHandlingPagination()) size = annotationListingService.countGenericAnnotation(al)
         }
