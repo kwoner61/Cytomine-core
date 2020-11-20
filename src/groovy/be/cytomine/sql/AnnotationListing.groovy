@@ -261,7 +261,16 @@ abstract class AnnotationListing {
 
             if (term || terms) {
                 sqlColumns = sqlColumns.findAll{it.key != "term" && it.key != "annotationTerms" && it.key != "userTerm"}
-                request += "at.term_id as term, at.id as annotationTerms, at.user_id as userTerm "
+                if (this instanceof  AlgoAnnotationListing) {
+                    request += "aat.term_id as term, aat.id as annotationTerms, aat.user_job_id as userTerm "
+                }
+                else if (this instanceof ReviewedAnnotationListing) {
+                    request += "at.term_id as term, 0 as annotationTerms, a.user as userTerm "
+                }
+                else {
+                    request += "at.term_id as term, at.id as annotationTerms, at.user_id as userTerm "
+                }
+
             }
 
             if ((term || terms) && (track || tracks))
@@ -274,18 +283,42 @@ abstract class AnnotationListing {
 
             request += "FROM (" + getSelect(sqlColumns) + getFrom() + whereRequest + ") a \n"
 
-            if (term || terms)
-                request += "LEFT OUTER JOIN annotation_term at ON a.id = at.user_annotation_id "
+            if (term || terms) {
+                if (this instanceof AlgoAnnotationListing) {
+                    request += "LEFT OUTER JOIN algo_annotation_term aat ON aat.annotation_ident = a.id "
+                }
+                else if (this instanceof ReviewedAnnotationListing) {
+                    request += "LEFT OUTER JOIN reviewed_annotation_term at ON a.id = at.reviewed_annotation_terms_id "
+                }
+                else {
+                    request += "LEFT OUTER JOIN annotation_term at ON a.id = at.user_annotation_id "
+                }
+            }
+
 
             if (track || tracks)
                 request += "LEFT OUTER JOIN annotation_track atr ON a.id = atr.annotation_ident "
 
             request += "WHERE true "
-            if (term || terms) request += "AND at.deleted IS NULL "
+            if (term || terms) {
+                if (this instanceof AlgoAnnotationListing) {
+                    request += "AND aat.deleted IS NULL "
+                }
+                else if (!(this instanceof ReviewedAnnotationListing)) {
+                    request += "AND at.deleted IS NULL "
+                }
+            }
 
             request += "ORDER BY "
             request += (track || tracks) ? "a.rank asc" : "a.id desc "
-            request += ((term || terms) ? ", at.term_id " : "")
+            if (term || terms) {
+                if (this instanceof AlgoAnnotationListing) {
+                    request += ", aat.term_id "
+                }
+                else {
+                    request += ", at.term_id "
+                }
+            }
             request += ((track || tracks) ? ", atr.track_id " : "")
             return request
         }
