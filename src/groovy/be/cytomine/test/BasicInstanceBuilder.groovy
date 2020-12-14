@@ -21,7 +21,7 @@ import be.cytomine.CytomineDomain
 import be.cytomine.meta.Property
 import be.cytomine.image.*
 import be.cytomine.image.acquisition.Instrument
-import be.cytomine.image.multidim.ImageGroup
+import be.cytomine.image.group.ImageGroup
 import be.cytomine.image.multidim.ImageGroupHDF5
 import be.cytomine.image.multidim.ImageSequence
 import be.cytomine.image.server.*

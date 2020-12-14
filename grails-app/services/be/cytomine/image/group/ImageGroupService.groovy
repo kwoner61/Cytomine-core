@@ -1,4 +1,4 @@
-package be.cytomine.image.multidim
+package be.cytomine.image.group
 
 /*
 * Copyright (c) 2009-2019. Authors: see NOTICE file.
@@ -17,6 +17,7 @@ package be.cytomine.image.multidim
 */
 
 import be.cytomine.command.*
+import be.cytomine.image.group.ImageGroup
 import be.cytomine.project.Project
 import be.cytomine.security.SecUser
 import be.cytomine.utils.ModelService
@@ -29,15 +30,9 @@ class ImageGroupService extends ModelService {
     static transactional = true
 
     def cytomineService
-    def transactionService
-    def userAnnotationService
-    def algoAnnotationService
-    def dataSource
-    def reviewedAnnotationService
     def imageSequenceService
     def securityACLService
     def abstractImageService
-    def imageGroupHDF5Service
     def imageServerService
 
     def currentDomain() {
@@ -107,46 +102,8 @@ class ImageGroupService extends ModelService {
         return [domain.id,  domain.name, domain.project.name]
     }
 
-    def deleteDependentImageSequence(ImageGroup group, Transaction transaction, Task task = null) {
-        ImageSequence.findAllByImageGroup(group).each {
-            imageSequenceService.delete(it,transaction,null,false)
-        }
-    }
-
-    def deleteDependentImageGroupHDF5(ImageGroup group, Transaction transaction, Task task = null) {
-        ImageGroupHDF5.findAllByGroup(group).each {
-            imageGroupHDF5Service.delete(it,transaction,null,false)
-        }
-    }
-
-    def characteristics(ImageGroup imageGroup){
-        def poss = ImageSequence.findAllByImageGroup(imageGroup)
-        def z = []
-        def t = []
-        def c = []
-        def s = []
-
-        poss.each {
-            z << it.zStack
-            t << it.time
-            c << it.channel
-            s << it.slice
-        }
-
-        z = z.unique().sort()
-        t = t.unique().sort()
-        c = c.unique().sort()
-        s = s.unique().sort()
-        return [slice:s,zStack:z,time:t,channel:c, imageGroup:imageGroup.id]
-
-    }
-
-    def thumb(Long id, int maxSize) {
-        ImageGroup imageGroup = ImageGroup.get(id)
-        def characteristics = characteristics(imageGroup)
-        def zMean = characteristics.zStack[(int) Math.floor(characteristics.zStack.size() / 2)]
-        def sequence = imageSequenceService.get(imageGroup, characteristics.channel[0], zMean, characteristics.slice[0], characteristics.time[0])
-
-        return imageServerService.thumb(sequence.image.baseImage, [maxSize:maxSize])
-    }
+//    def thumb(Long id, int maxSize) {
+//        ImageGroup imageGroup = ImageGroup.get(id)
+//        return imageServerService.thumb(sequence.image.baseImage, [maxSize:maxSize])
+//    }
 }

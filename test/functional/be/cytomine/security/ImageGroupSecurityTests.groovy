@@ -1,7 +1,4 @@
 package be.cytomine.security
-
-import be.cytomine.image.AbstractImage
-
 /*
 * Copyright (c) 2009-2019. Authors: see NOTICE file.
 *
@@ -18,8 +15,7 @@ import be.cytomine.image.AbstractImage
 * limitations under the License.
 */
 
-import be.cytomine.image.ImageInstance
-import be.cytomine.image.multidim.ImageGroup
+import be.cytomine.image.group.ImageGroup
 import be.cytomine.project.Project
 import be.cytomine.test.BasicInstanceBuilder
 import be.cytomine.test.Infos

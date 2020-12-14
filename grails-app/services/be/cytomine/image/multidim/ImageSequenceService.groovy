@@ -19,6 +19,7 @@ package be.cytomine.image.multidim
 import be.cytomine.Exception.ObjectNotFoundException
 import be.cytomine.command.*
 import be.cytomine.image.ImageInstance
+import be.cytomine.image.group.ImageGroup
 import be.cytomine.security.SecUser
 import be.cytomine.utils.ModelService
 import be.cytomine.utils.Task

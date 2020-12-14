@@ -15,16 +15,6 @@ package be.cytomine.security
 * limitations under the License.
 */
 
-import be.cytomine.image.ImageInstance
-import be.cytomine.image.multidim.ImageGroup
-import be.cytomine.image.multidim.ImageGroupHDF5
-import be.cytomine.project.Project
-import be.cytomine.test.BasicInstanceBuilder
-import be.cytomine.test.Infos
-import be.cytomine.test.http.ImageGroupAPI
-import be.cytomine.test.http.ImageGroupHDF5API
-import be.cytomine.test.http.ProjectAPI
-
 class ImageGroupHDF5SecurityTests extends SecurityTestsAbstract{
 
 

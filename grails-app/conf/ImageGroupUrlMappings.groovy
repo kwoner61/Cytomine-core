@@ -34,34 +34,30 @@ class ImageGroupUrlMappings {
             action = [GET:"listByProject"]
         }
 
-        "/api/imagegroup/$id/characteristics.$format"(controller: "restImageGroup"){
-            action = [GET:"characteristics"]
-        }
-
-        "/api/imagegroup/$id/thumb.$format"(controller: "restImageGroup"){
-            action = [GET:"thumb"]
-        }
+//        "/api/imagegroup/$id/thumb.$format"(controller: "restImageGroup"){
+//            action = [GET:"thumb"]
+//        }
 
         /* Image group Hdf5 special */
-        "/api/imagegroupHDF5.$format"(controller: "restImageGroupHDF5"){
-            action = [POST:"add"]
-        }
-
-        "/api/imagegroupHDF5/$id.$format"(controller: "restImageGroupHDF5"){
-            action = [GET:"show", PUT:"update", DELETE:"delete"]
-        }
-
-        "/api/imagegroup/$group/imagegroupHDF5.$format"(controller: "restImageGroupHDF5"){
-            action = [GET: "showFromImageGroup", DELETE:"deleteFromImageGroup"]
-        }
-
-        "/api/imagegroupHDF5/$id/$x/$y/pixel.$format"(controller: "restImageGroupHDF5"){
-            action = [GET: "pixelHDF5"]
-        }
-
-        "/api/imagegroupHDF5/$id/$x/$y/$w/$h/rectangle.$format"(controller: "restImageGroupHDF5"){
-            action = [GET: "rectangleHDF5"]
-        }
+//        "/api/imagegroupHDF5.$format"(controller: "restImageGroupHDF5"){
+//            action = [POST:"add"]
+//        }
+//
+//        "/api/imagegroupHDF5/$id.$format"(controller: "restImageGroupHDF5"){
+//            action = [GET:"show", PUT:"update", DELETE:"delete"]
+//        }
+//
+//        "/api/imagegroup/$group/imagegroupHDF5.$format"(controller: "restImageGroupHDF5"){
+//            action = [GET: "showFromImageGroup", DELETE:"deleteFromImageGroup"]
+//        }
+//
+//        "/api/imagegroupHDF5/$id/$x/$y/pixel.$format"(controller: "restImageGroupHDF5"){
+//            action = [GET: "pixelHDF5"]
+//        }
+//
+//        "/api/imagegroupHDF5/$id/$x/$y/$w/$h/rectangle.$format"(controller: "restImageGroupHDF5"){
+//            action = [GET: "rectangleHDF5"]
+//        }
 
     }
 }

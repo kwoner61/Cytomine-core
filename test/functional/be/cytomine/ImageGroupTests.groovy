@@ -16,7 +16,7 @@ package be.cytomine
 * limitations under the License.
 */
 
-import be.cytomine.image.multidim.ImageGroup
+import be.cytomine.image.group.ImageGroup
 import be.cytomine.test.BasicInstanceBuilder
 import be.cytomine.test.Infos
 import be.cytomine.test.http.ImageGroupAPI

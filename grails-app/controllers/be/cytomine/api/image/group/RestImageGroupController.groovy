@@ -1,4 +1,4 @@
-package be.cytomine.api.image.multidim
+package be.cytomine.api.image.group
 
 /*
 * Copyright (c) 2009-2019. Authors: see NOTICE file.
@@ -17,7 +17,7 @@ package be.cytomine.api.image.multidim
 */
 
 import be.cytomine.api.RestController
-import be.cytomine.image.multidim.ImageGroup
+import be.cytomine.image.group.ImageGroup
 import be.cytomine.project.Project
 import grails.converters.JSON
 import org.restapidoc.annotation.RestApi
@@ -25,7 +25,6 @@ import org.restapidoc.annotation.RestApiMethod
 import org.restapidoc.annotation.RestApiParam
 import org.restapidoc.annotation.RestApiParams
 import org.restapidoc.pojo.RestApiParamType
-import org.restapidoc.annotation.RestApiResponseObject
 
 /**
  * Created by IntelliJ IDEA.
@@ -36,8 +35,6 @@ import org.restapidoc.annotation.RestApiResponseObject
 class RestImageGroupController extends RestController {
 
     def imageGroupService
-    def imageGroupHDF5Service
-    def imageSequenceService
     def projectService
 
     @RestApiMethod(description="Get an image group")
@@ -89,32 +86,18 @@ class RestImageGroupController extends RestController {
         delete(imageGroupService, JSON.parse("{id : $params.id}"),null)
     }
 
-    @RestApiMethod(description="Get the different Characteristics for ImageGroup")
-    @RestApiParams(params=[
-            @RestApiParam(name="id", type="long", paramType = RestApiParamType.PATH,description = "The image group")
-    ])
-    def characteristics() {
-        ImageGroup imageGroup = imageGroupService.read(params.long('id'))
-        if (imageGroup)  {
-            responseSuccess(imageGroupService.characteristics(imageGroup))
-        }
-        else {
-            responseNotFound("ImageGroup", "ImageGroup", params.id)
-        }
-    }
-
-    /**
-     * Get image thumb URL
-     */
-    @RestApiMethod(description="Get a small image (thumb) for a specific multidimensional image")
-    @RestApiParams(params=[
-            @RestApiParam(name="id", type="long", paramType = RestApiParamType.PATH,description = "The image group id")
-    ])
-    @RestApiResponseObject(objectIdentifier = "image (bytes)")
-    def thumb() {
-        response.setHeader("max-age", "86400")
-        int maxSize = params.int('maxSize',  512)
-        imageGroupService.thumb(params.long('id'), maxSize)
-        responseByteArray(imageGroupService.thumb(params.long('id'), maxSize))
-    }
+//    /**
+//     * Get image thumb URL
+//     */
+//    @RestApiMethod(description="Get a small image (thumb) for a specific multidimensional image")
+//    @RestApiParams(params=[
+//            @RestApiParam(name="id", type="long", paramType = RestApiParamType.PATH,description = "The image group id")
+//    ])
+//    @RestApiResponseObject(objectIdentifier = "image (bytes)")
+//    def thumb() {
+//        response.setHeader("max-age", "86400")
+//        int maxSize = params.int('maxSize',  512)
+//        imageGroupService.thumb(params.long('id'), maxSize)
+//        responseByteArray(imageGroupService.thumb(params.long('id'), maxSize))
+//    }
 }

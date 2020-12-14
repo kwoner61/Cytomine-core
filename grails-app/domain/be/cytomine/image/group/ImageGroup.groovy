@@ -1,4 +1,4 @@
-package be.cytomine.image.multidim
+package be.cytomine.image.group
 
 /*
 * Copyright (c) 2009-2019. Authors: see NOTICE file.
@@ -18,7 +18,6 @@ package be.cytomine.image.multidim
 
 import be.cytomine.CytomineDomain
 import be.cytomine.Exception.AlreadyExistException
-import be.cytomine.api.UrlApi
 import be.cytomine.project.Project
 import be.cytomine.utils.JSONUtils
 import org.restapidoc.annotation.RestApiObject
@@ -34,7 +33,7 @@ import org.restapidoc.annotation.RestApiObjectField
 @RestApiObject(name = "Image group", description = "A group of image from the same source with different dimension")
 class ImageGroup extends CytomineDomain implements Serializable {
 
-    @RestApiObjectField(description = "The name of the project")
+    @RestApiObjectField(description = "The name of the image group")
     String name
 
     @RestApiObjectField(description = "The image group project")
@@ -92,11 +91,11 @@ class ImageGroup extends CytomineDomain implements Serializable {
         def returnArray = CytomineDomain.getDataFromDomain(domain)
         returnArray['name'] = domain?.name
         returnArray['project'] = domain?.project?.id
-        try {
-            returnArray['thumb'] = UrlApi.getImageGroupThumbUrlWithMaxSize(domain.id, 512)
-        } catch (Exception e) {
-            returnArray['thumb'] = 'NO THUMB:' + e.toString()
-        }
+//        try {
+//            returnArray['thumb'] = UrlApi.getImageGroupThumbUrlWithMaxSize(domain.id, 512)
+//        } catch (Exception e) {
+//            returnArray['thumb'] = 'NO THUMB:' + e.toString()
+//        }
         return returnArray
     }
 

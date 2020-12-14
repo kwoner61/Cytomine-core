@@ -19,7 +19,7 @@ package be.cytomine.api.image.multidim
 import be.cytomine.Exception.CytomineException
 import be.cytomine.api.RestController
 import be.cytomine.image.ImageInstance
-import be.cytomine.image.multidim.ImageGroup
+import be.cytomine.image.group.ImageGroup
 import be.cytomine.image.multidim.ImageSequence
 import grails.converters.JSON
 import org.restapidoc.annotation.*

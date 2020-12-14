@@ -17,7 +17,7 @@ package be.cytomine
 */
 
 import be.cytomine.image.ImageInstance
-import be.cytomine.image.multidim.ImageGroup
+import be.cytomine.image.group.ImageGroup
 import be.cytomine.image.multidim.ImageSequence
 import be.cytomine.test.BasicInstanceBuilder
 import be.cytomine.test.Infos

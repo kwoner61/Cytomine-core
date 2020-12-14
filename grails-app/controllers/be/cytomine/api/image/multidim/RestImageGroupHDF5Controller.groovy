@@ -17,9 +17,8 @@ package be.cytomine.api.image.multidim
 */
 
 import be.cytomine.api.RestController
-import be.cytomine.image.multidim.ImageGroup
+import be.cytomine.image.group.ImageGroup
 import be.cytomine.image.multidim.ImageGroupHDF5
-import be.cytomine.image.multidim.ImageSequence
 import grails.converters.JSON
 import org.restapidoc.annotation.RestApi
 import org.restapidoc.annotation.RestApiMethod

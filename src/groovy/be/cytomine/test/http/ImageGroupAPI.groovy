@@ -16,7 +16,7 @@ package be.cytomine.test.http
 * limitations under the License.
 */
 
-import be.cytomine.image.multidim.ImageGroup
+import be.cytomine.image.group.ImageGroup
 import be.cytomine.test.Infos
 import grails.converters.JSON
 

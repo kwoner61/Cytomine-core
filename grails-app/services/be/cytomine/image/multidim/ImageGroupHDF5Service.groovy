@@ -16,22 +16,21 @@
 
 package be.cytomine.image.multidim
 
-import be.cytomine.CytomineDomain
+
 import be.cytomine.Exception.ConstraintException
-import be.cytomine.Exception.ObjectNotFoundException
 import be.cytomine.api.UrlApi
 import be.cytomine.command.AddCommand
 import be.cytomine.command.Command
 import be.cytomine.command.DeleteCommand
 import be.cytomine.command.EditCommand
 import be.cytomine.command.Transaction
+import be.cytomine.image.group.ImageGroup
 import be.cytomine.security.SecUser
 import be.cytomine.utils.JSONUtils
 import be.cytomine.utils.ModelService
 import be.cytomine.utils.Task
 import grails.transaction.Transactional
 import groovyx.net.http.HTTPBuilder
-import groovyx.net.http.Method
 
 import static groovyx.net.http.ContentType.*
 import static org.springframework.security.acls.domain.BasePermission.READ

@@ -17,7 +17,7 @@
 
 package be.cytomine
 
-import be.cytomine.image.multidim.ImageGroup
+import be.cytomine.image.group.ImageGroup
 import be.cytomine.image.multidim.ImageGroupHDF5
 import be.cytomine.test.BasicInstanceBuilder
 import be.cytomine.test.Infos

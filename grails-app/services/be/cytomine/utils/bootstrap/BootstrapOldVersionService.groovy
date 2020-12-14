@@ -6,7 +6,7 @@ import be.cytomine.image.CompanionFile
 import be.cytomine.image.ImageInstance
 import be.cytomine.image.Mime
 import be.cytomine.image.SliceInstance
-import be.cytomine.image.multidim.ImageGroup
+import be.cytomine.image.group.ImageGroup
 import be.cytomine.image.multidim.ImageGroupHDF5
 import be.cytomine.image.multidim.ImageSequence
 import be.cytomine.meta.AttachedFile
@@ -32,7 +32,6 @@ import be.cytomine.image.server.Storage
 import be.cytomine.image.server.StorageAbstractImage
 import be.cytomine.image.UploadedFile
 import be.cytomine.middleware.AmqpQueue
-import be.cytomine.ontology.AnnotationTrack
 import be.cytomine.meta.Property
 import be.cytomine.ontology.Track
 import be.cytomine.processing.ImageFilter
