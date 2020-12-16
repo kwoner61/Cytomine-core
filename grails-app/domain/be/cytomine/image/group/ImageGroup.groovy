@@ -18,6 +18,7 @@ package be.cytomine.image.group
 
 import be.cytomine.CytomineDomain
 import be.cytomine.Exception.AlreadyExistException
+import be.cytomine.api.UrlApi
 import be.cytomine.project.Project
 import be.cytomine.utils.JSONUtils
 import org.restapidoc.annotation.RestApiObject
@@ -60,7 +61,7 @@ class ImageGroup extends CytomineDomain implements Serializable {
      */
     void checkAlreadyExist() {
         ImageGroup.withNewSession {
-            ImageGroup imageAlreadyExist = ImageGroup.findByNameAndProject(name,project)
+            ImageGroup imageAlreadyExist = ImageGroup.findByNameAndProjectAndDeletedIsNull(name,project)
             if (imageAlreadyExist != null && (imageAlreadyExist.id != id)) {
                 throw new AlreadyExistException("ImageGroup with name=" + name + " and project=" + project + "  already exists")
             }
@@ -77,6 +78,7 @@ class ImageGroup extends CytomineDomain implements Serializable {
         domain.id = JSONUtils.getJSONAttrLong(json,'id',null)
         domain.created = JSONUtils.getJSONAttrDate(json, "created")
         domain.updated = JSONUtils.getJSONAttrDate(json, "updated")
+        domain.deleted = JSONUtils.getJSONAttrDate(json, "deleted")
         domain.project = JSONUtils.getJSONAttrDomain(json, "project", new Project(), true)
         domain.name = JSONUtils.getJSONAttrStr(json, "name");
         return domain;
@@ -91,11 +93,10 @@ class ImageGroup extends CytomineDomain implements Serializable {
         def returnArray = CytomineDomain.getDataFromDomain(domain)
         returnArray['name'] = domain?.name
         returnArray['project'] = domain?.project?.id
-//        try {
-//            returnArray['thumb'] = UrlApi.getImageGroupThumbUrlWithMaxSize(domain.id, 512)
-//        } catch (Exception e) {
-//            returnArray['thumb'] = 'NO THUMB:' + e.toString()
-//        }
+        def images = domain?.imageInstances()
+        returnArray['imageInstances'] = images
+        returnArray['numberOfImages'] = images.size()
+        returnArray['numberOfAnnotationLinks'] = 0
         return returnArray
     }
 
@@ -105,5 +106,20 @@ class ImageGroup extends CytomineDomain implements Serializable {
      */
     public CytomineDomain container() {
         return project.container();
+    }
+
+    def imageInstances() {
+        if (version == null) {
+            return []
+        }
+        def returnArray = []
+        ImageGroupImageInstance.findAllByGroupAndDeletedIsNull(this).each { igii ->
+            returnArray << [
+                    id: igii.image?.id,
+                    instanceFilename: igii.image?.blindInstanceFilename,
+                    thumb: UrlApi.getImageInstanceThumbUrlWithMaxSize(igii.image?.id, 512)
+            ]
+        }
+        return returnArray
     }
 }

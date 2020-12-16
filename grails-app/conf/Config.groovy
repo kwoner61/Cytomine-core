@@ -365,6 +365,7 @@ cytomine.customUI.global = [
 cytomine.customUI.project = [
         //tabs
         "project-images-tab":["ADMIN_PROJECT":true,"CONTRIBUTOR_PROJECT":true],
+        "project-image-groups-tab":["ADMIN_PROJECT":false,"CONTRIBUTOR_PROJECT":false],
         "project-annotations-tab":["ADMIN_PROJECT":true,"CONTRIBUTOR_PROJECT":true],
         "project-jobs-tab":["ADMIN_PROJECT":false,"CONTRIBUTOR_PROJECT":false],
         "project-activities-tab":["ADMIN_PROJECT":true,"CONTRIBUTOR_PROJECT":false],

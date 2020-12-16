@@ -21,6 +21,7 @@ import be.cytomine.Exception.CytomineMethodNotYetImplementedException
 import be.cytomine.Exception.ForbiddenException
 import be.cytomine.api.UrlApi
 import be.cytomine.command.*
+import be.cytomine.image.group.ImageGroupImageInstance
 import be.cytomine.image.multidim.ImageSequence
 import be.cytomine.ontology.AlgoAnnotation
 import be.cytomine.ontology.AnnotationTerm
@@ -979,6 +980,13 @@ class ImageInstanceService extends ModelService {
     def deleteDependentTrack(ImageInstance image, Transaction transaction, Task task = null) {
         Track.findAllByImage(image).each {
             trackService.delete(it, transaction, task)
+        }
+    }
+
+    def imageGroupImageInstanceService
+    def deleteDependentImageGroupImageInstance(ImageInstance image, Transaction transaction, Task task = null) {
+        ImageGroupImageInstance.findAllByImage(image).each {
+            imageGroupImageInstanceService.delete(it,transaction,task)
         }
     }
 

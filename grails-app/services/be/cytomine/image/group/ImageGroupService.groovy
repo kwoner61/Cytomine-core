@@ -17,11 +17,11 @@ package be.cytomine.image.group
 */
 
 import be.cytomine.command.*
-import be.cytomine.image.group.ImageGroup
 import be.cytomine.project.Project
 import be.cytomine.security.SecUser
 import be.cytomine.utils.ModelService
 import be.cytomine.utils.Task
+import grails.converters.JSON
 
 import static org.springframework.security.acls.domain.BasePermission.READ
 
@@ -30,26 +30,26 @@ class ImageGroupService extends ModelService {
     static transactional = true
 
     def cytomineService
-    def imageSequenceService
+    def imageGroupImageInstanceService
     def securityACLService
     def abstractImageService
-    def imageServerService
 
     def currentDomain() {
         return ImageGroup
     }
 
     def read(def id) {
-        def image = ImageGroup.read(id)
-        if(image) {
-            securityACLService.check(image.container(),READ)
+        def group = ImageGroup.read(id)
+        if(group) {
+            securityACLService.check(group.container(),READ)
+            checkDeleted(group)
         }
-        image
+        group
     }
 
     def list(Project project) {
         securityACLService.check(project,READ)
-        return ImageGroup.findAllByProject(project)
+        return ImageGroup.findAllByProjectAndDeletedIsNull(project)
     }
 
 
@@ -60,6 +60,7 @@ class ImageGroupService extends ModelService {
      */
     def add(def json) {
         securityACLService.check(json.project,Project,READ)
+        securityACLService.checkisNotReadOnly(json.project, Project)
         SecUser currentUser = cytomineService.getCurrentUser()
         json.user = currentUser.id
         synchronized (this.getClass()) {
@@ -94,16 +95,23 @@ class ImageGroupService extends ModelService {
     def delete(ImageGroup domain, Transaction transaction = null, Task task = null, boolean printMessage = true) {
         securityACLService.check(domain.container(),READ)
         SecUser currentUser = cytomineService.getCurrentUser()
-        Command c = new DeleteCommand(user: currentUser,transaction:transaction)
-        return executeCommand(c,domain,null)
+//        Command c = new DeleteCommand(user: currentUser,transaction:transaction)
+//        return executeCommand(c,domain,null)
+        //We don't delete domain, we juste change a flag
+        def jsonNewData = JSON.parse(domain.encodeAsJSON())
+        jsonNewData.deleted = new Date().time
+        Command c = new EditCommand(user: currentUser)
+        c.delete = true
+        return executeCommand(c,domain,jsonNewData)
     }
 
     def getStringParamsI18n(def domain) {
         return [domain.id,  domain.name, domain.project.name]
     }
 
-//    def thumb(Long id, int maxSize) {
-//        ImageGroup imageGroup = ImageGroup.get(id)
-//        return imageServerService.thumb(sequence.image.baseImage, [maxSize:maxSize])
-//    }
+    def deleteDependentImageGroupImageInstance(ImageGroup group, Transaction transaction, Task task = null) {
+        ImageGroupImageInstance.findAllByGroup(group).each {
+            imageGroupImageInstanceService.delete(it,transaction,null,false)
+        }
+    }
 }
