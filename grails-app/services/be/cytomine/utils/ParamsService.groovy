@@ -135,6 +135,7 @@ class ParamsService {
                     showUser: 'user',
                     showSlice: 'slice',
                     showTrack: 'track',
+                    showLink: 'group',
             ]
 
             //show if ask

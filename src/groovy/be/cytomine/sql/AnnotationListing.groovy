@@ -22,6 +22,7 @@ import be.cytomine.Exception.ObjectNotFoundException
 import be.cytomine.Exception.WrongArgumentException
 import be.cytomine.image.ImageInstance
 import be.cytomine.image.SliceInstance
+import be.cytomine.ontology.AnnotationGroup
 import be.cytomine.ontology.Term
 import be.cytomine.ontology.Track
 import be.cytomine.project.Project
@@ -62,6 +63,10 @@ abstract class AnnotationListing {
     def beforeSlice = null
     def afterSlice = null
     def sliceDimension = null
+
+    def annotationGroup = null
+    def annotationGroups = null
+    def hasAnnotationGroup = null
 
     def user = null
     def userForTermAlgo = null
@@ -232,6 +237,9 @@ abstract class AnnotationListing {
                         getTrackConst() +
                         getTracksConst() +
                         getBeforeOrAfterSliceConst() +
+
+                        getGroupConst() +
+                        getGroupsConst() +
 
                         getUsersForTermConst() +
 
@@ -523,6 +531,27 @@ abstract class AnnotationListing {
         }
     }
 
+    def getGroupConst() {
+        if (annotationGroup) {
+            if (!AnnotationGroup.read(annotationGroup)) {
+                throw new ObjectNotFoundException("Annotation group $annotationGroup does not exists !")
+            }
+            addIfMissingColumn('group')
+            return " AND al1.group_id = ${annotationGroup}\n"
+        } else {
+            return ""
+        }
+    }
+
+    def getGroupsConst() {
+        if (annotationGroups) {
+            addIfMissingColumn('group')
+            return " AND al1.group_id IN (${annotationGroups.join(',')})\n"
+        } else {
+            return ""
+        }
+    }
+
     def getTagConst() {
         if (tag && noTag) {
             return "AND (tda.tag_id = ${tag} OR tda.tag_id IS NULL)\n"
@@ -636,6 +665,7 @@ term = $term
 image = $image
 slice = $slice
 track = $track
+group = $annotationGroup
 suggestedTerm = $suggestedTerm
 userForTermAlgo = $userForTermAlgo
 users = $users
@@ -646,6 +676,7 @@ terms = $terms
 images = $images
 slices = $slices
 tracks = $tracks
+annotationGroups = $annotationGroups
 afterThan = $afterThan
 beforeThan = $beforeThan
 suggestedTerms = $suggestedTerms
@@ -721,6 +752,12 @@ class UserAnnotationListing extends AnnotationListing {
                 track: 'atr.track_id',
                 annotationTracks: 'atr.id',
         ],
+        group: [
+                group: 'al.group_id',
+                annotationLinks: 'al.id',
+                linkedAnnotations: 'al.annotation_ident',
+                linkedImages: 'al.image_id'
+        ],
         image: [
                 originalFilename: 'ai.original_filename', // not in single annot marshaller
                 instanceFilename: 'COALESCE(ii.instance_filename, ai.original_filename)' // not in single annot marshaller
@@ -783,6 +820,13 @@ class UserAnnotationListing extends AnnotationListing {
 
         if (multipleTrack || noTrack || columnToPrint.contains('track')) {
             from += "LEFT OUTER JOIN annotation_track atr ON a.id = atr.annotation_ident "
+        }
+
+        if (annotationGroup || annotationGroups || hasAnnotationGroup || columnToPrint.contains('group')) {
+            from += "LEFT OUTER JOIN annotation_link al1 ON al1.annotation_ident = a.id "
+            from += "LEFT OUTER JOIN annotation_link al ON al.group_id = al1.group_id "
+            where += "AND al1.deleted IS NULL "
+            where += "AND al.deleted IS NULL "
         }
 
         if (columnToPrint.contains('user')) {

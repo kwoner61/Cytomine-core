@@ -75,6 +75,7 @@ class UserAnnotationService extends ModelService {
     def imageInstanceService
     def abstractImageService
     def sliceInstanceService
+    def annotationLinkService
 
     def currentDomain() {
         return UserAnnotation
@@ -304,6 +305,15 @@ class UserAnnotationService extends ModelService {
         result.data.annotation.annotationTrack = annotationTracks
         result.data.annotation.track = annotationTracks.collect { it -> it.track }
 
+        // Add annotation-group/link if any
+        def groupId = json.group
+        if (groupId) {
+            def annotationLinkResult = annotationLinkService.addAnnotationLink("be.cytomine.ontology.UserAnnotation",
+                    addedAnnotation.id, groupId, addedAnnotation.image.id, currentUser, transaction)
+            result.data.annotation.group = groupId
+            result.data.annotation.annotationLinks = annotationLinkResult?.data?.annotationlink // Only return created links but not all links !
+        }
+        
         // Add to retrieval index
         if (addedAnnotation.location.getNumPoints() >= 3 && !currentUser.algo()) {
             try {

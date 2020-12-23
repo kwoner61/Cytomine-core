@@ -99,6 +99,24 @@ class UserAnnotation extends AnnotationDomain implements Serializable {
         }
     }
 
+    def annotationGroup() {
+        if (this.version != null) {
+            AnnotationLink.findByAnnotationIdentAndDeletedIsNull(this.id)
+        } else {
+            return null
+        }
+    }
+
+    def annotationLinks() {
+        if (this.version != null) {
+            def group = this.annotationGroup()
+            if (group) {
+                return AnnotationLink.findAllByGroupAndDeletedIsNull(group)
+            }
+        }
+        return []
+    }
+
     /**
      * Get all annotation terms id
      * @return Terms id list
@@ -114,6 +132,14 @@ class UserAnnotation extends AnnotationDomain implements Serializable {
 
     def tracksId() {
         return tracks().collect { it.id }.unique()
+    }
+
+    def annotationLinksId() {
+        return annotationLinks().collect { it.id }.unique()
+    }
+
+    def linkedAnnotations() {
+        return annotationLinks().collect { it.annotationIdent }.unique()
     }
 
     /**

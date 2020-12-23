@@ -117,7 +117,9 @@ class ImageGroup extends CytomineDomain implements Serializable {
             returnArray << [
                     id: igii.image?.id,
                     instanceFilename: igii.image?.blindInstanceFilename,
-                    thumb: UrlApi.getImageInstanceThumbUrlWithMaxSize(igii.image?.id, 512)
+                    thumb: UrlApi.getImageInstanceThumbUrlWithMaxSize(igii.image?.id, 512),
+                    width: igii.image?.baseImage?.width,
+                    height: igii.image?.baseImage?.height
             ]
         }
         return returnArray

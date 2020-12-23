@@ -79,6 +79,7 @@ class AnnotationListingService extends ModelService {
         long lastAnnotationId = -1
         long lastTermId = -1
         long lastTrackId = -1
+        long lastGroupId = -1
 
         boolean first = true;
 
@@ -87,8 +88,9 @@ class AnnotationListingService extends ModelService {
 
         boolean termAsked = false
         boolean trackAsked = false
+        boolean groupAsked = false
 
-        def excludedColumns = ['annotationTerms', 'annotationTracks', 'userTerm', 'x', 'y']
+        def excludedColumns = ['annotationTerms', 'annotationTracks', 'userTerm', 'x', 'y', 'annotationLinks', 'linkedAnnotations', 'linkedImages']
 
         def sql = new Sql(dataSource)
         log.debug request
@@ -103,6 +105,7 @@ class AnnotationListingService extends ModelService {
             if (it.id != lastAnnotationId) {
                 termAsked = false
                 trackAsked = false
+                groupAsked = false
 
                 if(first) {
                     al.getAllPropertiesName().each { columnName ->
@@ -130,6 +133,12 @@ class AnnotationListingService extends ModelService {
                     trackAsked = true
                     item['track'] = (it?.track ? [it.track] : [])
                     item['annotationTrack'] = (it?.track ? [[id: it.annotationTracks, track: it.track]] : [])
+                }
+
+                if (al.columnToPrint.contains('group') && (al instanceof UserAnnotationListing || al instanceof AlgoAnnotationListing)) {
+                    groupAsked = true
+                    item['group'] = it?.group
+                    item['annotationLink'] = (it?.group ? [[id: it.annotationLinks, annotation: it.linkedAnnotations, image: it.linkedImages]] : [])
                 }
 
                 if(al.columnToPrint.contains('gis')) {
@@ -172,6 +181,10 @@ class AnnotationListingService extends ModelService {
                     data.last().track.add(it.track)
                     data.last().annotationTrack.add([id: it.annotationTracks, track: it.track])
                 }
+
+                if (groupAsked && it.group && it.group == lastGroupId) {
+                    data.last().annotationLink.add([id: it.annotationLinks, annotation: it.linkedAnnotations, image: it.linkedImages])
+                }
             }
 
             if (termAsked) {
@@ -180,6 +193,10 @@ class AnnotationListingService extends ModelService {
 
             if (trackAsked) {
                 lastTrackId = it.track
+            }
+
+            if (groupAsked) {
+                lastGroupId = it.group
             }
 
             lastAnnotationId = it.id

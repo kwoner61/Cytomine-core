@@ -113,6 +113,9 @@ class RestAnnotationDomainController extends RestController {
             @RestApiParam(name="showTrack", type="boolean", paramType = RestApiParamType.QUERY, description = "(Optional) If true, show the annotation track details. This may slow down the request."),
             @RestApiParam(name="hideTrack", type="boolean", paramType = RestApiParamType.QUERY, description = "(Optional) If true, hide the annotation track details. This may slow down the request."),
 
+            @RestApiParam(name="showLink", type="boolean", paramType = RestApiParamType.QUERY, description = "(Optional) If true, show the annotation links details. This may slow down the request."),
+            @RestApiParam(name="hideLink", type="boolean", paramType = RestApiParamType.QUERY, description = "(Optional) If true, hide the annotation links details. This may slow down the request."),
+
             @RestApiParam(name="project", type="long", paramType = RestApiParamType.QUERY, description = "(Optional) Get only annotation for this project id"),
 
             @RestApiParam(name="job", type="long", paramType = RestApiParamType.QUERY, description = "(Optional) Get only annotation for this job id"),
@@ -138,7 +141,10 @@ class RestAnnotationDomainController extends RestController {
             @RestApiParam(name="beforeSlice", type="long", paramType = RestApiParamType.QUERY, description = "(Optional) Only to be used with track(s), return only annotation in the track(s) before the given slice"),
             @RestApiParam(name="sliceDirection", type="long", paramType = RestApiParamType.QUERY, description = "Only to be used with beforeSlice, afterSlice or aroundSlide and mandatory in this case. Give the dimension to follow in the image. Accepted values: C,Z,T"),
 
-
+            @RestApiParam(name="group", type="long", paramType = RestApiParamType.QUERY, description = "(Optional) Get only annotation for this group id"),
+            @RestApiParam(name="groups", type="list", paramType = RestApiParamType.QUERY, description = "(Optional) Get only annotation for these groups id"),
+            @RestApiParam(name="hasGroups", type="boolean", paramType = RestApiParamType.QUERY, description = "(Optional) Get only annotations having groups"),
+    
             @RestApiParam(name="tags", type="list", paramType = RestApiParamType.QUERY, description = "(Optional) Get only annotation associated with these tags"),
             @RestApiParam(name="tag", type="long", paramType = RestApiParamType.QUERY, description = "(Optional) Get only annotation associated with this tag"),
             @RestApiParam(name="noTag", type="boolean", paramType = RestApiParamType.QUERY, description = "(Optional) Also get annotation with no tag"),
@@ -424,6 +430,14 @@ class RestAnnotationDomainController extends RestController {
             al.afterSlice = params.getLong('afterSlice')
             al.sliceDimension = params.sliceDimension
         }
+        
+        // Links
+        al.annotationGroup = params.getLong('group')
+        def annotationGroups = params.get('groups')
+        if (annotationGroups) {
+            al.annotationGroups = annotationGroups.replace("_", ",").split(",").collect{Long.parseLong(it)}
+        }
+        al.hasAnnotationGroup = params.getBoolean('hasGroup')
 
         // Users
         al.user = params.getLong('user')
