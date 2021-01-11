@@ -135,7 +135,7 @@ class AnnotationListingService extends ModelService {
                     item['annotationTrack'] = (it?.track ? [[id: it.annotationTracks, track: it.track]] : [])
                 }
 
-                if (al.columnToPrint.contains('group') && (al instanceof UserAnnotationListing || al instanceof AlgoAnnotationListing)) {
+                if (al.columnToPrint.contains('group')) {
                     groupAsked = true
                     item['group'] = it?.group
                     item['annotationLink'] = (it?.group ? [[id: it.annotationLinks, annotation: it.linkedAnnotations, image: it.linkedImages]] : [])
@@ -202,6 +202,12 @@ class AnnotationListingService extends ModelService {
             lastAnnotationId = it.id
         }
         sql.close()
+
+        // Post ordering for group. Could be inefficient on large data arrays.
+        if (al.columnToPrint.contains('group')) {
+            data.sort({x, y -> x?.group <=> y?.group})
+        }
+
         data
     }
 

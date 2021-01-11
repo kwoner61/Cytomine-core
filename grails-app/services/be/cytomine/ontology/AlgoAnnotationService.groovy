@@ -58,6 +58,7 @@ class AlgoAnnotationService extends ModelService {
     def sharedAnnotationService
     def imageInstanceService
     def sliceInstanceService
+    def annotationLinkService
 
     def currentDomain() {
         return AlgoAnnotation
@@ -204,6 +205,15 @@ class AlgoAnnotationService extends ModelService {
         result.data.annotation.annotationTrack = annotationTracks
         result.data.annotation.track = annotationTracks.collect { it -> it.track }
 
+        // Add annotation-group/link if any
+        def groupId = json.group
+        if (groupId) {
+            def annotationLinkResult = annotationLinkService.addAnnotationLink("be.cytomine.ontology.AlgoAnnotation",
+                    addedAnnotation.id, groupId, addedAnnotation.image.id, currentUser, transaction)
+            result.data.annotation.group = groupId
+            result.data.annotation.annotationLinks = annotationLinkResult?.data?.annotationlink // Only return created links but not all links !
+        }
+
         // Add properties if any
         def properties = JSONUtils.getJSONList(json.property) + JSONUtils.getJSONList(json.properties)
         properties.each {
@@ -322,4 +332,11 @@ class AlgoAnnotationService extends ModelService {
             annotationTrackService.delete(it, transaction, task)
         }
     }
+
+    def deleteDependentAnnotationLink(AlgoAnnotation ua, Transaction transaction, Task task = null) {
+        AnnotationLink.findAllByAnnotationIdent(ua.id).each {
+            annotationLinkService.delete(it, transaction, task)
+        }
+    }
+
 }

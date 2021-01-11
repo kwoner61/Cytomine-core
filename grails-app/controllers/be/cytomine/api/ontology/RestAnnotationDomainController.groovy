@@ -143,7 +143,7 @@ class RestAnnotationDomainController extends RestController {
 
             @RestApiParam(name="group", type="long", paramType = RestApiParamType.QUERY, description = "(Optional) Get only annotation for this group id"),
             @RestApiParam(name="groups", type="list", paramType = RestApiParamType.QUERY, description = "(Optional) Get only annotation for these groups id"),
-            @RestApiParam(name="hasGroups", type="boolean", paramType = RestApiParamType.QUERY, description = "(Optional) Get only annotations having groups"),
+//            @RestApiParam(name="hasGroups", type="boolean", paramType = RestApiParamType.QUERY, description = "(Optional) Get only annotations having groups"),
     
             @RestApiParam(name="tags", type="list", paramType = RestApiParamType.QUERY, description = "(Optional) Get only annotation associated with these tags"),
             @RestApiParam(name="tag", type="long", paramType = RestApiParamType.QUERY, description = "(Optional) Get only annotation associated with this tag"),
@@ -437,7 +437,7 @@ class RestAnnotationDomainController extends RestController {
         if (annotationGroups) {
             al.annotationGroups = annotationGroups.replace("_", ",").split(",").collect{Long.parseLong(it)}
         }
-        al.hasAnnotationGroup = params.getBoolean('hasGroup')
+//        al.hasAnnotationGroup = params.getBoolean('hasGroup')
 
         // Users
         al.user = params.getLong('user')

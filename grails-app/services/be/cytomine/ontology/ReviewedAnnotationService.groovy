@@ -370,6 +370,13 @@ class ReviewedAnnotationService extends ModelService {
 
     }
 
+    def annotationLinkService
+    def deleteDependentAnnotationLink(ReviewedAnnotation ua, Transaction transaction, Task task = null) {
+        AnnotationLink.findAllByAnnotationIdent(ua.id).each {
+            annotationLinkService.delete(it, transaction, task)
+        }
+    }
+
 
 
 }

@@ -823,10 +823,8 @@ class UserAnnotationListing extends AnnotationListing {
         }
 
         if (annotationGroup || annotationGroups || hasAnnotationGroup || columnToPrint.contains('group')) {
-            from += "LEFT OUTER JOIN annotation_link al1 ON al1.annotation_ident = a.id "
-            from += "LEFT OUTER JOIN annotation_link al ON al.group_id = al1.group_id "
-            where += "AND al1.deleted IS NULL "
-            where += "AND al.deleted IS NULL "
+            from += "LEFT OUTER JOIN (SELECT * FROM annotation_link WHERE deleted IS NULL) al1 ON al1.annotation_ident = a.id "
+            from += "LEFT OUTER JOIN (SELECT * FROM annotation_link WHERE deleted IS NULL) al ON al.group_id = al1.group_id "
         }
 
         if (columnToPrint.contains('user')) {
@@ -969,6 +967,11 @@ class AlgoAnnotationListing extends AnnotationListing {
 
         if (columnToPrint.contains('track')) {
             from += "LEFT OUTER JOIN annotation_track atr ON a.id = atr.annotation_ident "
+        }
+
+        if (annotationGroup || annotationGroups || hasAnnotationGroup || columnToPrint.contains('group')) {
+            from += "LEFT OUTER JOIN (SELECT * FROM annotation_link WHERE deleted IS NULL) al1 ON al1.annotation_ident = a.id "
+            from += "LEFT OUTER JOIN (SELECT * FROM annotation_link WHERE deleted IS NULL) al ON al.group_id = al1.group_id "
         }
 
         if (columnToPrint.contains('image') || tracks || track) {
@@ -1129,6 +1132,11 @@ class ReviewedAnnotationListing extends AnnotationListing {
         }
         else if (columnToPrint.contains('term')) {
             from = "$from LEFT OUTER JOIN reviewed_annotation_term at ON a.id = at.reviewed_annotation_terms_id "
+        }
+
+        if (annotationGroup || annotationGroups || hasAnnotationGroup || columnToPrint.contains('group')) {
+            from += "LEFT OUTER JOIN (SELECT * FROM annotation_link WHERE deleted IS NULL) al1 ON al1.annotation_ident = a.id "
+            from += "LEFT OUTER JOIN (SELECT * FROM annotation_link WHERE deleted IS NULL) al ON al.group_id = al1.group_id "
         }
 
         if (columnToPrint.contains('image')) {
