@@ -108,14 +108,14 @@ class AnnotationLinkService extends ModelService {
         securityACLService.check(annotation.project, READ)
         securityACLService.checkisNotReadOnly(annotation.project)
         SecUser currentUser = cytomineService.getCurrentUser()
-//        Command c = new DeleteCommand(user: currentUser,transaction:transaction)
-//        return executeCommand(c,domain,null)
-        //We don't delete domain, we juste change a flag
-        def jsonNewData = JSON.parse(domain.encodeAsJSON())
-        jsonNewData.deleted = new Date().time
-        Command c = new EditCommand(user: currentUser)
-        c.delete = true
-        return executeCommand(c,domain,jsonNewData)
+        Command c = new DeleteCommand(user: currentUser,transaction:transaction)
+        return executeCommand(c,domain,null)
+//        //We don't delete domain, we juste change a flag
+//        def jsonNewData = JSON.parse(domain.encodeAsJSON())
+//        jsonNewData.deleted = new Date().time
+//        Command c = new EditCommand(user: currentUser)
+//        c.delete = true
+//        return executeCommand(c,domain,jsonNewData)
     }
 
     def retrieve(Map json) {
@@ -127,6 +127,22 @@ class AnnotationLinkService extends ModelService {
         }
 
         return read(group, annotation)
+    }
+
+    @Override
+    def afterDelete(Object domain, Object response) {
+        if (AnnotationLink.countByGroupAndDeletedIsNull(domain.group) < 1) {
+            domain.group.deleted = new Date()
+            domain.group.save(flush: true)
+        }
+    }
+
+    @Override
+    def afterUpdate(Object domain, Object response) {
+        if (AnnotationLink.countByGroupAndDeletedIsNull(domain.group) < 1) {
+            domain.group.deleted = new Date()
+            domain.group.save(flush: true)
+        }
     }
 
     def getStringParamsI18n(def domain) {

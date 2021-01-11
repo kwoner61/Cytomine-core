@@ -32,7 +32,7 @@ class AnnotationLink extends CytomineDomain implements Serializable {
             }
 
             annotationLink = AnnotationLink.findByAnnotationIdent(annotationIdent)
-            if (annotationLink != null) {
+            if (annotationLink != null && annotationLink?.id != id) {
                 throw new AlreadyExistException("The annotation ${annotationIdent} is already linked to some annotation group !")
             }
         }

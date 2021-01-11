@@ -429,6 +429,8 @@ cytomine.customUI.project = [
         "project-tools-screenshot":["ADMIN_PROJECT":true,"CONTRIBUTOR_PROJECT":true],
         "project-tools-copy-paste":["ADMIN_PROJECT":true,"CONTRIBUTOR_PROJECT":true],
         "project-tools-undo-redo":["ADMIN_PROJECT":true,"CONTRIBUTOR_PROJECT":true],
+        "project-tools-link":["ADMIN_PROJECT":true,"CONTRIBUTOR_PROJECT":true],
+        "project-tools-unlink": ["ADMIN_PROJECT":true,"CONTRIBUTOR_PROJECT":true],
 
         //graphs
         "project-annotations-term-piegraph":["ADMIN_PROJECT":true,"CONTRIBUTOR_PROJECT":true],
