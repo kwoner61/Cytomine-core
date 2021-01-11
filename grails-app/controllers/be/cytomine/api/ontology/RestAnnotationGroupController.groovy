@@ -1,5 +1,6 @@
 package be.cytomine.api.ontology
 
+import be.cytomine.Exception.CytomineException
 import be.cytomine.Exception.InvalidRequestException
 import be.cytomine.api.RestController
 import be.cytomine.image.group.ImageGroup
@@ -95,6 +96,15 @@ class RestAnnotationGroupController extends RestController {
     ])
     def delete () {
         delete(annotationGroupService, JSON.parse("{id : $params.id}"),null)
+    }
+
+    def merge() {
+        try {
+            responseResult(annotationGroupService.merge(params.int('id'), params.int('mergedId')))
+        } catch (CytomineException e) {
+            log.error(e)
+            response([success: false, errors: e.msg], e.code)
+        }
     }
 
 }

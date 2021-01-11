@@ -136,6 +136,7 @@ class ParamsService {
                     showSlice: 'slice',
                     showTrack: 'track',
                     showLink: 'group',
+                    showImageGroup: 'imageGroup',
             ]
 
             //show if ask

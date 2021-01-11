@@ -1,5 +1,8 @@
 package be.cytomine.ontology
 
+import be.cytomine.Exception.InvalidRequestException
+import be.cytomine.Exception.ObjectNotFoundException
+
 /*
 * Copyright (c) 2009-2019. Authors: see NOTICE file.
 *
@@ -23,6 +26,7 @@ import be.cytomine.security.SecUser
 import be.cytomine.utils.ModelService
 import be.cytomine.utils.Task
 import grails.converters.JSON
+import org.codehaus.groovy.grails.web.json.JSONObject
 
 import static org.springframework.security.acls.domain.BasePermission.READ
 
@@ -94,6 +98,29 @@ class AnnotationGroupService extends ModelService {
         SecUser currentUser = cytomineService.getCurrentUser()
         Command c = new EditCommand(user: currentUser)
         executeCommand(c,domain,jsonNewData)
+    }
+
+    def merge(def id, def mergedId) {
+        AnnotationGroup ag = read(id)
+        AnnotationGroup agToMerge = read(mergedId)
+
+        if (!ag)
+            throw new ObjectNotFoundException("AnnotationGroup $id not found.")
+        if (!agToMerge)
+            throw new ObjectNotFoundException("AnnotationGroup $mergedId not found")
+        if (ag.project != agToMerge.project || ag.imageGroup != agToMerge.imageGroup || ag.type != agToMerge.type)
+            throw new InvalidRequestException("Annotation groups $id and $mergedId are incompatible to be merged.")
+
+        AnnotationLink.executeUpdate("update AnnotationLink al set al.group = :newGroup where al.group = :mergedGroup",
+                [newGroup: ag, mergedGroup: agToMerge])
+        agToMerge.delete()
+
+        SecUser currentUser = cytomineService.getCurrentUser()
+        Command c = new EditCommand(user: currentUser)
+        def data = AnnotationGroup.getDataFromDomain(ag)
+        JSONObject json = new JSONObject()
+        json.putAll(data)
+        executeCommand(c, ag, json)
     }
 
     /**

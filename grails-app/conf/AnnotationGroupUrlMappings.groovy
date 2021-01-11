@@ -29,6 +29,9 @@ class AnnotationGroupUrlMappings {
         "/api/imagegroup/$id/annotationgroup.$format"(controller:"restAnnotationGroup"){
             action = [GET:"listByImageGroup"]
         }
+        "/api/annotationgroup/$id/annotationgroup/$mergedId/merge.$format"(controller: "restAnnotationGroup"){
+            action = [POST:"merge"]
+        }
 
         "/api/annotationgroup/$annotationGroup/annotation/$annotation.$format"(controller: "restAnnotationLink"){
             action = [GET: "show", DELETE: "delete"]
