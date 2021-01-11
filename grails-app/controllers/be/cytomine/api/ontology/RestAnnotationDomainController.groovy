@@ -116,6 +116,9 @@ class RestAnnotationDomainController extends RestController {
             @RestApiParam(name="showLink", type="boolean", paramType = RestApiParamType.QUERY, description = "(Optional) If true, show the annotation links details. This may slow down the request."),
             @RestApiParam(name="hideLink", type="boolean", paramType = RestApiParamType.QUERY, description = "(Optional) If true, hide the annotation links details. This may slow down the request."),
 
+            @RestApiParam(name="showImageGroup", type="boolean", paramType = RestApiParamType.QUERY, description = "(Optional) If true, show the image group. This may slow down the request."),
+            @RestApiParam(name="hideImageGroup", type="boolean", paramType = RestApiParamType.QUERY, description = "(Optional) If true, hide the image group. This may slow down the request."),
+
             @RestApiParam(name="project", type="long", paramType = RestApiParamType.QUERY, description = "(Optional) Get only annotation for this project id"),
 
             @RestApiParam(name="job", type="long", paramType = RestApiParamType.QUERY, description = "(Optional) Get only annotation for this job id"),

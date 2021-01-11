@@ -764,6 +764,9 @@ class UserAnnotationListing extends AnnotationListing {
                 linkedAnnotations: 'al.annotation_ident',
                 linkedImages: 'al.image_id'
         ],
+        imageGroup: [
+                imageGroup: 'ig.group_id'
+        ],
         image: [
                 originalFilename: 'ai.original_filename', // not in single annot marshaller
                 instanceFilename: 'COALESCE(ii.instance_filename, ai.original_filename)' // not in single annot marshaller
@@ -839,6 +842,10 @@ class UserAnnotationListing extends AnnotationListing {
 
         if (columnToPrint.contains('image') || tracks || track) {
             from += "INNER JOIN image_instance ii ON a.image_id = ii.id INNER JOIN abstract_image ai ON ii.base_image_id = ai.id "
+        }
+
+        if (columnToPrint.contains('imageGroup')) {
+            from += "LEFT JOIN (SELECT * FROM image_group_image_instance WHERE deleted IS NULL) ig ON a.image_id = ig.image_id "
         }
 
         if (columnToPrint.contains('algo')) {
@@ -933,6 +940,15 @@ class AlgoAnnotationListing extends AnnotationListing {
                 track: 'atr.track_id',
                 annotationTracks: 'atr.id'
         ],
+        group: [
+                group: 'al.group_id',
+                annotationLinks: 'al.id',
+                linkedAnnotations: 'al.annotation_ident',
+                linkedImages: 'al.image_id'
+        ],
+        imageGroup: [
+                imageGroup: 'ig.group_id'
+        ],
         image: [
                 originalFilename: 'ai.original_filename', // not in single annot marshaller
                 instanceFilename: 'COALESCE(ii.instance_filename, ai.original_filename)' // not in single annot marshaller
@@ -986,6 +1002,10 @@ class AlgoAnnotationListing extends AnnotationListing {
 
         if (columnToPrint.contains('slice') || tracks || track) {
             from += "INNER JOIN slice_instance si ON a.slice_id = si.id INNER JOIN abstract_slice asl ON si.base_slice_id = asl.id "
+        }
+
+        if (columnToPrint.contains('imageGroup')) {
+            from += "LEFT JOIN (SELECT * FROM image_group_image_instance WHERE deleted IS NULL) ig ON a.image_id = ig.image_id "
         }
 
         if (columnToPrint.contains('user')) {
@@ -1099,6 +1119,15 @@ class ReviewedAnnotationListing extends AnnotationListing {
                 annotationTerms: "0",
                 userTerm: 'a.user_id' //user who add the term, is the user that create reviewedannotation (a.user_id)
         ],
+        group: [
+                group: 'al.group_id',
+                annotationLinks: 'al.id',
+                linkedAnnotations: 'al.annotation_ident',
+                linkedImages: 'al.image_id'
+        ],
+        imageGroup: [
+                imageGroup: 'ig.group_id'
+        ],
         image: [
                 originalFilename: 'ai.original_filename', // not in single annot marshaller
                 instanceFilename: 'COALESCE(ii.instance_filename, ai.original_filename)' // not in single annot marshaller
@@ -1148,6 +1177,11 @@ class ReviewedAnnotationListing extends AnnotationListing {
         if (columnToPrint.contains('image')) {
             from += "INNER JOIN image_instance ii ON a.image_id = ii.id INNER JOIN abstract_image ai ON ii.base_image_id = ai.id "
         }
+
+        if (columnToPrint.contains('imageGroup')) {
+            from += "LEFT JOIN (SELECT * FROM image_group_image_instance WHERE deleted IS NULL) ig ON a.image_id = ig.image_id "
+        }
+
 
         if (columnToPrint.contains('slice')) {
             from += "INNER JOIN slice_instance si ON a.slice_id = si.id INNER JOIN abstract_slice asl ON si.base_slice_id = asl.id "
