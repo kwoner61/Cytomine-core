@@ -137,7 +137,7 @@ class RestImageInstanceController extends RestController {
             if(params.tags) params."tag[in]" = params.tags // Hotfix to allow filtering by tags in (Python) client...
             def result
             if(extended.isEmpty()) {
-                result = imageInstanceService.list(project, sortColumn, sortDirection, searchParameters, params.long('max'), params.long('offset'), light)
+                result = imageInstanceService.list(project, sortColumn, sortDirection, searchParameters, params.long('max'), params.long('offset'), light, params.boolean('withImageGroup', false))
             } else {
                 result = imageInstanceService.listExtended(project, sortColumn, sortDirection, searchParameters, params.long('max'), params.long('offset'), extended)
             }

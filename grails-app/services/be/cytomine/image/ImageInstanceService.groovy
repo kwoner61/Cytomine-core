@@ -330,12 +330,13 @@ class ImageInstanceService extends ModelService {
         return tree
     }
 
-    def list(Project project, String sortColumn = 'created', String sortDirection = "asc", def searchParameters = [], Long max  = 0, Long offset = 0, boolean light=false) {
+    def list(Project project, String sortColumn = 'created', String sortDirection = "asc", def searchParameters = [], Long max  = 0, Long offset = 0, boolean light=false, boolean withImageGroup=false) {
         securityACLService.check(project, READ)
 
         String imageInstanceAlias = "ii"
         String abstractImageAlias = "ai"
         String mimeAlias = "mime"
+        String imageGroupAlias = "igii"
 
         if(!sortColumn)  sortColumn = "created"
         if(!sortDirection)  sortDirection = "asc"
@@ -368,6 +369,7 @@ class ImageInstanceService extends ModelService {
 
         boolean joinAI = validatedSearchParameters.any {it.property.contains(abstractImageAlias+".")} || sortedProperty.contains(abstractImageAlias+".") || light
         boolean joinMime = validatedSearchParameters.any {it.property.contains(mimeAlias+".")} || sortedProperty.contains(mimeAlias+".")
+        boolean joinImageGroup = validatedSearchParameters.any {it.property.contains(imageGroupAlias+".")} || withImageGroup
         def sqlSearchConditions = searchParametersToSQLConstraints(validatedSearchParameters)
 
         sqlSearchConditions = [
@@ -375,6 +377,7 @@ class ImageInstanceService extends ModelService {
                 abstractImage: sqlSearchConditions.data.findAll {it.property.startsWith("$abstractImageAlias.")}.collect { it.sql }.join(" AND "),
                 mime: sqlSearchConditions.data.findAll {it.property.startsWith("$mimeAlias.")}.collect { it.sql }.join(" AND "),
                 tags : sqlSearchConditions.data.findAll{it.property.startsWith("tda.")}.collect{it.sql}.join(" AND "),
+                imageGroup: sqlSearchConditions.data.findAll{it.property.startsWith("igii.")}.collect{it.sql}.join(" AND "),
                 parameters   : sqlSearchConditions.sqlParameters
         ]
 
@@ -415,6 +418,11 @@ class ImageInstanceService extends ModelService {
             search +=" AND "
             search += sqlSearchConditions.tags
         }
+        if(sqlSearchConditions.imageGroup) {
+            joinImageGroup = true
+            search +=  " AND "
+            search += sqlSearchConditions.imageGroup
+        }
 
 
         if(blindedNameSearch && manager) {
@@ -453,6 +461,10 @@ class ImageInstanceService extends ModelService {
         if (joinMime) {
             if (!light) select += ", ${mimeAlias}.* "
             from += "JOIN uploaded_file $mimeAlias ON ${mimeAlias}.id = ${abstractImageAlias}.uploaded_file_id "
+        }
+        if (joinImageGroup) {
+            select +=", igii.group_id as image_group_id "
+            from += "LEFT OUTER JOIN (SELECT * FROM image_group_image_instance WHERE deleted IS NULL) $imageGroupAlias ON ${imageInstanceAlias}.id = ${imageGroupAlias}.image_id "
         }
 
         request = select + from + where + search + sort
@@ -500,6 +512,10 @@ class ImageInstanceService extends ModelService {
                 line.putAt('numberOfReviewedAnnotations', map.countImageReviewedAnnotations)
                 line.putAt('projectBlind', map.projectBlind)
                 line.putAt('projectName', map.projectName)
+
+                if (withImageGroup) {
+                    line.putAt('imageGroup', map.imageGroupId)
+                }
                 data << line
             }
         }
@@ -1017,6 +1033,10 @@ class ImageInstanceService extends ModelService {
             switch(parameter.field) {
                 case "tag" :
                     property = "tda.tag_id"
+                    parameter.values = convertSearchParameter(Long.class, parameter.values)
+                    break
+                case "imageGroup":
+                    property = "igii.group_id"
                     parameter.values = convertSearchParameter(Long.class, parameter.values)
                     break
                 default:
