@@ -96,7 +96,7 @@ class ImageGroup extends CytomineDomain implements Serializable {
         def images = domain?.imageInstances()
         returnArray['imageInstances'] = images
         returnArray['numberOfImages'] = images.size()
-        returnArray['numberOfAnnotationLinks'] = 0
+//        returnArray['numberOfAnnotationLinks'] = 0
         return returnArray
     }
 
