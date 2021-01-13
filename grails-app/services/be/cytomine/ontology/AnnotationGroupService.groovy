@@ -134,14 +134,14 @@ class AnnotationGroupService extends ModelService {
     def delete(AnnotationGroup domain, Transaction transaction = null, Task task = null, boolean printMessage = true) {
         securityACLService.check(domain.container(),READ)
         SecUser currentUser = cytomineService.getCurrentUser()
-//        Command c = new DeleteCommand(user: currentUser,transaction:transaction)
-//        return executeCommand(c,domain,null)
-        //We don't delete domain, we juste change a flag
-        def jsonNewData = JSON.parse(domain.encodeAsJSON())
-        jsonNewData.deleted = new Date().time
-        Command c = new EditCommand(user: currentUser)
-        c.delete = true
-        return executeCommand(c,domain,jsonNewData)
+        Command c = new DeleteCommand(user: currentUser,transaction:transaction)
+        return executeCommand(c,domain,null)
+//        //We don't delete domain, we juste change a flag
+//        def jsonNewData = JSON.parse(domain.encodeAsJSON())
+//        jsonNewData.deleted = new Date().time
+//        Command c = new EditCommand(user: currentUser)
+//        c.delete = true
+//        return executeCommand(c,domain,jsonNewData)
     }
 
     def getStringParamsI18n(def domain) {

@@ -131,17 +131,21 @@ class AnnotationLinkService extends ModelService {
 
     @Override
     def afterDelete(Object domain, Object response) {
-        if (AnnotationLink.countByGroupAndDeletedIsNull(domain.group) < 1) {
-            domain.group.deleted = new Date()
-            domain.group.save(flush: true)
+        if (AnnotationLink.countByGroupAndDeletedIsNull(domain.group) < 2) {
+
+            def other = AnnotationLink.findByGroupAndDeletedIsNull(domain.group)
+            if (other) {
+                other.delete(flush: true)
+            }
+
+            domain.group.delete(flush: true)
         }
     }
 
     @Override
     def afterUpdate(Object domain, Object response) {
-        if (AnnotationLink.countByGroupAndDeletedIsNull(domain.group) < 1) {
-            domain.group.deleted = new Date()
-            domain.group.save(flush: true)
+        if (domain.deleted != null) {
+            afterDelete(domain, response)
         }
     }
 

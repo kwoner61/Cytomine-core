@@ -25,6 +25,7 @@ import be.cytomine.command.Command
 import be.cytomine.command.DeleteCommand
 import be.cytomine.command.Transaction
 import be.cytomine.image.ImageInstance
+import be.cytomine.ontology.AnnotationLink
 import be.cytomine.security.SecUser
 import be.cytomine.utils.ModelService
 import be.cytomine.utils.Task
@@ -100,5 +101,12 @@ class ImageGroupImageInstanceService extends ModelService {
         }
 
         return read(group, image)
+    }
+
+    def annotationLinkService
+    def deleteDependentAnnotationLink(ImageGroupImageInstance igii, Transaction transaction, Task task = null) {
+        AnnotationLink.findAllByImage(igii.image).each {
+            annotationLinkService.delete(it,transaction,null,false)
+        }
     }
 }

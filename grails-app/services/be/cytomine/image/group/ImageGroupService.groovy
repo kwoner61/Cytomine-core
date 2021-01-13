@@ -17,6 +17,7 @@ package be.cytomine.image.group
 */
 
 import be.cytomine.command.*
+import be.cytomine.ontology.AnnotationGroup
 import be.cytomine.project.Project
 import be.cytomine.security.SecUser
 import be.cytomine.utils.ModelService
@@ -112,6 +113,13 @@ class ImageGroupService extends ModelService {
     def deleteDependentImageGroupImageInstance(ImageGroup group, Transaction transaction, Task task = null) {
         ImageGroupImageInstance.findAllByGroup(group).each {
             imageGroupImageInstanceService.delete(it,transaction,null,false)
+        }
+    }
+
+    def annotationGroupService
+    def deleteDependentAnnotationGroup(ImageGroup group, Transaction transaction, Task task = null) {
+        AnnotationGroup.findAllByProject(group).each {
+            annotationGroupService.delete(it,transaction,null,false)
         }
     }
 }

@@ -923,6 +923,12 @@ class ProjectService extends ModelService {
 //        }
 //    }
 //
+//    def deleteDependentAnnotationGroup(Project project, Transaction transaction, Task task = null) {
+//        AnnotationGroup.findAllByProject(project).each {
+//            annotationGroupService.delete(it,transaction,null,false)
+//        }
+//    }
+//
 //    def deleteDependentProperty(Project project, Transaction transaction, Task task = null) {
 //        Property.findAllByDomainIdent(project.id).each {
 //            propertyService.delete(it,transaction,null,false)
