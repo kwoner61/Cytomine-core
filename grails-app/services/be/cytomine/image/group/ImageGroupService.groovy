@@ -118,7 +118,7 @@ class ImageGroupService extends ModelService {
 
     def annotationGroupService
     def deleteDependentAnnotationGroup(ImageGroup group, Transaction transaction, Task task = null) {
-        AnnotationGroup.findAllByProject(group).each {
+        AnnotationGroup.findAllByImageGroup(group).each {
             annotationGroupService.delete(it,transaction,null,false)
         }
     }
