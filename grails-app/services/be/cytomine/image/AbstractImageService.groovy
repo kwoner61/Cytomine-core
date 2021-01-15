@@ -247,7 +247,7 @@ class AbstractImageService extends ModelService {
     def listUnused(User user) {
         def result = []
         def abstractList = list(user);
-        abstractList.each {
+        abstractList.data.each {
             image ->
                 if(!isUsed(image.id)) result << image;
         }
