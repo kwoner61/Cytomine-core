@@ -88,6 +88,8 @@ class JobRuntimeService {
             SoftwareParameter softwareParameter = it.key as SoftwareParameter
 
             String regex = "${softwareParameter.valueKey.replace("[", "\\[").replace("]", "\\]")}"
+
+            if(!softwareParameter.commandLineFlag) softwareParameter.commandLineFlag = "";
             String replacement = softwareParameter.commandLineFlag + ((softwareParameter.commandLineFlag.length() > 0) ? " " : "") + it.value as String
             command = command.replaceAll(regex, replacement)
         }
