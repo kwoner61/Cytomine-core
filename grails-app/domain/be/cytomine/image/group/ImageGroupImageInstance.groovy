@@ -46,6 +46,7 @@ class ImageGroupImageInstance extends CytomineDomain implements Serializable {
         def returnArray = CytomineDomain.getDataFromDomain(domain)
         returnArray['image'] = domain?.image?.id
         returnArray['group'] = domain?.group?.id
+        returnArray['groupName'] = domain?.group?.name
         returnArray
     }
 

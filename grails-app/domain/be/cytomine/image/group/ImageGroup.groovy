@@ -122,6 +122,7 @@ class ImageGroup extends CytomineDomain implements Serializable {
                     height: igii.image?.baseImage?.height
             ]
         }
+        returnArray.sort({x, y -> x.instanceFilename?.toLowerCase() <=> y.instanceFilename?.toLowerCase()})
         return returnArray
     }
 }

@@ -69,6 +69,86 @@ class RestImageGroupImageInstanceController extends RestController {
         }
     }
 
+    @RestApiMethod(description="Get the next image in the group, ordered by image filename")
+    @RestApiParams(params=[
+            @RestApiParam(name="group", type="long", paramType = RestApiParamType.PATH, description = "The image group id"),
+            @RestApiParam(name="image", type="long", paramType = RestApiParamType.PATH, description = "The current image instance id"),
+            @RestApiParam(name="circular", type="boolean", paramType = RestApiParamType.PATH, description = "Whether return first image when end is reached"),
+    ])
+    def next() {
+        ImageGroup group = imageGroupService.read(params.long('group'))
+        ImageInstance image = imageInstanceService.read(params.long('image'))
+
+        if (!group) {
+            responseNotFound("ImageGroup", params.group)
+        }
+
+        if (!image) {
+            responseNotFound("ImageInstance", params.image)
+        }
+
+        ImageGroupImageInstance igii = imageGroupImageInstanceService.read(group, image)
+        if (!igii) {
+            responseNotFound("ImageGroupImageInstance", "ImageGroup", "ImageInstance", group.id, image.id)
+        }
+
+        boolean circular = params.boolean('circular', true)
+
+        def images = ImageGroupImageInstance.findAllByGroupAndDeletedIsNull(group).collect{ x -> x.image}
+        images.sort({x, y ->
+            x?.blindInstanceFilename?.toLowerCase() <=> y?.blindInstanceFilename?.toLowerCase()
+        })
+        def index = images.findIndexOf {it.id == image.id}
+        def next = index + 1
+        if (next == images.size()) {
+            if (!circular) {
+                return responseSuccess([:])
+            }
+            next = 0
+        }
+        return responseSuccess(images[next])
+    }
+
+    @RestApiMethod(description="Get the previous image in the group, ordered by image filename")
+    @RestApiParams(params=[
+            @RestApiParam(name="group", type="long", paramType = RestApiParamType.PATH, description = "The image group id"),
+            @RestApiParam(name="image", type="long", paramType = RestApiParamType.PATH, description = "The current image instance id"),
+            @RestApiParam(name="circular", type="boolean", paramType = RestApiParamType.PATH, description = "Whether return last image when beginning is reached"),
+    ])
+    def previous() {
+        ImageGroup group = imageGroupService.read(params.long('group'))
+        ImageInstance image = imageInstanceService.read(params.long('image'))
+
+        if (!group) {
+            responseNotFound("ImageGroup", params.group)
+        }
+
+        if (!image) {
+            responseNotFound("ImageInstance", params.image)
+        }
+
+        ImageGroupImageInstance igii = imageGroupImageInstanceService.read(group, image)
+        if (!igii) {
+            responseNotFound("ImageGroupImageInstance", "ImageGroup", "ImageInstance", group.id, image.id)
+        }
+
+        boolean circular = params.boolean('circular', true)
+
+        def images = ImageGroupImageInstance.findAllByGroupAndDeletedIsNull(group).collect{ x -> x.image}
+        images.sort({x, y ->
+            x?.blindInstanceFilename?.toLowerCase() <=> y?.blindInstanceFilename?.toLowerCase()
+        })
+        def index = images.findIndexOf {it.id == image.id}
+        def previous = index - 1
+        if (previous == -1) {
+            if (!circular) {
+                return responseSuccess([:])
+            }
+            previous = images.size() - 1
+        }
+        return responseSuccess(images[previous])
+    }
+
     @RestApiMethod(description="Add an image instance to an image group")
     def add() {
         def json = request.JSON
