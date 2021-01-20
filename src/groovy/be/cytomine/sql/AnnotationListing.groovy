@@ -762,7 +762,8 @@ class UserAnnotationListing extends AnnotationListing {
                 group: 'al.group_id',
                 annotationLinks: 'al.id',
                 linkedAnnotations: 'al.annotation_ident',
-                linkedImages: 'al.image_id'
+                linkedImages: 'al.image_id',
+                linkedUpdated: 'al.updated'
         ],
         imageGroup: [
                 imageGroup: 'ig.group_id'
@@ -944,7 +945,8 @@ class AlgoAnnotationListing extends AnnotationListing {
                 group: 'al.group_id',
                 annotationLinks: 'al.id',
                 linkedAnnotations: 'al.annotation_ident',
-                linkedImages: 'al.image_id'
+                linkedImages: 'al.image_id',
+                linkedUpdated: 'al.updated'
         ],
         imageGroup: [
                 imageGroup: 'ig.group_id'
@@ -1123,7 +1125,8 @@ class ReviewedAnnotationListing extends AnnotationListing {
                 group: 'al.group_id',
                 annotationLinks: 'al.id',
                 linkedAnnotations: 'al.annotation_ident',
-                linkedImages: 'al.image_id'
+                linkedImages: 'al.image_id',
+                linkedUpdated: 'al.updated'
         ],
         imageGroup: [
                 imageGroup: 'ig.group_id'

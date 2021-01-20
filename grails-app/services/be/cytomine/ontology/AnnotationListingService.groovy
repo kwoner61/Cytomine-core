@@ -90,7 +90,8 @@ class AnnotationListingService extends ModelService {
         boolean trackAsked = false
         boolean groupAsked = false
 
-        def excludedColumns = ['annotationTerms', 'annotationTracks', 'userTerm', 'x', 'y', 'annotationLinks', 'linkedAnnotations', 'linkedImages']
+        def excludedColumns = ['annotationTerms', 'annotationTracks', 'userTerm', 'x', 'y',
+                               'annotationLinks', 'linkedAnnotations', 'linkedImages', 'linkedUpdated']
 
         def sql = new Sql(dataSource)
         log.debug request
@@ -138,7 +139,8 @@ class AnnotationListingService extends ModelService {
                 if (al.columnToPrint.contains('group')) {
                     groupAsked = true
                     item['group'] = it?.group
-                    item['annotationLink'] = (it?.group ? [[id: it.annotationLinks, annotation: it.linkedAnnotations, image: it.linkedImages]] : [])
+                    item['annotationLink'] = (it?.group ? [[id: it.annotationLinks, annotation: it.linkedAnnotations,
+                                                            image: it.linkedImages, updated: it.linkedUpdated]] : [])
                 }
 
                 if(al.columnToPrint.contains('gis')) {
@@ -183,7 +185,8 @@ class AnnotationListingService extends ModelService {
                 }
 
                 if (groupAsked && it.group && it.group == lastGroupId) {
-                    data.last().annotationLink.add([id: it.annotationLinks, annotation: it.linkedAnnotations, image: it.linkedImages])
+                    data.last().annotationLink.add([id: it.annotationLinks, annotation: it.linkedAnnotations,
+                                                    image: it.linkedImages, updated: it.linkedUpdated])
                 }
             }
 

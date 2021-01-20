@@ -380,6 +380,10 @@ class UserAnnotationService extends ModelService {
     }
 
     def afterUpdate(def domain, def response) {
+        def sql = new Sql(dataSource)
+        sql.executeUpdate("UPDATE annotation_link SET updated = NOW() where annotation_ident = ${domain.id}")
+        sql.close()
+
         response.data['annotation'] = response.data.userannotation
         response.data.remove('userannotation')
     }
