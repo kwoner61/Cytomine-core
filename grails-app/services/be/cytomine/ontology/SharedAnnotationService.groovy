@@ -211,7 +211,7 @@ class SharedAnnotationService extends ModelService {
 
     def delete(SharedAnnotation domain, Transaction transaction = null, Task task = null, boolean printMessage = true) {
         SecUser currentUser = cytomineService.getCurrentUser()
-        securityACLService.checkIsSameUserOrAdminContainer(domain,domain.sender, currentUser)
+        securityACLService.checkFullOrRestrictedForOwner(domain,domain.sender)
         Command c = new DeleteCommand(user: currentUser,transaction:transaction)
         return executeCommand(c,domain,null)
     }

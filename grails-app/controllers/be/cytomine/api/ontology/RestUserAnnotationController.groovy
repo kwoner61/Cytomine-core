@@ -152,7 +152,7 @@ class RestUserAnnotationController extends RestController {
         if (!annotation) {
             responseNotFound("Annotation", params.annotation)
         }
-        def sharedAnnotation = SharedAnnotation.findById(params.long('id'))
+        def sharedAnnotation = sharedAnnotationService.read(params.long('id'))
         if (sharedAnnotation) {
             responseSuccess(sharedAnnotation)
         } else {

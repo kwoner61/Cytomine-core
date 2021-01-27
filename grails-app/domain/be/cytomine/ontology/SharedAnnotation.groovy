@@ -16,6 +16,7 @@ package be.cytomine.ontology
 * limitations under the License.
 */
 
+import be.cytomine.AnnotationDomain
 import be.cytomine.CytomineDomain
 import be.cytomine.security.User
 import be.cytomine.utils.JSONUtils
@@ -99,5 +100,12 @@ class SharedAnnotation extends CytomineDomain {
         return domain
     }
 
+    /**
+     * Get the container domain for this domain (usefull for security)
+     * @return Container of this domain
+     */
+    public CytomineDomain container() {
+        return AnnotationDomain.getAnnotationDomain(annotationIdent).container();
+    }
 }
 
