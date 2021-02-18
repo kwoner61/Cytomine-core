@@ -66,7 +66,7 @@ class RestAnnotationLinkController extends RestController {
             responseNotFound("AnnotationGroup", params.annotationGroup)
         }
 
-        AnnotationLink at = annotationLinkService.read(annotation, annotationGroup)
+        AnnotationLink at = annotationLinkService.read(annotationGroup, annotation)
         if (at) {
             responseSuccess(at)
         }

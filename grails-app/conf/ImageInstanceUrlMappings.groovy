@@ -51,6 +51,10 @@ class ImageInstanceUrlMappings {
             action = [GET:"listLastOpenImage"]
         }
 
+        "/api/imagegroup/$imageGroup/imageinstance.$format"(controller: "restImageInstance"){
+            action = [GET:"listByImageGroup"]
+        }
+
 
 //        "/api/imageinstance/$id/sameimagedata.$format"(controller :"restImageInstance") {
 //            action = [GET:"retrieveSameImageOtherProject"]

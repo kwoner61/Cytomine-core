@@ -25,6 +25,7 @@ import be.cytomine.api.RestController
 import be.cytomine.image.CompanionFile
 import be.cytomine.image.ImageInstance
 import be.cytomine.image.SliceInstance
+import be.cytomine.image.group.ImageGroup
 import be.cytomine.ontology.UserAnnotation
 import be.cytomine.project.Project
 import be.cytomine.security.SecUser
@@ -97,6 +98,16 @@ class RestImageInstanceController extends RestController {
     ])
     def listLightByUser() {
         responseSuccess(imageInstanceService.listLight(cytomineService.currentUser))
+    }
+
+    def imageGroupImageInstanceService
+    def listByImageGroup() {
+        ImageGroup group = imageGroupService.read(params.long('imageGroup'))
+        if (group) {
+            responseSuccess(imageGroupImageInstanceService.list(group).collect {it.image})
+        } else {
+            responseNotFound("ImageInstance", "ImageGroup", params.imageGroup)
+        }
     }
 
     @RestApiMethod(description="Get the last opened image for the current user", listing = true)
