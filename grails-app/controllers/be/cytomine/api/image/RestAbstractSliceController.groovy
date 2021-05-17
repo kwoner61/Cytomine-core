@@ -157,7 +157,6 @@ class RestAbstractSliceController extends RestController {
             parameters.contrast = params.double('contrast')
             parameters.gamma = params.double('gamma')
             parameters.bits = (params.bits == "max") ? "max" : params.int('bits')
-            parameters.refresh = params.boolean('refresh', false)
             responseByteArray(imageServerService.thumb(abstractSlice, parameters))
         } else {
             responseNotFound("AbstractSlice", params.id)

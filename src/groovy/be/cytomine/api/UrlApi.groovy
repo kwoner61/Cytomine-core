@@ -84,7 +84,7 @@ class UrlApi {
         if(label == "macro" && contentType && !formatsWithMacro.contains(contentType)) {
             return null
         }
-        String size = maxSize ? "?maxWidth=$maxSize" : "";
+        String size = maxSize ? "?maxSize=$maxSize" : "";
         return "${serverUrl()}/api/abstractimage/$idAbstractImage/associated/$label.$format$size"
     }
 
@@ -95,7 +95,7 @@ class UrlApi {
         if(label == "macro" && contentType && !formatsWithMacro.contains(contentType)) {
             return null
         }
-        String size = maxSize ? "?maxWidth=$maxSize" : "";
+        String size = maxSize ? "?maxSize=$maxSize" : "";
         return "${serverUrl()}/api/imageinstance/$id/associated/$label.$format$size"
     }
 

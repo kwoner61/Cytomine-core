@@ -60,6 +60,7 @@ grails.mime.types = [
         jpg : 'image/jpeg',
         tiff : 'image/tiff',
         tif: 'image/tiff',
+        webp: 'image/webp',
         text: 'text/plain',
         js: 'text/javascript',
         rss: 'application/rss+xml',

@@ -160,7 +160,6 @@ class RestAbstractImageController extends RestController {
             parameters.contrast = params.double('contrast')
             parameters.gamma = params.double('gamma')
             parameters.bits = (params.bits == "max") ? "max" : params.int('bits')
-            parameters.refresh = params.boolean('refresh', false)
             responseByteArray(imageServerService.thumb(abstractImage.referenceSlice, parameters))
         } else {
             responseNotFound("Image", params.id)

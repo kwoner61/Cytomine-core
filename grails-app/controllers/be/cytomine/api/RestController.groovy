@@ -315,6 +315,8 @@ class RestController {
             contentType = "image/jpeg"
         } else if (params.format == 'tiff' || params.format == 'tif') {
             contentType = "image/tiff"
+        } else if (params.format == 'webp') {
+            contentType = "image/webp"
         } else {
             contentType = "image/png"
         }

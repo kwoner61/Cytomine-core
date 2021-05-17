@@ -91,8 +91,7 @@ class Job extends CytomineDomain  {
     @RestApiObjectField(description = "Flag to see if data generate by this job are deleted",mandatory = false)
     boolean dataDeleted = false
 
-    @RestApiObjectField(description = "Flag to star an interesting job", mandatory =
-    false)
+    @RestApiObjectField(description = "Flag to star an interesting job", mandatory = false)
     Boolean favorite = false
 
     @RestApiObjectFields(params=[

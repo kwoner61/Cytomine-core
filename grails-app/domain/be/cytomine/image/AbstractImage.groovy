@@ -224,7 +224,7 @@ class AbstractImage extends CytomineDomain implements Serializable {
         returnArray['colorspace'] = image?.colorspace
         returnArray['thumb'] = UrlApi.getAbstractImageThumbUrlWithMaxSize(image ? (long)image?.id : null, 512)
         returnArray['preview'] = UrlApi.getAbstractImageThumbUrlWithMaxSize(image ? (long)image?.id : null, 1024)
-        returnArray['macroURL'] = UrlApi.getAssociatedImage(image ? (long)image?.id : null, "macro", image?.uploadedFile?.contentType, 512)
+        returnArray['macroURL'] = UrlApi.getAssociatedImage(image ? (long)image?.id : null, "macro", image?.uploadedFile?.contentType, 256)
         returnArray
     }
 

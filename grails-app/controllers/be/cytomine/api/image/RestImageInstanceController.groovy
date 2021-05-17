@@ -32,12 +32,10 @@ import be.cytomine.security.SecUser
 import be.cytomine.sql.ReviewedAnnotationListing
 import be.cytomine.utils.GeometryUtils
 import com.vividsolutions.jts.geom.Geometry
-import com.vividsolutions.jts.geom.GeometryCollection
-import com.vividsolutions.jts.geom.GeometryFactory
 import com.vividsolutions.jts.io.WKTReader
-import com.vividsolutions.jts.io.WKTWriter
 import grails.converters.JSON
 import org.codehaus.groovy.grails.web.json.JSONObject
+import org.codehaus.groovy.grails.web.servlet.mvc.GrailsParameterMap
 import org.restapidoc.annotation.*
 import org.restapidoc.pojo.RestApiParamType
 import static org.springframework.security.acls.domain.BasePermission.READ
@@ -388,7 +386,6 @@ class RestImageInstanceController extends RestController {
             parameters.contrast = params.double('contrast')
             parameters.gamma = params.double('gamma')
             parameters.bits = (params.bits == "max") ? "max" : params.int('bits')
-            parameters.refresh = params.boolean('refresh', false)
             responseByteArray(imageServerService.thumb(imageInstance, parameters))
         } else {
             responseNotFound("Image", params.id)
@@ -504,8 +501,12 @@ class RestImageInstanceController extends RestController {
 
                 responseByteArray(imageServerService.profileImageProjection(cf, roiGeometry, params))
             }
-            if (params.mask || params.alphaMask || params.alphaMask || params.draw || params.type in ['draw', 'mask', 'alphaMask', 'alphamask'])
-                params.location = getWKTGeometry(imageInstance, params)
+
+            def annotationType = imageServerService.checkType(params)
+            if (annotationType != 'crop') {
+                params.geometries = getWKTGeometry(imageInstance, params)
+            }
+
             responseByteArray(imageServerService.window(imageInstance.baseImage, params, false))
         } else {
             responseNotFound("Image", params.id)
@@ -534,7 +535,7 @@ class RestImageInstanceController extends RestController {
 //    }
 
     //todo : move into a service
-    public String getWKTGeometry(ImageInstance imageInstance, params) {
+    public List<Geometry> getWKTGeometry(ImageInstance imageInstance, GrailsParameterMap params) {
         def geometries = []
         if (params.annotations && !params.reviewed) {
             def idAnnotations = params.annotations.split(',')
@@ -568,23 +569,10 @@ class RestImageInstanceController extends RestController {
             }
             List<Long> imageIDS = [imageInstance.id]
 
-            log.info params
-            //Create a geometry corresponding to the ROI of the request (x,y,w,h)
-            int x
-            int y
-            int w
-            int h
-            try {
-                x = params.int('topLeftX')
-                y = params.int('topLeftY')
-                w = params.int('width')
-                h = params.int('height')
-            }catch (Exception e) {
-                x = params.int('x')
-                y = params.int('y')
-                w = params.int('w')
-                h = params.int('h')
-            }
+            def x = params.int('x')
+            def y = params.int('y')
+            def w = params.int('w')
+            def h = params.int('h')
             Geometry roiGeometry = GeometryUtils.createBoundingBox(
                     x,                                      //minX
                     x + w,                                  //maxX
@@ -595,8 +583,10 @@ class RestImageInstanceController extends RestController {
 
             //Fetch annotations with the requested term on the request image
 
-            if (params.review) {
-                ReviewedAnnotationListing ral = new ReviewedAnnotationListing(project: imageInstance.getProject().id, terms: termsIDS, reviewUsers: userIDS, images:imageIDS, bbox:roiGeometry, columnToPrint:['basic','meta','wkt','term']  )
+            if (params.reviewed) {
+                ReviewedAnnotationListing ral = new ReviewedAnnotationListing(project: imageInstance.getProject().id,
+                        terms: termsIDS, reviewUsers: userIDS, images:imageIDS, bbox:roiGeometry,
+                        columnToPrint:['basic','meta','wkt','term']  )
                 def result = annotationListingService.listGeneric(ral)
                 log.info "annotations=${result.size()}"
                 geometries = result.collect {
@@ -610,13 +600,10 @@ class RestImageInstanceController extends RestController {
                 log.info "userIDS=${userIDS}"
                 Collection<UserAnnotation> annotations = userAnnotationService.list(imageInstance, roiGeometry, termsIDS, userIDS)
                 log.info "annotations=${annotations.size()}"
-                geometries = annotations.collect { geometry ->
-                    geometry.getLocation()
-                }
+                geometries = annotations.collect { it.location }
             }
         }
-        GeometryCollection geometryCollection = new GeometryCollection((Geometry[])geometries, new GeometryFactory())
-        return new WKTWriter().write(geometryCollection)
+        return geometries
     }
 
     def download() {
