@@ -73,10 +73,18 @@ class ImageServerService extends ModelService {
     }
 
 
-    //TODO
     def properties(AbstractImage image) {
-        def (server, parameters) = imsParametersFromAbstractImage(image)
-        return JSON.parse(new String(makeRequest("/image/properties.json", server, parameters, "GET")))
+        def (server, path) = imsParametersFromAbstractImage(image)
+        def uri = "/image/${path}/info"
+        def response = makeRequest(uri, server, [:], "json", "GET")
+        return response
+    }
+
+    def rawProperties(AbstractImage image) {
+        def (server, path) = imsParametersFromAbstractImage(image)
+        def uri = "/image/${path}/metadata"
+        def response = makeRequest(uri, server, [:], "json", "GET")
+        return response?.items
     }
 
     //TODO

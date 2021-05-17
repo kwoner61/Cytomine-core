@@ -17,7 +17,6 @@ package be.cytomine.image
 */
 
 import be.cytomine.meta.Property
-import grails.converters.JSON
 import grails.gorm.DetachedCriteria
 import grails.transaction.Transactional
 
@@ -27,45 +26,21 @@ class ImagePropertiesService implements Serializable {
     def abstractImageService
     def imageServerService
 
-    def keys() {
-        def parseString = { x -> x }
-        def parseInt = { x -> Integer.parseInt(x) }
-        def parseDouble = { x -> Double.parseDouble(x) }
-        def parseJSON = { x -> JSON.parse(x) }
-        return [
-                width        : [name: 'cytomine.width', parser: parseInt],
-                height       : [name: 'cytomine.height', parser: parseInt],
-                depth        : [name: 'cytomine.depth', parser: parseInt],
-                duration     : [name: 'cytomine.duration', parser: parseInt],
-                channels     : [name: 'cytomine.channels', parser: parseInt],
-                physicalSizeX: [name: 'cytomine.physicalSizeX', parser: parseDouble],
-                physicalSizeY: [name: 'cytomine.physicalSizeY', parser: parseDouble],
-                physicalSizeZ: [name: 'cytomine.physicalSizeZ', parser: parseDouble],
-                fps          : [name: 'cytomine.fps', parser: parseDouble],
-                bitPerSample : [name: 'cytomine.bitPerSample', parser: parseInt],
-                samplePerPixel: [name: 'cytomine.samplePerPixel', parser: parseInt],
-                colorspace   : [name: 'cytomine.colorspace', parser: parseString],
-                magnification: [name: 'cytomine.magnification', parser: parseInt],
-                resolution   : [name: 'cytomine.resolution', parser: parseDouble],
-                channelNames : [name: 'cytomine.channelNames', parser: parseJSON],
-                tileSize     : [name: 'cytomine.tileSize', parser: parseInt]
-        ]
-    }
-
     @Transactional
     def clear(AbstractImage image) {
-        def propertyKeys = keys().collect { it.value.name }
-        Property.findAllByDomainIdentAndKeyInList(image.id, propertyKeys)?.each {
-            it.delete()
-        }
+        Property.where {
+            domainClassName == image.class.name
+            domainIdent == image.id
+        }.deleteAll()
     }
 
     @Transactional
     def populate(AbstractImage image) {
         try {
-            def properties = imageServerService.properties(image)
+            def properties = imageServerService.rawProperties(image)
             properties.each {
-                String key = it?.key?.toString()?.trim()
+                String namespace = (it?.namespace) ? it?.namespace + "." : ""
+                String key = namespace + it?.key?.toString()?.trim()
                 String value = it?.value?.toString()?.trim()
                 if (key && value) {
                     key = key.replaceAll("\u0000", "")
@@ -84,37 +59,44 @@ class ImagePropertiesService implements Serializable {
             }
         } catch(Exception e) {
             log.error(e)
-            log.error(e.printStackTrace())
+            e.printStackTrace()
         }
     }
 
     @Transactional
     def extractUseful(AbstractImage image, boolean deep = false) {
-        def channelNames = [:]
-        keys().each { k, v ->
-            def property = Property.findByDomainIdentAndKey(image.id, v.name)
-            if (property) {
-                if (k == "channelNames" && deep) {
-                    channelNames = v.parser(property.value)
-                }
-                else if (k != "channelNames") {
-                    image[k] = v.parser(property.value)
-                }
-            }
-            else
-                log.info "No property ${v.name} for abstract image $image"
-        }
-        image.extractedMetadata = new Date()
-        image.save(flush: true, failOnError: true)
+        try {
+            def properties = imageServerService.properties(image)
+            image.width = properties?.image?.width
+            image.height = properties?.image?.height
+            image.depth = properties?.image?.depth
+            image.duration = properties?.image?.duration
+            image.channels = properties?.image?.n_channels
+            image.physicalSizeX = properties?.image?.physical_size_x
+            image.physicalSizeY = properties?.image?.physical_size_y
+            image.physicalSizeZ = properties?.image?.physical_size_z
+            image.fps = properties?.image?.frame_rate
+            image.bitPerSample = properties?.image?.significant_bits // Ok ?
+            image.magnification = properties?.instrument?.objective?.nominal_magnification
 
-        if (deep) {
-            channelNames.each { channel, name ->
-                def  query = new DetachedCriteria(AbstractSlice).build {
-                    eq 'image', image
-                    eq 'channel', channel as Integer
+            image.resolution = properties?.image?.physical_size_x
+            // TODO: samplePerPixel, colorspace, tileSize
+
+            image.extractedMetadata = new Date()
+            image.save(flush: true, failOnError: true)
+
+            if (deep) {
+                properties?.channels?.each { channel ->
+                    def  query = new DetachedCriteria(AbstractSlice).build {
+                        eq 'image', image
+                        eq 'channel', channel.index as Integer
+                    }
+                    query.updateAll(channelName: channel.suggested_name as String)
                 }
-                query.updateAll(channelName: name as String)
             }
+        } catch(Exception e) {
+            log.error(e)
+            e.printStackTrace()
         }
     }
 
