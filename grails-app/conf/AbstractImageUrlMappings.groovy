@@ -64,18 +64,18 @@ class AbstractImageUrlMappings {
         "/api/abstractimage/$id/window-$x-$y-$w-$h.$format"(controller: "restAbstractImage"){
             action = [GET:"window", POST:"window"]
         }
-        "/api/abstractimage/$id/window_url-$x-$y-$w-$h.$format"(controller: "restAbstractImage"){
-            action = [GET:"windowUrl", POST:"windowUrl"]
-        }
-        "/api/abstractimage/$id/camera.$format"(controller: "restAbstractImage"){
-            action = [POST:"camera"]
-        }
-        "/api/abstractimage/$id/camera-$x-$y-$w-$h.$format"(controller: "restAbstractImage"){
-            action = [GET:"camera", POST:"camera"]
-        }
-        "/api/abstractimage/$id/camera_url-$x-$y-$w-$h.$format"(controller: "restAbstractImage"){
-            action = [GET:"cameraUrl", POST:"cameraUrl"]
-        }
+//        "/api/abstractimage/$id/window_url-$x-$y-$w-$h.$format"(controller: "restAbstractImage"){
+//            action = [GET:"windowUrl", POST:"windowUrl"]
+//        }
+//        "/api/abstractimage/$id/camera.$format"(controller: "restAbstractImage"){
+//            action = [POST:"camera"]
+//        }
+//        "/api/abstractimage/$id/camera-$x-$y-$w-$h.$format"(controller: "restAbstractImage"){
+//            action = [GET:"camera", POST:"camera"]
+//        }
+//        "/api/abstractimage/$id/camera_url-$x-$y-$w-$h.$format"(controller: "restAbstractImage"){
+//            action = [GET:"cameraUrl", POST:"cameraUrl"]
+//        }
 
         "/api/abstractimage/$id/properties/clear.$format"(controller:"restAbstractImage"){
             action = [POST:"clearProperties"]

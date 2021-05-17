@@ -48,18 +48,18 @@ class AbstractSliceUrlMappings {
         "/api/abstractslice/$id/window-$x-$y-$w-$h.$format"(controller: "restAbstractSlice"){
             action = [GET:"window", POST:"window"]
         }
-        "/api/abstractslice/$id/window_url-$x-$y-$w-$h.$format"(controller: "restAbstractSlice"){
-            action = [GET:"windowUrl", POST:"windowUrl"]
-        }
-        "/api/abstractslice/$id/camera.$format"(controller: "restAbstractSlice"){
-            action = [POST:"camera"]
-        }
-        "/api/abstractslice/$id/camera-$x-$y-$w-$h.$format"(controller: "restAbstractSlice"){
-            action = [GET:"camera", POST:"camera"]
-        }
-        "/api/abstractslice/$id/camera_url-$x-$y-$w-$h.$format"(controller: "restAbstractSlice"){
-            action = [GET:"cameraUrl", POST:"cameraUrl"]
-        }
+//        "/api/abstractslice/$id/window_url-$x-$y-$w-$h.$format"(controller: "restAbstractSlice"){
+//            action = [GET:"windowUrl", POST:"windowUrl"]
+//        }
+//        "/api/abstractslice/$id/camera.$format"(controller: "restAbstractSlice"){
+//            action = [POST:"camera"]
+//        }
+//        "/api/abstractslice/$id/camera-$x-$y-$w-$h.$format"(controller: "restAbstractSlice"){
+//            action = [GET:"camera", POST:"camera"]
+//        }
+//        "/api/abstractslice/$id/camera_url-$x-$y-$w-$h.$format"(controller: "restAbstractSlice"){
+//            action = [GET:"cameraUrl", POST:"cameraUrl"]
+//        }
     }
 }
 

@@ -173,15 +173,15 @@ class RestAbstractSliceController extends RestController {
         }
     }
 
-    def windowUrl() {
-        AbstractSlice abstractSlice = abstractSliceService.read(params.long("id"))
-        if (abstractSlice) {
-            String url = imageServerService.window(abstractSlice, params, true)
-            responseSuccess([url : url])
-        } else {
-            responseNotFound("AbstractSlice", params.id)
-        }
-    }
+//    def windowUrl() {
+//        AbstractSlice abstractSlice = abstractSliceService.read(params.long("id"))
+//        if (abstractSlice) {
+//            String url = imageServerService.window(abstractSlice, params, true)
+//            responseSuccess([url : url])
+//        } else {
+//            responseNotFound("AbstractSlice", params.id)
+//        }
+//    }
 
     def window() {
         AbstractSlice abstractSlice = abstractSliceService.read(params.long("id"))
@@ -192,26 +192,26 @@ class RestAbstractSliceController extends RestController {
         }
     }
 
-    def cameraUrl() {
-        AbstractSlice abstractSlice = abstractSliceService.read(params.long("id"))
-        if (abstractSlice) {
-            params.withExterior = false
-            String url = imageServerService.window(abstractSlice, params, true)
-            responseSuccess([url : url])
-        } else {
-            responseNotFound("AbstractSlice", params.id)
-        }
-    }
-
-    def camera() {
-        AbstractSlice abstractSlice = abstractSliceService.read(params.long("id"))
-        if (abstractSlice) {
-            params.withExterior = false
-            responseByteArray(imageServerService.window(abstractSlice, params, false))
-        } else {
-            responseNotFound("AbstractSlice", params.id)
-        }
-    }
+//    def cameraUrl() {
+//        AbstractSlice abstractSlice = abstractSliceService.read(params.long("id"))
+//        if (abstractSlice) {
+//            params.withExterior = false
+//            String url = imageServerService.window(abstractSlice, params, true)
+//            responseSuccess([url : url])
+//        } else {
+//            responseNotFound("AbstractSlice", params.id)
+//        }
+//    }
+//
+//    def camera() {
+//        AbstractSlice abstractSlice = abstractSliceService.read(params.long("id"))
+//        if (abstractSlice) {
+//            params.withExterior = false
+//            responseByteArray(imageServerService.window(abstractSlice, params, false))
+//        } else {
+//            responseNotFound("AbstractSlice", params.id)
+//        }
+//    }
 
 //    def download() {
 //        AbstractSlice abstractSlice = abstractSliceService.read(params.long("id"))

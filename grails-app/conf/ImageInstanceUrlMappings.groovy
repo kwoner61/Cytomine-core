@@ -102,18 +102,18 @@ class ImageInstanceUrlMappings {
         "/api/imageinstance/$id/window-$x-$y-$w-$h.$format"(controller: "restImageInstance"){
             action = [GET:"window", POST:"window"]
         }
-        "/api/imageinstance/$id/window_url-$x-$y-$w-$h.$format"(controller: "restImageInstance"){
-            action = [GET:"windowUrl", POST:"windowUrl"]
-        }
-        "/api/imageinstance/$id/camera.$format"(controller: "restImageInstance"){
-            action = [POST:"camera"]
-        }
-        "/api/imageinstance/$id/camera-$x-$y-$w-$h.$format"(controller: "restImageInstance"){
-            action = [GET:"camera", POST:"camera"]
-        }
-        "/api/imageinstance/$id/camera_url-$x-$y-$w-$h.$format"(controller: "restImageInstance"){
-            action = [GET:"cameraUrl", POST:"cameraUrl"]
-        }
+//        "/api/imageinstance/$id/window_url-$x-$y-$w-$h.$format"(controller: "restImageInstance"){
+//            action = [GET:"windowUrl", POST:"windowUrl"]
+//        }
+//        "/api/imageinstance/$id/camera.$format"(controller: "restImageInstance"){
+//            action = [POST:"camera"]
+//        }
+//        "/api/imageinstance/$id/camera-$x-$y-$w-$h.$format"(controller: "restImageInstance"){
+//            action = [GET:"camera", POST:"camera"]
+//        }
+//        "/api/imageinstance/$id/camera_url-$x-$y-$w-$h.$format"(controller: "restImageInstance"){
+//            action = [GET:"cameraUrl", POST:"cameraUrl"]
+//        }
         "/api/imageinstance/$id/metadata.$format"(controller: "restImageInstance"){
             action = [GET: "metadata"]
         }

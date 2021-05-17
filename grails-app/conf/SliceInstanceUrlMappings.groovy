@@ -41,18 +41,18 @@ class SliceInstanceUrlMappings {
         "/api/sliceinstance/$id/window-$x-$y-$w-$h.$format"(controller: "restSliceInstance"){
             action = [GET:"window", POST:"window"]
         }
-        "/api/sliceinstance/$id/window_url-$x-$y-$w-$h.$format"(controller: "restSliceInstance"){
-            action = [GET:"windowUrl", POST:"windowUrl"]
-        }
-        "/api/sliceinstance/$id/camera.$format"(controller: "restSliceInstance"){
-            action = [POST:"camera"]
-        }
-        "/api/sliceinstance/$id/camera-$x-$y-$w-$h.$format"(controller: "restSliceInstance"){
-            action = [GET:"camera", POST:"camera"]
-        }
-        "/api/sliceinstance/$id/camera_url-$x-$y-$w-$h.$format"(controller: "restSliceInstance"){
-            action = [GET:"cameraUrl", POST:"cameraUrl"]
-        }
+//        "/api/sliceinstance/$id/window_url-$x-$y-$w-$h.$format"(controller: "restSliceInstance"){
+//            action = [GET:"windowUrl", POST:"windowUrl"]
+//        }
+//        "/api/sliceinstance/$id/camera.$format"(controller: "restSliceInstance"){
+//            action = [POST:"camera"]
+//        }
+//        "/api/sliceinstance/$id/camera-$x-$y-$w-$h.$format"(controller: "restSliceInstance"){
+//            action = [GET:"camera", POST:"camera"]
+//        }
+//        "/api/sliceinstance/$id/camera_url-$x-$y-$w-$h.$format"(controller: "restSliceInstance"){
+//            action = [GET:"cameraUrl", POST:"cameraUrl"]
+//        }
     }
 }
 
