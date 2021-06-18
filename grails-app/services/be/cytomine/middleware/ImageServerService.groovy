@@ -254,8 +254,8 @@ class ImageServerService extends ModelService {
         switch (checkType(params)) {
             case 'draw':
                 parameters.try_square = params.boolean('square')
-                parameters.annotations.stroke_color = params.color?.replace("0x", "#") ?: "black"
-                parameters.annotations.stroke_width = params.int('thickness') ?: 1 // TODO: check scale
+                parameters.annotations.stroke_color = params.color?.replace("0x", "#")
+                parameters.annotations.stroke_width = params.int('thickness')
                 uri = "/image/${path}/annotation/drawing"
                 format = checkFormat(params.format, ['jpg', 'png', 'webp'])
                 break
