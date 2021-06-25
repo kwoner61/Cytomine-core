@@ -94,6 +94,8 @@ class ImageFilterProject extends CytomineDomain implements Serializable {
         returnArray['imagingServer'] = domain?.imageFilter?.imagingServer?.url
         returnArray['baseUrl'] = domain?.imageFilter?.baseUrl
         returnArray['name'] = domain?.imageFilter?.name
+        returnArray['method'] = domain?.imageFilter?.method
+        returnArray['available'] = domain?.imageFilter?.available
         return returnArray
     }
 

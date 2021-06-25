@@ -33,19 +33,18 @@ class ImageFilter extends CytomineDomain {
     @RestApiObjectField(description = "The filter name",useForCreation = false)
     String name
 
-    @RestApiObjectField(description = "The URL path of the filter on the imaging server",useForCreation = false)
-    String baseUrl
+    String method
 
     @RestApiObjectField(description = "The URL of the imaging server", allowedType = "string",useForCreation = false)
     ImagingServer imagingServer
 
-    @RestApiObjectFields(params=[
-        @RestApiObjectField(apiFieldName = "id", description = "The domain id",allowedType = "long",useForCreation = false)
-    ])
+    Boolean available = true
+
     static constraints = {
         name(blank: false, nullable: false)
-        baseUrl(blank: false, nullable: false)
+        method(blank: false, nullable: true)
         imagingServer (nullable: true)
+        available(nullable: true)
     }
 
     /**
@@ -57,9 +56,11 @@ class ImageFilter extends CytomineDomain {
     static ImageFilter insertDataIntoDomain(def json,def domain=new ImageFilter()) {
         domain.id = JSONUtils.getJSONAttrLong(json,'id',null)
         domain.name = JSONUtils.getJSONAttrStr(json, 'name')
-        domain.baseUrl = JSONUtils.getJSONAttrStr(json, 'baseUrl')
+        domain.method = JSONUtils.getJSONAttrStr(json, 'method')
         domain.imagingServer = ImagingServer.findByUrl(JSONUtils.getJSONAttrStr(json, 'imagingServer'))
         if(!domain.imagingServer) throw new WrongArgumentException("ImagingServer doesn't exist")
+
+        domain.available = JSONUtils.getJSONAttrBoolean(json, 'available', true)
 
         return domain;
     }
@@ -69,13 +70,19 @@ class ImageFilter extends CytomineDomain {
      * @param domain Domain source for json value
      * @return Map with fields (keys) and their values
      */
-    static def getDataFromDomain(def domain) {
+    static def getDataFromDomain(ImageFilter domain) {
         def returnArray = [:]
         returnArray['id'] = domain?.id
         returnArray['name'] = domain?.name
         returnArray['imagingServer'] = domain?.imagingServer?.url
+        returnArray['method'] = domain?.method
+        returnArray['available'] = domain?.available
         returnArray['baseUrl'] = domain?.baseUrl
         return returnArray
+    }
+
+    def getBaseUrl() {
+        return "/filters/${method}&url=" // For backwards compatibility
     }
 
     public CytomineDomain container() {

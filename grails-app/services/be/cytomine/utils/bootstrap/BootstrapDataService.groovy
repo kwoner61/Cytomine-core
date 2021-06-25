@@ -33,43 +33,47 @@ class BootstrapDataService {
     def dataSource
     def amqpQueueConfigService
 
+    def initImageFilters() {
+        def imagingServer = bootstrapUtilsService.createNewImagingServer()
+        def filters = [
+                [name: "Binary", method: "binary", imagingServer: imagingServer, available: true],
+                [name: "Huang Threshold", method: "huang", imagingServer: imagingServer, available: false],
+                [name: "Intermodes Threshold", method: "intermodes", imagingServer: imagingServer, available: false],
+                [name: "IsoData Threshold", method: "isodata", imagingServer: imagingServer, available: true],
+                [name: "Li Threshold", method: "li", imagingServer: imagingServer, available: false],
+                [name: "Max Entropy Threshold", method: "maxentropy", imagingServer: imagingServer, available: false],
+                [name: "Mean Threshold", method: "mean", imagingServer: imagingServer, available: true],
+                [name: "Minimum Threshold", method: "minimum", imagingServer: imagingServer, available: true],
+                [name: "MinError(I) Threshold", method: "minerror", imagingServer: imagingServer, available: false],
+                [name: "Moments Threshold", method: "moments", imagingServer: imagingServer, available: false],
+                [name: "Otsu Threshold", method: "otsu", imagingServer: imagingServer, available: true],
+                [name: "Renyi Entropy Threshold", method: "renyientropy", imagingServer: imagingServer, available: false],
+                [name: "Shanbhag Threshold", method: "shanbhag", imagingServer: imagingServer, available: false],
+                [name: "Triangle Threshold", method: "triangle", imagingServer: imagingServer, available: false],
+                [name: "Yen Threshold", method: "yen", imagingServer: imagingServer, available: true],
+                [name: "Percentile Threshold", method: "percentile", imagingServer: imagingServer, available: false],
+                [name: "H&E Haematoxylin", method: "he-haematoxylin", imagingServer: imagingServer, available: true],
+                [name: "H&E Eosin", method: "he-eosin", imagingServer: imagingServer, available: true],
+                [name: "HDAB Haematoxylin", method: "hdab-haematoxylin", imagingServer: imagingServer, available: true],
+                [name: "HDAB DAB", method: "hdab-dab", imagingServer: imagingServer, available: true],
+                [name: "Haematoxylin", method: "haematoxylin", imagingServer: imagingServer, available: false], //To be removed: does not exist
+                [name: "Eosin", method: "eosin", imagingServer: imagingServer, available: false], //To be removed: does not exist
+                [name: "Red (RGB)", method: "r_rgb", imagingServer: imagingServer, available: true],
+                [name: "Green (RGB)", method: "g_rgb", imagingServer: imagingServer, available: true],
+                [name: "Blue (RGB)", method: "b_rgb", imagingServer: imagingServer, available: true],
+                [name: "Cyan (CMY)", method: "c_cmy", imagingServer: imagingServer, available: true],
+                [name: "Magenta (CMY)", method: "m_cmy", imagingServer: imagingServer, available: true],
+                [name: "Yellow (CMY)", method: "y_cmy", imagingServer: imagingServer, available: true],
+        ]
+        bootstrapUtilsService.createFilters(filters)
+    }
+
     def initData() {
 
         recreateTableFromNotDomainClass()
         amqpQueueConfigService.initAmqpQueueConfigDefaultValues()
 
-        def imagingServer = bootstrapUtilsService.createNewImagingServer()
-        def filters = [
-                [name: "Binary", baseUrl: "/vision/process?method=binary&url=", imagingServer: imagingServer],
-                [name: "Huang Threshold", baseUrl: "/vision/process?method=huang&url=", imagingServer: imagingServer],
-                [name: "Intermodes Threshold", baseUrl: "/vision/process?method=intermodes&url=", imagingServer: imagingServer],
-                [name: "IsoData Threshold", baseUrl: "/vision/process?method=isodata&url=", imagingServer: imagingServer],
-                [name: "Li Threshold", baseUrl: "/vision/process?method=li&url=", imagingServer: imagingServer],
-                [name: "Max Entropy Threshold", baseUrl: "/vision/process?method=maxentropy&url=", imagingServer: imagingServer],
-                [name: "Mean Threshold", baseUrl: "/vision/process?method=mean&url=", imagingServer: imagingServer],
-                [name: "Minimum Threshold", baseUrl: "/vision/process?method=minimum&url=", imagingServer: imagingServer],
-                [name: "MinError(I) Threshold", baseUrl: "/vision/process?method=minerror&url=", imagingServer: imagingServer],
-                [name: "Moments Threshold", baseUrl: "/vision/process?method=moments&url=", imagingServer: imagingServer],
-                [name: "Otsu Threshold", baseUrl: "/vision/process?method=otsu&url=", imagingServer: imagingServer],
-                [name: "Renyi Entropy Threshold", baseUrl: "/vision/process?method=renyientropy&url=", imagingServer: imagingServer],
-                [name: "Shanbhag Threshold", baseUrl: "/vision/process?method=shanbhag&url=", imagingServer: imagingServer],
-                [name: "Triangle Threshold", baseUrl: "/vision/process?method=triangle&url=", imagingServer: imagingServer],
-                [name: "Yen Threshold", baseUrl: "/vision/process?method=yen&url=", imagingServer: imagingServer],
-                [name: "Percentile Threshold", baseUrl: "/vision/process?method=percentile&url=", imagingServer: imagingServer],
-                [name: "H&E Haematoxylin", baseUrl: "/vision/process?method=he-haematoxylin&url=", imagingServer: imagingServer],
-                [name: "H&E Eosin", baseUrl: "/vision/process?method=he-eosin&url=", imagingServer: imagingServer],
-                [name: "HDAB Haematoxylin", baseUrl: "/vision/process?method=hdab-haematoxylin&url=", imagingServer: imagingServer],
-                [name: "HDAB DAB", baseUrl: "/vision/process?method=hdab-dab&url=", imagingServer: imagingServer],
-                [name: "Haematoxylin", baseUrl: "/vision/process?method=haematoxylin&url=", imagingServer: imagingServer],
-                [name: "Eosin", baseUrl: "/vision/process?method=eosin&url=", imagingServer: imagingServer],
-                [name: "Red (RGB)", baseUrl: "/vision/process?method=r_rgb&url=", imagingServer: imagingServer],
-                [name: "Green (RGB)", baseUrl: "/vision/process?method=g_rgb&url=", imagingServer: imagingServer],
-                [name: "Blue (RGB)", baseUrl: "/vision/process?method=b_rgb&url=", imagingServer: imagingServer],
-                [name: "Cyan (CMY)", baseUrl: "/vision/process?method=c_cmy&url=", imagingServer: imagingServer],
-                [name: "Magenta (CMY)", baseUrl: "/vision/process?method=m_cmy&url=", imagingServer: imagingServer],
-                [name: "Yellow (CMY)", baseUrl: "/vision/process?method=y_cmy&url=", imagingServer: imagingServer],
-        ]
-        bootstrapUtilsService.createFilters(filters)
+        initImageFilters()
 
         def nativelySupportedMimes = [
                 [extension : 'tif', mimeType : 'image/pyrtiff'],

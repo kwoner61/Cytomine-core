@@ -114,6 +114,16 @@ class BootstrapOldVersionService {
         Version.setCurrentVersion(Long.parseLong(grailsApplication.metadata.'app.versionDate'), grailsApplication.metadata.'app.version')
     }
 
+    def initv2_4_0() {
+        log.info "Migration to v2.4"
+        def sql = new Sql(dataSource)
+        sql.executeUpdate("UPDATE image_filter SET available = true WHERE available IS NULL;")
+        bootstrapUtilsService.updateSqlColumnConstraint("image_filter", "available", "DROP NOT NULL")
+        sql.close()
+
+        bootstrapDataService.initImageFilters()
+    }
+
     def initv2_2_1() {
         log.info "Migration to v2.2.1"
         def sql = new Sql(dataSource)
