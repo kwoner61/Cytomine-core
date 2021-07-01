@@ -1,6 +1,7 @@
 package be.cytomine.api
 
 import be.cytomine.image.AbstractImage
+import be.cytomine.image.ImageInstance
 
 /*
 * Copyright (c) 2009-2019. Authors: see NOTICE file.
@@ -77,26 +78,29 @@ class UrlApi {
         return "${serverUrl()}/api/annotation/$idAnnotation/crop.png?" + params
     }
 
-    static def getAssociatedImage(Long idAbstractImage, String label, String contentType = null, def maxSize = null, def format="png") {
-        def formatsWithMacro = [
-                "openslide/ndpi", "openslide/vms", "openslide/mrxs", "openslide/svs", "openslide/scn", "ventana/bif", "ventana/tif", "philips/tif"
+    static def getAssociatedImage(Long id, String imageType, String label, String contentType = null,
+                                  def maxSize = null, def format="png") {
+        def associatedPerFormatHints = [
+                macro: ["SVS", "NDPI", "VMS", "SCN", "MRXS", "BIF", "VENTANA", "PHILIPS"],
+                label: ["SVS", "MRXS", "PHILIPS"],
+                thumb: ["SVS", "MRXS", "BIF", "VENTANA"],
         ]
-        if(label == "macro" && contentType && !formatsWithMacro.contains(contentType)) {
+
+        if (contentType && !associatedPerFormatHints[label]?.contains(contentType)) {
             return null
         }
-        String size = maxSize ? "?maxSize=$maxSize" : "";
-        return "${serverUrl()}/api/abstractimage/$idAbstractImage/associated/$label.$format$size"
+        String size = maxSize ? "?maxSize=$maxSize" : ""
+        return "${serverUrl()}/api/$imageType/$id/associated/$label.$format$size"
     }
 
-    static def getAssociatedImageInstance(Long id, String label, String contentType = null, def maxSize = null, def format="png") {
-        def formatsWithMacro = [
-                "openslide/ndpi", "openslide/vms", "openslide/mrxs", "openslide/svs", "openslide/scn", "ventana/bif", "ventana/tif", "philips/tif"
-        ]
-        if(label == "macro" && contentType && !formatsWithMacro.contains(contentType)) {
-            return null
-        }
-        String size = maxSize ? "?maxSize=$maxSize" : "";
-        return "${serverUrl()}/api/imageinstance/$id/associated/$label.$format$size"
+    static def getAssociatedImage(AbstractImage image, String label, String contentType = null,
+                                  def maxSize = null, def format="png") {
+        return getAssociatedImage(image?.id, 'abstractimage', label, contentType, maxSize, format)
+    }
+
+    static def getAssociatedImage(ImageInstance image, String label, String contentType = null,
+                                  def maxSize = null, def format="png") {
+        return getAssociatedImage(image?.id, 'imageinstance', label, contentType, maxSize, format)
     }
 
     static def getAbstractImageThumbUrl(Long idImage, def format="png") {
