@@ -1,7 +1,4 @@
 package be.cytomine.image
-
-import be.cytomine.Exception.ConstraintException
-
 /*
 * Copyright (c) 2009-2019. Authors: see NOTICE file.
 *
@@ -30,7 +27,7 @@ import be.cytomine.security.SecUser
 import be.cytomine.security.User
 import be.cytomine.security.UserJob
 import be.cytomine.utils.ModelService
-import be.cytomine.utils.SQLUtils
+import be.cytomine.utils.StringUtils
 import be.cytomine.utils.Task
 import grails.converters.JSON
 import groovy.sql.Sql
@@ -82,12 +79,12 @@ class UploadedFileService extends ModelService {
 
         String search = ""
         searchParameters.each {
-            search += "AND uf.${SQLUtils.toSnakeCase(it.field)} ${it.sqlOperator} '${it.value}' "
+            search += "AND uf.${StringUtils.toSnakeCase(it.field)} ${it.sqlOperator} '${it.value}' "
         }
 
         String sort = ""
         if (["content_type", "id", "created", "filename", "originalFilename", "size", "status"].contains(sortedProperty)) {
-            sort += "uf.${SQLUtils.toSnakeCase(sortedProperty)}"
+            sort += "uf.${StringUtils.toSnakeCase(sortedProperty)}"
         }
         else if(withTreeDetails && sortedProperty == "globalSize") {
             sort += "COALESCE(SUM(DISTINCT tree.size),0)+uf.size"
@@ -139,7 +136,7 @@ class UploadedFileService extends ModelService {
         def data = []
         def sql = new Sql(dataSource)
         sql.eachRow(request, [username: user.username]) { resultSet ->
-            def row = SQLUtils.keysToCamelCase(resultSet.toRowResult())
+            def row = StringUtils.keysToCamelCase(resultSet.toRowResult())
             row.thumbURL = (row.image) ? UrlApi.getAbstractImageThumbUrl(row.image as Long) : null
             data << row
         }
@@ -174,7 +171,7 @@ class UploadedFileService extends ModelService {
         def data = []
         def sql = new Sql(dataSource)
         sql.eachRow(request, [username: user.username]) { resultSet ->
-            def row = SQLUtils.keysToCamelCase(resultSet.toRowResult())
+            def row = StringUtils.keysToCamelCase(resultSet.toRowResult())
             row.lTree = row.lTree.value
             row.image = row.image.array.find { it != null }
             row.slices = row.slices.array.findAll { it != null } // A same UF can be linked to several slices (virtual stacks)
@@ -182,7 +179,7 @@ class UploadedFileService extends ModelService {
             row.thumbURL =  null
             if(row.image) {
                 row.thumbURL = UrlApi.getAbstractImageThumbUrl(row.image as Long)
-                row.macroURL = UrlApi.getAssociatedImage(row.image as Long, "macro", row.contentType as String, 256)
+                row.macroURL = UrlApi.getAssociatedImage(row.image as Long, "abstractimage", "macro", row.contentType as String, 256)
             } else if (row.slices.size() > 0) {
                 row.thumbURL = UrlApi.getAbstractSliceThumbUrl(row.slices[0] as Long)
             }

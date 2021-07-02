@@ -2,7 +2,6 @@ package be.cytomine.image
 
 import be.cytomine.command.AddCommand
 import be.cytomine.command.Command
-import be.cytomine.command.DeleteCommand
 import be.cytomine.command.EditCommand
 import be.cytomine.command.Transaction
 import be.cytomine.ontology.AnnotationIndex
@@ -10,16 +9,11 @@ import be.cytomine.ontology.AnnotationTrack
 import be.cytomine.project.Project
 import be.cytomine.security.SecUser
 import be.cytomine.utils.ModelService
-import be.cytomine.utils.SQLUtils
 import be.cytomine.utils.Task
 import grails.converters.JSON
-import groovy.sql.Sql
 import org.hibernate.FetchMode
 
-import java.nio.file.Paths
-
 import static org.springframework.security.acls.domain.BasePermission.READ
-import static org.springframework.security.acls.domain.BasePermission.WRITE
 
 class SliceInstanceService extends ModelService {
 
