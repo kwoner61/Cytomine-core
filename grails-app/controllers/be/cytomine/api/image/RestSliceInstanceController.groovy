@@ -282,4 +282,49 @@ class RestSliceInstanceController extends RestController {
 //            responseNotFound("SliceInstance", params.id)
 //        }
 //    }
+
+
+    def histogram() {
+        SliceInstance sliceInstance = sliceInstanceService.read(params.long("id"))
+        if (sliceInstance) {
+            def histogram = imageServerService.planeHistograms(
+                    sliceInstance, params.int("nBins", 256), false
+            )
+            responseSuccess(histogram)
+        } else {
+            responseNotFound("Image", params.id)
+        }
+    }
+
+    def histogramBounds() {
+        SliceInstance sliceInstance = sliceInstanceService.read(params.long("id"))
+        if (sliceInstance) {
+            def histogramBounds = imageServerService.planeHistogramBounds(sliceInstance, false)
+            responseSuccess(histogramBounds)
+        } else {
+            responseNotFound("Image", params.id)
+        }
+    }
+
+    def channelHistograms() {
+        SliceInstance sliceInstance = sliceInstanceService.read(params.long("id"))
+        if (sliceInstance) {
+            def histograms = imageServerService.planeHistograms(
+                    sliceInstance, params.int("nBins", 256), true
+            )
+            responseSuccess(histograms)
+        } else {
+            responseNotFound("Image", params.id)
+        }
+    }
+
+    def channelHistogramBounds() {
+        SliceInstance sliceInstance = sliceInstanceService.read(params.long("id"))
+        if (sliceInstance) {
+            def channelHistogramBounds = imageServerService.planeHistogramBounds(sliceInstance, true)
+            responseSuccess(channelHistogramBounds)
+        } else {
+            responseNotFound("Image", params.id)
+        }
+    }
 }

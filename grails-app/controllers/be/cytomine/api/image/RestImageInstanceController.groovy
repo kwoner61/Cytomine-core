@@ -341,26 +341,48 @@ class RestImageInstanceController extends RestController {
 //        }
 //    }
 
-
-    @RestApiMethod(description = "Compute histogram for the whole image")
-    @RestApiParams(params=[
-            @RestApiParam(name="id", type="long", paramType = RestApiParamType.PATH, description = "The image id")
-    ])
-    @RestApiResponseObject(objectIdentifier = "empty")
-    def extractHistogram() {
+    def histogram() {
         ImageInstance imageInstance = imageInstanceService.read(params.long("id"))
-        sampleHistogramService.extractHistogram(imageInstance.baseImage)
-        responseSuccess([:])
+        if (imageInstance) {
+            def histogram = imageServerService.imageHistogram(
+                    imageInstance, params.int("nBins", 256)
+            )
+            responseSuccess(histogram)
+        } else {
+            responseNotFound("Image", params.id)
+        }
     }
 
-    @RestApiMethod(description = "Get histogram statistics for the whole image")
-    @RestApiParams(params=[
-            @RestApiParam(name="id", type="long", paramType = RestApiParamType.PATH, description = "The image id")
-    ])
-    @RestApiResponseObject(objectIdentifier = "empty")
-    def showHistogramStats() {
+    def histogramBounds() {
         ImageInstance imageInstance = imageInstanceService.read(params.long("id"))
-        responseSuccess(sampleHistogramService.histogramStats(imageInstance.baseImage))
+        if (imageInstance) {
+            def histogramBounds = imageServerService.imageHistogramBounds(imageInstance)
+            responseSuccess(histogramBounds)
+        } else {
+            responseNotFound("Image", params.id)
+        }
+    }
+
+    def channelHistograms() {
+        ImageInstance imageInstance = imageInstanceService.read(params.long("id"))
+        if (imageInstance) {
+            def histograms = imageServerService.channelHistograms(
+                    imageInstance, params.int("nBins", 256)
+            )
+            responseSuccess(histograms)
+        } else {
+            responseNotFound("Image", params.id)
+        }
+    }
+
+    def channelHistogramBounds() {
+        ImageInstance imageInstance = imageInstanceService.read(params.long("id"))
+        if (imageInstance) {
+            def channelHistogramBounds = imageServerService.channelHistogramBounds(imageInstance)
+            responseSuccess(channelHistogramBounds)
+        } else {
+            responseNotFound("Image", params.id)
+        }
     }
 
     @RestApiMethod(description="Get a small image (thumb) for a specific image", extensions=["png", "jpg"])

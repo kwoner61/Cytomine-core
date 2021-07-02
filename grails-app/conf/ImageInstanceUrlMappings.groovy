@@ -117,11 +117,18 @@ class ImageInstanceUrlMappings {
         "/api/imageinstance/$id/metadata.$format"(controller: "restImageInstance"){
             action = [GET: "metadata"]
         }
-        "/api/imageinstance/$id/histogram/extract.$format"(controller: "restImageInstance"){
-            action = [POST:"extractHistogram"]
+
+        "/api/imageinstance/$id/histogram.$format"(controller: "restImageInstance"){
+            action = [GET:"histogram"]
         }
-        "/api/imageinstance/$id/histogram/stats.$format"(controller: "restImageInstance"){
-            action = [GET: "showHistogramStats"]
+        "/api/imageinstance/$id/histogram/bounds.$format"(controller: "restImageInstance"){
+            action = [GET:"histogramBounds"]
+        }
+        "/api/imageinstance/$id/channelhistogram.$format"(controller: "restImageInstance"){
+            action = [GET:"channelHistograms"]
+        }
+        "/api/imageinstance/$id/channelhistogram/bounds.$format"(controller: "restImageInstance"){
+            action = [GET:"channelHistogramBounds"]
         }
 
         // Deprecated

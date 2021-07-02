@@ -366,33 +366,47 @@ class RestAbstractImageController extends RestController {
         }
     }
 
-    @RestApiMethod(description = "Compute histogram for the whole image")
-    @RestApiParams(params=[
-            @RestApiParam(name="id", type="long", paramType = RestApiParamType.PATH, description = "The image id")
-    ])
-    @RestApiResponseObject(objectIdentifier = "empty")
-    def extractHistogram() {
-        AbstractImage abstractImage = abstractImageService.read(params.long('id'))
+    def histogram() {
+        AbstractImage abstractImage = abstractImageService.read(params.long("id"))
         if (abstractImage) {
-            sampleHistogramService.extractHistogram(abstractImage)
-            responseSuccess([:])
+            def histogram = imageServerService.imageHistogram(
+                    abstractImage, params.int("nBins", 256)
+            )
+            responseSuccess(histogram)
         } else {
             responseNotFound("Image", params.id)
         }
     }
 
-    @RestApiMethod(description = "Get histogram statistics for the whole image")
-    @RestApiParams(params=[
-            @RestApiParam(name="id", type="long", paramType = RestApiParamType.PATH, description = "The image id")
-    ])
-    @RestApiResponseObject(objectIdentifier = "empty")
-    def showHistogramStats() {
-        AbstractImage abstractImage = abstractImageService.read(params.long('id'))
+    def histogramBounds() {
+        AbstractImage abstractImage = abstractImageService.read(params.long("id"))
         if (abstractImage) {
-            responseSuccess(sampleHistogramService.histogramStats(abstractImage))
+            def histogramBounds = imageServerService.imageHistogramBounds(abstractImage)
+            responseSuccess(histogramBounds)
         } else {
             responseNotFound("Image", params.id)
         }
     }
 
+    def channelHistograms() {
+        AbstractImage abstractImage = abstractImageService.read(params.long("id"))
+        if (abstractImage) {
+            def histograms = imageServerService.channelHistograms(
+                    abstractImage, params.int("nBins", 256)
+            )
+            responseSuccess(histograms)
+        } else {
+            responseNotFound("Image", params.id)
+        }
+    }
+
+    def channelHistogramBounds() {
+        AbstractImage abstractImage = abstractImageService.read(params.long("id"))
+        if (abstractImage) {
+            def channelHistogramBounds = imageServerService.channelHistogramBounds(abstractImage)
+            responseSuccess(channelHistogramBounds)
+        } else {
+            responseNotFound("Image", params.id)
+        }
+    }
 }
