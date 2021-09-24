@@ -126,8 +126,8 @@ class UploadedFileService extends ModelService {
                     "LEFT JOIN acl_entry AS ae ON asi.id = ae.sid " +
                     "LEFT JOIN acl_object_identity AS aoi ON ae.acl_object_identity = aoi.id " +
                     "WHERE aoi.object_id_identity = uf.storage_id AND asi.sid = :username) " +
-                "AND (uf.parent_id IS NULL OR parent.content_type similar to '%zip%') " +
-                "AND uf.content_type NOT similar to '%zip%' " +
+                "AND (uf.parent_id IS NULL OR parent.content_type IN ('" + UploadedFile.archiveFormats().join("','") + "')) " +
+                "AND uf.content_type NOT IN ('" + UploadedFile.archiveFormats().join("','") + "') " +
                 "AND uf.deleted IS NULL " +
                 search +
                 "GROUP BY uf.id, ai.id " +
@@ -137,6 +137,7 @@ class UploadedFileService extends ModelService {
         def sql = new Sql(dataSource)
         sql.eachRow(request, [username: user.username]) { resultSet ->
             def row = StringUtils.keysToCamelCase(resultSet.toRowResult())
+            row.isArchive = UploadedFile.archiveFormats().contains(row.contentType)
             row.thumbURL = (row.image) ? UrlApi.getAbstractImageThumbUrl(row.image as Long) : null
             data << row
         }
@@ -176,6 +177,7 @@ class UploadedFileService extends ModelService {
             row.image = row.image.array.find { it != null }
             row.slices = row.slices.array.findAll { it != null } // A same UF can be linked to several slices (virtual stacks)
             row.companionFile = row.companionFile.array.find { it != null }
+            row.isArchive = UploadedFile.archiveFormats().contains(row.contentType)
             row.thumbURL =  null
             if(row.image) {
                 row.thumbURL = UrlApi.getAbstractImageThumbUrl(row.image as Long)

@@ -155,6 +155,7 @@ class UploadedFile extends CytomineDomain implements Serializable {
         returnArray['contentType'] = uploaded?.contentType
         returnArray['size'] = uploaded?.size
         returnArray['path'] = uploaded?.path
+        returnArray['isArchive'] = uploaded?.isArchive()
 
         returnArray['status'] = uploaded?.status
         returnArray['statusText'] = uploaded?.statusText
@@ -213,5 +214,13 @@ class UploadedFile extends CytomineDomain implements Serializable {
 
     CytomineDomain container() {
         return storage
+    }
+
+    static def archiveFormats() {
+        return ["ZIP", "TAR", "GZTAR", "BZTAR", "XZTAR"]
+    }
+
+    boolean isArchive() {
+        return archiveFormats().contains(contentType)
     }
 }
