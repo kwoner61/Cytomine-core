@@ -33,7 +33,7 @@ class AbstractSlice extends CytomineDomain implements Serializable {
     UploadedFile uploadedFile
 
     @RestApiObjectField(description = "The Cytomine internal slice mime type.")
-    Mime mime
+    Mime mime // [PIMS] Deprecated.
 
     @RestApiObjectField(description = "The channel this plane is for. No unit. This is numbered from 0.")
     Integer channel
@@ -65,6 +65,7 @@ class AbstractSlice extends CytomineDomain implements Serializable {
 
     static constraints = {
         channelName nullable: true, blank: true
+        mime nullable: true
     }
 
     void checkAlreadyExist() {
@@ -83,7 +84,7 @@ class AbstractSlice extends CytomineDomain implements Serializable {
 
         domain.uploadedFile = JSONUtils.getJSONAttrDomain(json, "uploadedFile", new UploadedFile(), true)
         domain.image = JSONUtils.getJSONAttrDomain(json, "image", new AbstractImage(), true)
-        domain.mime = JSONUtils.getJSONAttrDomain(json,"mime",new Mime(),'mimeType','String',true)
+        domain.mime = JSONUtils.getJSONAttrDomain(json,"mime",new Mime(),'mimeType','String',false)
 
         domain.channel = JSONUtils.getJSONAttrInteger(json, "channel", 0)
         domain.zStack = JSONUtils.getJSONAttrInteger(json, "zStack", 0)
