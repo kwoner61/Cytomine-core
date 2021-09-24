@@ -121,6 +121,11 @@ class BootstrapOldVersionService {
         bootstrapUtilsService.updateSqlColumnConstraint("image_filter", "available", "DROP NOT NULL")
         sql.close()
 
+        // Delete forever histograms stored in database. This feature was experimental and is replaced by PIMS.
+        // However if we delete data from DB, it is no more possible to retrograde to IMS
+        // TODO: discuss about the right strategy.
+        //sql.executeUpdate("DROP TABLE sample_histogram;")
+
         bootstrapDataService.initImageFilters()
     }
 

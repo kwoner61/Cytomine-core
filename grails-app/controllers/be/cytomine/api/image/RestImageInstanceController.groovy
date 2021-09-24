@@ -63,7 +63,6 @@ class RestImageInstanceController extends RestController {
     def imageGroupService
     def imageServerService
     def statsService
-    def sampleHistogramService
 
     @RestApiMethod(description="Get an image instance")
     @RestApiParams(params=[

@@ -328,10 +328,4 @@ class AbstractImageService extends ModelService {
             it.delete(flush: true)
         }
     }
-
-    def deleteDependentSampleHistogram(SliceInstance slice, Transaction transaction, Task task = null) {
-        SampleHistogram.findAllBySlice(slice).each {
-            it.delete()
-        }
-    }
 }

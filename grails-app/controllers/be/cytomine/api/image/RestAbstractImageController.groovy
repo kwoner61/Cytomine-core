@@ -39,7 +39,6 @@ class RestAbstractImageController extends RestController {
     def projectService
     def imageServerService
     def uploadedFileService
-    def sampleHistogramService
 
     @RestApiMethod(description="Get all image available for the current user", listing = true)
     @RestApiParams(params=[
@@ -366,47 +365,47 @@ class RestAbstractImageController extends RestController {
         }
     }
 
-    def histogram() {
-        AbstractImage abstractImage = abstractImageService.read(params.long("id"))
-        if (abstractImage) {
-            def histogram = imageServerService.imageHistogram(
-                    abstractImage, params.int("nBins", 256)
-            )
-            responseSuccess(histogram)
-        } else {
-            responseNotFound("Image", params.id)
-        }
-    }
+//    def histogram() {
+//        AbstractImage abstractImage = abstractImageService.read(params.long("id"))
+//        if (abstractImage) {
+//            def histogram = imageServerService.imageHistogram(
+//                    abstractImage, params.int("nBins", 256)
+//            )
+//            responseSuccess(histogram)
+//        } else {
+//            responseNotFound("Image", params.id)
+//        }
+//    }
 
-    def histogramBounds() {
-        AbstractImage abstractImage = abstractImageService.read(params.long("id"))
-        if (abstractImage) {
-            def histogramBounds = imageServerService.imageHistogramBounds(abstractImage)
-            responseSuccess(histogramBounds)
-        } else {
-            responseNotFound("Image", params.id)
-        }
-    }
-
-    def channelHistograms() {
-        AbstractImage abstractImage = abstractImageService.read(params.long("id"))
-        if (abstractImage) {
-            def histograms = imageServerService.channelHistograms(
-                    abstractImage, params.int("nBins", 256)
-            )
-            responseSuccess(histograms)
-        } else {
-            responseNotFound("Image", params.id)
-        }
-    }
-
-    def channelHistogramBounds() {
-        AbstractImage abstractImage = abstractImageService.read(params.long("id"))
-        if (abstractImage) {
-            def channelHistogramBounds = imageServerService.channelHistogramBounds(abstractImage)
-            responseSuccess(channelHistogramBounds)
-        } else {
-            responseNotFound("Image", params.id)
-        }
-    }
+//    def histogramBounds() {
+//        AbstractImage abstractImage = abstractImageService.read(params.long("id"))
+//        if (abstractImage) {
+//            def histogramBounds = imageServerService.imageHistogramBounds(abstractImage)
+//            responseSuccess(histogramBounds)
+//        } else {
+//            responseNotFound("Image", params.id)
+//        }
+//    }
+//
+//    def channelHistograms() {
+//        AbstractImage abstractImage = abstractImageService.read(params.long("id"))
+//        if (abstractImage) {
+//            def histograms = imageServerService.channelHistograms(
+//                    abstractImage, params.int("nBins", 256)
+//            )
+//            responseSuccess(histograms)
+//        } else {
+//            responseNotFound("Image", params.id)
+//        }
+//    }
+//
+//    def channelHistogramBounds() {
+//        AbstractImage abstractImage = abstractImageService.read(params.long("id"))
+//        if (abstractImage) {
+//            def channelHistogramBounds = imageServerService.channelHistogramBounds(abstractImage)
+//            responseSuccess(channelHistogramBounds)
+//        } else {
+//            responseNotFound("Image", params.id)
+//        }
+//    }
 }

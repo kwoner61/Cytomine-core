@@ -25,7 +25,6 @@ import org.joda.time.DateTime
 class ExtractImageMetadataJob {
 
     def imagePropertiesService
-    def sampleHistogramService
 
     static triggers = {
         simple name: 'extractImageMetadataJob', startDelay: 10000, repeatInterval: 1000*15
@@ -64,8 +63,6 @@ class ExtractImageMetadataJob {
                                 log.info "Regenerate properties for image $image - ${image.originalFilename}"
                                 try {
                                     imagePropertiesService.regenerate(image)
-                                    if (image.bitPerSample > 8)
-                                        sampleHistogramService.extractHistogram(image)
                                 }
                                 catch (Exception e) {
                                     log.error "Error during metadata extraction for image $image: ${e.printStackTrace()}"
