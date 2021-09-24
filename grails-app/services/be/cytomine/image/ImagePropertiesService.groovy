@@ -71,16 +71,25 @@ class ImagePropertiesService implements Serializable {
             image.height = properties?.image?.height
             image.depth = properties?.image?.depth
             image.duration = properties?.image?.duration
-            image.channels = properties?.image?.n_channels
+            image.channels = properties?.image?.n_intrinsic_channels
             image.physicalSizeX = properties?.image?.physical_size_x
             image.physicalSizeY = properties?.image?.physical_size_y
             image.physicalSizeZ = properties?.image?.physical_size_z
             image.fps = properties?.image?.frame_rate
-            image.bitPerSample = properties?.image?.significant_bits // Ok ?
             image.magnification = properties?.instrument?.objective?.nominal_magnification
 
-            image.resolution = properties?.image?.physical_size_x
-            // TODO: samplePerPixel, colorspace, tileSize
+            def pixelType = [
+                    "uint8": 8,
+                    "int8": 8,
+                    "uint16": 16,
+                    "int16": 16
+            ]
+            image.bitPerSample = pixelType.getOrDefault(properties?.image?.pixel_type, 8)
+            image.samplePerPixel = properties?.image?.n_channels / properties?.image?.n_intrinsic_channels
+
+
+            image.resolution = properties?.image?.physical_size_x // TODO: remove
+            // TODO: colorspace, tileSize
 
             image.extractedMetadata = new Date()
             image.save(flush: true, failOnError: true)
