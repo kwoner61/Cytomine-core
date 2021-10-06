@@ -43,16 +43,29 @@ public abstract class CytomineException extends RuntimeException{
     public LinkedHashMap<Object, Object> values;
 
     /**
+     * Headers to be sent in the response (can contain information on the exception 
+     * or how the client has to treat the exception).
+     */
+    public LinkedHashMap<Object, Object> headers;
+
+    /**
      * Message map with this exception
      * @param msg Message
      * @param code Http code
      */
-    public CytomineException(String msg, int code) {
-        this(msg,code,new LinkedHashMap<Object, Object>());
+    
+    CytomineException(String msg, int code) {
+        this(msg, code, new LinkedHashMap<Object, Object>());
     }
-    public CytomineException(String msg, int code, LinkedHashMap<Object, Object> values) {
-        this.msg=msg;
+    
+    CytomineException(String msg, int code, LinkedHashMap<Object, Object> values) {
+        this(msg, code, values, new LinkedHashMap<Object, Object>());
+    }
+    
+    CytomineException(String msg, int code, LinkedHashMap<Object, Object> values, LinkedHashMap<Object, Object> headers) {
+        this.msg = msg;
         this.code = code;
         this.values = values;
+        this.headers = headers;
     }
 }

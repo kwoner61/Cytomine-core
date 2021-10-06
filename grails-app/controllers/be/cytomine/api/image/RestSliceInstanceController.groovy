@@ -136,7 +136,8 @@ class RestSliceInstanceController extends RestController {
             parameters.contrast = params.double('contrast')
             parameters.gamma = params.double('gamma')
             parameters.bits = (params.bits == "max") ? "max" : params.int('bits')
-            responseByteArray(imageServerService.thumb(sliceInstance, parameters))
+            String etag = request.getHeader("If-None-Match") ?: request.getHeader("if-none-match")
+            responseImage(imageServerService.thumb(sliceInstance, parameters, etag))
         } else {
             responseNotFound("SliceInstance", params.id)
         }
@@ -145,7 +146,8 @@ class RestSliceInstanceController extends RestController {
     def crop() {
         SliceInstance sliceInstance = sliceInstanceService.read(params.long("id"))
         if (sliceInstance) {
-            responseByteArray(imageServerService.crop(sliceInstance, params))
+            String etag = request.getHeader("If-None-Match") ?: request.getHeader("if-none-match")
+            responseImage(imageServerService.crop(sliceInstance, params, false, false, etag))
         } else {
             responseNotFound("SliceInstance", params.id)
         }
@@ -168,7 +170,8 @@ class RestSliceInstanceController extends RestController {
             if (annotationType != 'crop') {
                 params.geometries = getWKTGeometry(sliceInstance, params)
             }
-            responseByteArray(imageServerService.window(sliceInstance, params, false))
+            String etag = request.getHeader("If-None-Match") ?: request.getHeader("if-none-match")
+            responseImage(imageServerService.window(sliceInstance, params, false, etag))
         } else {
             responseNotFound("SliceInstance", params.id)
         }
@@ -189,7 +192,7 @@ class RestSliceInstanceController extends RestController {
 //        SliceInstance sliceInstance = sliceInstanceService.read(params.long("id"))
 //        if (sliceInstance) {
 //            params.withExterior = false
-//            responseByteArray(imageServerService.window(sliceInstance, params, false))
+//            responseImage(imageServerService.window(sliceInstance, params, false))
 //        } else {
 //            responseNotFound("SliceInstance", params.id)
 //        }

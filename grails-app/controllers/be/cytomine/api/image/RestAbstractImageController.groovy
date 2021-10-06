@@ -159,7 +159,8 @@ class RestAbstractImageController extends RestController {
             parameters.contrast = params.double('contrast')
             parameters.gamma = params.double('gamma')
             parameters.bits = (params.bits == "max") ? "max" : params.int('bits')
-            responseByteArray(imageServerService.thumb(abstractImage.referenceSlice, parameters))
+            String etag = request.getHeader("If-None-Match") ?: request.getHeader("if-none-match")
+            responseImage(imageServerService.thumb(abstractImage.referenceSlice, parameters, etag))
         } else {
             responseNotFound("Image", params.id)
         }
@@ -187,7 +188,8 @@ class RestAbstractImageController extends RestController {
             parameters.contrast = params.double('contrast')
             parameters.gamma = params.double('gamma')
             parameters.bits = (params.bits == "max") ? "max" : params.int('bits')
-            responseByteArray(imageServerService.thumb(abstractImage.referenceSlice, parameters))
+            String etag = request.getHeader("If-None-Match") ?: request.getHeader("if-none-match")
+            responseImage(imageServerService.thumb(abstractImage.referenceSlice, parameters, etag))
         } else {
             responseNotFound("Image", params.id)
         }
@@ -222,8 +224,9 @@ class RestAbstractImageController extends RestController {
             parameters.format = params.format
             parameters.label = params.label
             parameters.maxSize = params.int('maxSize', 256)
-            def associatedImage = imageServerService.label(abstractImage, parameters)
-            responseByteArray(associatedImage)
+            String etag = request.getHeader("If-None-Match") ?: request.getHeader("if-none-match")
+            def associatedImage = imageServerService.label(abstractImage, parameters, etag)
+            responseImage(associatedImage)
         } else {
             responseNotFound("Image", params.id)
         }
@@ -232,7 +235,8 @@ class RestAbstractImageController extends RestController {
     def crop() {
         AbstractImage abstractImage = abstractImageService.read(params.long("id"))
         if (abstractImage && abstractImage.referenceSlice) {
-            responseByteArray(imageServerService.crop(abstractImage.referenceSlice, params))
+            String etag = request.getHeader("If-None-Match") ?: request.getHeader("if-none-match")
+            responseImage(imageServerService.crop(abstractImage.referenceSlice, params, false, false, etag))
         } else {
             responseNotFound("Image", params.id)
         }
@@ -251,7 +255,8 @@ class RestAbstractImageController extends RestController {
     def window() {
         AbstractImage abstractImage = abstractImageService.read(params.long("id"))
         if (abstractImage && abstractImage.referenceSlice) {
-            responseByteArray(imageServerService.window(abstractImage.referenceSlice, params, false))
+            String etag = request.getHeader("If-None-Match") ?: request.getHeader("if-none-match")
+            responseImage(imageServerService.window(abstractImage.referenceSlice, params, false, etag))
         } else {
             responseNotFound("Image", params.id)
         }
@@ -272,7 +277,7 @@ class RestAbstractImageController extends RestController {
 //        AbstractImage abstractImage = abstractImageService.read(params.long("id"))
 //        if (abstractImage && abstractImage.referenceSlice) {
 //            params.withExterior = false
-//            responseByteArray(imageServerService.window(abstractImage.referenceSlice, params, false))
+//            responseImage(imageServerService.window(abstractImage.referenceSlice, params, false))
 //        } else {
 //            responseNotFound("Image", params.id)
 //        }

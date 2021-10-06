@@ -98,6 +98,6 @@ class RestImageGroupController extends RestController {
 //        response.setHeader("max-age", "86400")
 //        int maxSize = params.int('maxSize',  512)
 //        imageGroupService.thumb(params.long('id'), maxSize)
-//        responseByteArray(imageGroupService.thumb(params.long('id'), maxSize))
+//        responseImage(imageGroupService.thumb(params.long('id'), maxSize))
 //    }
 }

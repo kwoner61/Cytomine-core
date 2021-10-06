@@ -78,7 +78,7 @@ class RestAnnotationProfileController extends RestController {
                 }
             }
             else if (params.type == "image-projection") {
-                responseByteArray(imageServerService.profileImageProjection(cf, annotation, params))
+                responseImage(imageServerService.profileImageProjection(cf, annotation, params))
             }
             else {
                 responseSuccess(imageServerService.profile(cf, annotation, params))

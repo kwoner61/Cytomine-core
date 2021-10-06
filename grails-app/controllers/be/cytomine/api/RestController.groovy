@@ -18,6 +18,7 @@ package be.cytomine.api
 
 import be.cytomine.Exception.CytomineException
 import be.cytomine.Exception.ServerException
+import be.cytomine.utils.ImageResponse
 import be.cytomine.utils.Task
 import grails.converters.JSON
 import org.codehaus.groovy.grails.web.json.JSONArray
@@ -222,13 +223,18 @@ class RestController {
      * @param data Message content
      * @param code HTTP code
      */
-    protected def response(data, code) {
+    protected def response(def data, int code, def headers = null) {
         response.status = code
+        if (headers != null) {
+            headers.each { name, value ->
+                response.setHeader(name, value)
+            }
+        }
         response(data)
     }
 
     public def responseError(CytomineException e) {
-        response([success: false, errors: e.msg], e.code)
+        response([success: false, errors: e.msg], e.code, e.headers)
     }
 
     /**
@@ -344,6 +350,34 @@ class RestController {
             }
         }
     }
+
+    protected def responseImage(ImageResponse image) {
+        String contentType = image.headers.get("Content-Type")
+        if (request.method == 'HEAD') {
+            render(text: "", contentType: contentType)
+        }
+        else {
+            image.headers.each { name, value ->
+                response.setHeader(name, value)
+            }
+            response.contentLength = image.content.length
+            def outputStream = response.outputStream
+            try {
+                outputStream << image.content
+            } catch (IOException ignored) {
+                null
+            } finally {
+                if (outputStream != null) {
+                    try {
+                        outputStream.close()
+                    } catch (IOException ignored) {
+                        null
+                    }
+                }
+            }
+        }
+    }
+
 
     private static String SEARCH_PARAM_EQUALS = "equals"
     private static String SEARCH_PARAM_LIKE = "like"

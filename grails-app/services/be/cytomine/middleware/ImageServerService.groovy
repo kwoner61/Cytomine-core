@@ -2,6 +2,7 @@ package be.cytomine.middleware
 
 import be.cytomine.AnnotationDomain
 import be.cytomine.Exception.InvalidRequestException
+import be.cytomine.Exception.NotModifiedException
 import be.cytomine.Exception.ObjectNotFoundException
 import be.cytomine.Exception.ServerException
 import be.cytomine.api.UrlApi
@@ -12,6 +13,7 @@ import be.cytomine.image.ImageInstance
 import be.cytomine.image.SliceInstance
 import be.cytomine.image.UploadedFile
 import be.cytomine.utils.GeometryUtils
+import be.cytomine.utils.ImageResponse
 import be.cytomine.utils.ModelService
 import be.cytomine.utils.StringUtils
 import com.vividsolutions.jts.geom.Geometry
@@ -21,6 +23,7 @@ import grails.util.Holders
 import groovy.json.JsonOutput
 import groovyx.net.http.ContentType
 import groovyx.net.http.HTTPBuilder
+import groovyx.net.http.HttpResponseDecorator
 import groovyx.net.http.Method
 import org.apache.commons.io.IOUtils
 import org.codehaus.groovy.grails.web.servlet.mvc.GrailsParameterMap
@@ -236,31 +239,37 @@ class ImageServerService extends ModelService {
         }
     }
 
-    def label(ImageInstance image, def params) {
-        label(image.baseImage, params)
+    def label(ImageInstance image, def params, String etag = null) {
+        label(image.baseImage, params, etag)
     }
 
-    def label(AbstractImage image, def params) {
+    def label(AbstractImage image, def params, String etag = null) {
         def (server, path) = imsParametersFromAbstractImage(image)
         def format = checkFormat(params.format, ['jpg', 'png', 'webp'])
         def parameters = [length: params.maxSize]
         def uri = "/image/${path}/associated/${params.label.toLowerCase()}"
-        return makeRequest(uri, server, parameters, format)
+
+        def headers = [:]
+        if (etag) {
+            headers << ['If-None-Match': etag]
+        }
+
+        return makeRequest(uri, server, parameters, format, null, headers)
     }
 
-    def thumb(ImageInstance image, def params) {
-        thumb(image.referenceSlice, params)
+    def thumb(ImageInstance image, def params, String etag = null) {
+        thumb(image.referenceSlice, params, etag)
     }
 
-    def thumb(SliceInstance slice, def params) {
-        thumb(slice.baseSlice, params)
+    def thumb(SliceInstance slice, def params, String etag = null) {
+        thumb(slice.baseSlice, params, etag)
     }
 
-    def thumb(AbstractImage image, def params) {
-        thumb(image.referenceSlice, params)
+    def thumb(AbstractImage image, def params, String etag = null) {
+        thumb(image.referenceSlice, params, etag)
     }
 
-    def thumb(AbstractSlice slice, def params) {
+    def thumb(AbstractSlice slice, def params, String etag = null) {
         def (server, path) = imsParametersFromAbstractSlice(slice)
         def format = checkFormat(params.format, ['jpg', 'png', 'webp'])
         def uri = "/image/${path}/thumb"
@@ -277,23 +286,28 @@ class ImageServerService extends ModelService {
 //        parameters.inverse = params.inverse
 //        parameters.contrast = params.contrast
 
-        return makeRequest(uri, server, parameters, format)
+        def headers = [:]
+        if (etag) {
+            headers << ['If-None-Match': etag]
+        }
+
+        return makeRequest(uri, server, parameters, format, null, headers)
     }
 
-    def crop(AnnotationDomain annotation, GrailsParameterMap params, def urlOnly = false, def parametersOnly = false) {
+    def crop(AnnotationDomain annotation, GrailsParameterMap params, def urlOnly = false, def parametersOnly = false, String etag = null) {
         params.geometry = annotation.location
-        crop(annotation.slice, params, urlOnly, parametersOnly)
+        crop(annotation.slice, params, urlOnly, parametersOnly, etag)
     }
 
-    def crop(ImageInstance image, GrailsParameterMap params, def urlOnly = false, def parametersOnly = false) {
-        crop(image.baseImage.referenceSlice, params, urlOnly, parametersOnly)
+    def crop(ImageInstance image, GrailsParameterMap params, def urlOnly = false, def parametersOnly = false, String etag = null) {
+        crop(image.baseImage.referenceSlice, params, urlOnly, parametersOnly, etag)
     }
 
-    def crop(SliceInstance slice, GrailsParameterMap params, def urlOnly = false, def parametersOnly = false) {
-        crop(slice.baseSlice, params, urlOnly, parametersOnly)
+    def crop(SliceInstance slice, GrailsParameterMap params, def urlOnly = false, def parametersOnly = false, String etag = null) {
+        crop(slice.baseSlice, params, urlOnly, parametersOnly, etag)
     }
 
-    def crop(AbstractSlice slice, GrailsParameterMap params, def urlOnly = false, def parametersOnly = false) {
+    def crop(AbstractSlice slice, GrailsParameterMap params, def urlOnly = false, def parametersOnly = false, String etag = null) {
         log.debug params
         def (server, path) = imsParametersFromAbstractSlice(slice)
 
@@ -351,6 +365,9 @@ class ImageServerService extends ModelService {
         if (params.boolean('safe')) {
             headers << ['X-Image-Size-Safety': 'SAFE_RESIZE']
         }
+        if (etag) {
+            headers << ['If-None-Match': etag]
+        }
 
 //        parameters.colormap = params.colormap
 //        parameters.inverse = params.boolean('inverse')
@@ -365,19 +382,19 @@ class ImageServerService extends ModelService {
         return makeRequest(uri, server, parameters, format, "POST", headers)
     }
 
-    def window(ImageInstance image, GrailsParameterMap params, def urlOnly = false) {
-        window(image.baseImage.referenceSlice, params, urlOnly)
+    def window(ImageInstance image, GrailsParameterMap params, def urlOnly = false, String etag = null) {
+        window(image.baseImage.referenceSlice, params, urlOnly, etag)
     }
 
-    def window(AbstractImage image, GrailsParameterMap params, def urlOnly = false) {
-        window(image.referenceSlice, params, urlOnly)
+    def window(AbstractImage image, GrailsParameterMap params, def urlOnly = false, String etag = null) {
+        window(image.referenceSlice, params, urlOnly, etag)
     }
 
-    def window(SliceInstance slice, GrailsParameterMap params, def urlOnly = false) {
-        window(slice.baseSlice, params, urlOnly)
+    def window(SliceInstance slice, GrailsParameterMap params, def urlOnly = false, String etag = null) {
+        window(slice.baseSlice, params, urlOnly, etag)
     }
 
-    def window(AbstractSlice slice, GrailsParameterMap params, def urlOnly = false) {
+    def window(AbstractSlice slice, GrailsParameterMap params, def urlOnly = false, String etag = null) {
         log.debug params
         def (server, path) = imsParametersFromAbstractSlice(slice)
 
@@ -454,6 +471,9 @@ class ImageServerService extends ModelService {
         if (params.boolean('safe')) {
             headers << ['X-Image-Size-Safety': 'SAFE_RESIZE']
         }
+        if (etag) {
+            headers << ['If-None-Match': etag]
+        }
 
         def uri = "/image/${path}/window"
         if (urlOnly)
@@ -527,12 +547,45 @@ class ImageServerService extends ModelService {
         }
     }
 
+    private static def extractPIMSHeaders(HttpResponseDecorator.HeadersDecorator headers) {
+        def names = ["Cache-Control", "ETag", "X-Annotation-Origin", "X-Image-Size-Limit"]
+        def extractedHeaders = [:]
+        names.each { name ->
+            def h = headers[name] ?: headers[name.toLowerCase()]
+            if (h) {
+                extractedHeaders << [(name): h.getValue()]
+            }
+        }
+        return extractedHeaders
+    }
+
     private static def makeRequest(def path, def server, def parameters,
                                       def format, def httpMethod=null, def customHeaders=[:]) {
         def final GET_URL_MAX_LENGTH = 512
         parameters = filterParameters(parameters)
         def url = makeGetUrl(path, server, parameters)
         def responseContentType = formatToContentType(format)
+
+        def okClosure = { resp, stream ->
+            if (responseContentType == 'application/json')
+                return stream
+            return new ImageResponse(IOUtils.toByteArray(stream), extractPIMSHeaders(resp.headers))
+        }
+        def notModifiedClosure = { resp ->
+            throw new NotModifiedException(extractPIMSHeaders(resp.headers))
+        }
+        def badRequestClosure = { resp, json ->
+            log.error(json)
+            throw new InvalidRequestException("$url returned a 400 Bad Request")
+        }
+        def notFoundClosure = { resp ->
+            log.error(resp)
+            throw new ObjectNotFoundException("$url returned a 404 Not found")
+        }
+        def internalServerErrorClosure = { resp ->
+            log.error(resp)
+            throw new ServerException("$url returned a 500 Internal error")
+        }
 
         def http = new HTTPBuilder(server)
         if ((url.size() < GET_URL_MAX_LENGTH && httpMethod == null) || httpMethod == "GET") {
@@ -542,26 +595,12 @@ class ImageServerService extends ModelService {
                 requestContentType = ContentType.JSON
                 headers = customHeaders
 
-                response.success = { resp, stream ->
-                    if (responseContentType == 'application/json')
-                        return stream
-                    return IOUtils.toByteArray(stream)
-                }
-
-                response.'400' = { resp, json ->
-                    log.error(json)
-                    throw new InvalidRequestException("$url returned a 400 Bad Request")
-                }
-
-                response.'404' = { resp ->
-                    log.error(resp)
-                    throw new ObjectNotFoundException("$url returned a 404 Not found")
-                }
-
-                response.'500' = { resp ->
-                    log.error(resp)
-                    throw new ServerException("$url returned a 500 Internal error")
-                }
+                response.'200' = okClosure
+                response.'304' = notModifiedClosure
+                response.'400' = badRequestClosure
+                response.'404' = notFoundClosure
+                response.'422' = badRequestClosure
+                response.'500' = internalServerErrorClosure
             }
         }
         else {
@@ -571,26 +610,12 @@ class ImageServerService extends ModelService {
                 body = JsonOutput.toJson(parameters)
                 headers = customHeaders
 
-                response.success = { resp, stream ->
-                    if (responseContentType == 'application/json')
-                        return stream
-                    return IOUtils.toByteArray(stream)
-                }
-
-                response.'400' = { resp ->
-                    log.error(resp)
-                    throw new InvalidRequestException("$url (with parameters $parameters) returned a 400 Bad Request")
-                }
-
-                response.'404' = { resp ->
-                    log.error(resp)
-                    throw new ObjectNotFoundException("$url (with parameters $parameters) returned a 404 Not found")
-                }
-
-                response.'500' = { resp ->
-                    log.error(resp)
-                    throw new ServerException("$url (with parameters $parameters) returned a 500 Internal error")
-                }
+                response.'200' = okClosure
+                response.'304' = notModifiedClosure
+                response.'400' = badRequestClosure
+                response.'404' = notFoundClosure
+                response.'422' = badRequestClosure
+                response.'500' = internalServerErrorClosure
             }
         }
     }

@@ -407,7 +407,8 @@ class RestImageInstanceController extends RestController {
             parameters.contrast = params.double('contrast')
             parameters.gamma = params.double('gamma')
             parameters.bits = (params.bits == "max") ? "max" : params.int('bits')
-            responseByteArray(imageServerService.thumb(imageInstance, parameters))
+            String etag = request.getHeader("If-None-Match") ?: request.getHeader("if-none-match")
+            responseImage(imageServerService.thumb(imageInstance, parameters, etag))
         } else {
             responseNotFound("Image", params.id)
         }
@@ -435,7 +436,8 @@ class RestImageInstanceController extends RestController {
             parameters.contrast = params.double('contrast')
             parameters.gamma = params.double('gamma')
             parameters.bits = (params.bits == "max") ? "max" : params.int('bits')
-            responseByteArray(imageServerService.thumb(imageInstance, parameters))
+            String etag = request.getHeader("If-None-Match") ?: request.getHeader("if-none-match")
+            responseImage(imageServerService.thumb(imageInstance, parameters, etag))
         } else {
             responseNotFound("Image", params.id)
         }
@@ -470,8 +472,9 @@ class RestImageInstanceController extends RestController {
             parameters.format = params.format
             parameters.label = params.label
             parameters.maxSize = params.int('maxSize', 256)
-            def associatedImage = imageServerService.label(imageInstance, parameters)
-            responseByteArray(associatedImage)
+            String etag = request.getHeader("If-None-Match") ?: request.getHeader("if-none-match")
+            def associatedImage = imageServerService.label(imageInstance, parameters, etag)
+            responseImage(associatedImage)
         } else {
             responseNotFound("Image", params.id)
         }
@@ -480,7 +483,8 @@ class RestImageInstanceController extends RestController {
     def crop() {
         ImageInstance imageInstance = imageInstanceService.read(params.long("id"))
         if (imageInstance) {
-            responseByteArray(imageServerService.crop(imageInstance, params))
+            String etag = request.getHeader("If-None-Match") ?: request.getHeader("if-none-match")
+            responseImage(imageServerService.crop(imageInstance, params, false, false, etag))
         } else {
             responseNotFound("Image", params.id)
         }
@@ -520,15 +524,15 @@ class RestImageInstanceController extends RestController {
                         imageInstance.baseImage.getHeight() - y           //maxY
                 )
 
-                responseByteArray(imageServerService.profileImageProjection(cf, roiGeometry, params))
+                responseImage(imageServerService.profileImageProjection(cf, roiGeometry, params))
             }
 
             def annotationType = imageServerService.checkType(params)
             if (annotationType != 'crop') {
                 params.geometries = getWKTGeometry(imageInstance, params)
             }
-
-            responseByteArray(imageServerService.window(imageInstance.baseImage, params, false))
+            String etag = request.getHeader("If-None-Match") ?: request.getHeader("if-none-match")
+            responseImage(imageServerService.window(imageInstance.baseImage, params, false, etag))
         } else {
             responseNotFound("Image", params.id)
         }
@@ -549,7 +553,7 @@ class RestImageInstanceController extends RestController {
 //        ImageInstance imageInstance = imageInstanceService.read(params.long("id"))
 //        if (imageInstance) {
 //            params.withExterior = false
-//            responseByteArray(imageServerService.window(imageInstance.baseImage, params, false))
+//            responseImage(imageServerService.window(imageInstance.baseImage, params, false))
 //        } else {
 //            responseNotFound("Image", params.id)
 //        }
