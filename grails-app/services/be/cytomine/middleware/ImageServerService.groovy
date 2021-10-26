@@ -58,17 +58,23 @@ class ImageServerService extends ModelService {
         return makeRequest("/storage/size.json", is.internalUrl, [:], "GET")
     }
 
-    //TODO
     def downloadUri(UploadedFile uploadedFile) {
-        if (!uploadedFile.path) {
-            throw new InvalidRequestException("Uploaded file has no valid path.")
+        if (uploadedFile.isVirtual()) {
+            throw new InvalidRequestException("Uploaded file is virtual, it has no valid path.")
         }
-        makeGetUrl("/image/download", uploadedFile.imageServer.url,
-                [fif: uploadedFile.path, mimeType: uploadedFile.contentType])
+        // It gets the file specified in the uri.
+        def uri = "/file/${uploadedFile.path}/export"
+        makeGetUrl(uri, uploadedFile.imageServer.url, [:])
     }
 
     def downloadUri(AbstractImage image) {
-        downloadUri(image.uploadedFile)
+        UploadedFile uf = image.uploadedFile
+        if (uf.isVirtual()) {
+            throw new InvalidRequestException("Uploaded file is virtual, it has no valid path.")
+        }
+        // It gets the original image file, (re-)zipped for multi-file formats if needed.
+        def uri = "/image/${uf.path}/export"
+        makeGetUrl(uri, uf.imageServer.url, [:])
     }
 
     //TODO

@@ -194,7 +194,7 @@ class UploadedFile extends CytomineDomain implements Serializable {
     }
 
     def getPath() {
-        if (contentType == "virtual/stack")
+        if (isVirtual())
             return null;
         //[PIMS] Image server base path is no more required.
         return Paths.get(/*imageServer?.basePath, user.id as String,*/ filename).toString()
@@ -222,5 +222,9 @@ class UploadedFile extends CytomineDomain implements Serializable {
 
     boolean isArchive() {
         return archiveFormats().contains(contentType)
+    }
+
+    boolean isVirtual() {
+        return contentType == "virtual/stack"; //TODO
     }
 }
