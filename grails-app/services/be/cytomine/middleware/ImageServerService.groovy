@@ -594,6 +594,12 @@ class ImageServerService extends ModelService {
         }
 
         def http = new HTTPBuilder(server)
+        if (responseContentType == "image/webp") {
+            // Avoid parser registry to throw a warning for unknown content type
+            def parserRegistry = http.getParser()
+            parserRegistry.putAt("image/webp", parserRegistry.getDefaultParser())
+        }
+
         if ((url.size() < GET_URL_MAX_LENGTH && httpMethod == null) || httpMethod == "GET") {
             http.request(Method.GET, responseContentType) {
                 uri.path = path
