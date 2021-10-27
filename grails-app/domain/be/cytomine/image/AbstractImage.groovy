@@ -57,7 +57,11 @@ class AbstractImage extends CytomineDomain implements Serializable {
     Integer duration
 
     @RestApiObjectField(description = "The N-dimensional image channels (C)", mandatory = false, defaultValue = "1")
-    Integer channels
+    Integer channels // [PIMS] Intrinsic number of channels (RGB image = 1 intrinsic channel)
+    // TODO: in a new API, should be renamed to "intrinsicChannels"
+
+    Integer extrinsicChannels // [PIMS] True number of (color) channels (RGB image = 3 extrinsic channels)
+    // TODO: in a new API, should be renamed to "channels"
 
     @RestApiObjectField(description = "Physical size of a pixel along X axis", mandatory = false)
     Double physicalSizeX
@@ -88,6 +92,7 @@ class AbstractImage extends CytomineDomain implements Serializable {
     @RestApiObjectField(description = "The number of samples (colors) per pixel")
     Integer samplePerPixel
 
+    // TODO: Remove, no more filled by [PIMS]
     @RestApiObjectField(description = "The image colorspace")
     String colorspace
 
@@ -148,6 +153,7 @@ class AbstractImage extends CytomineDomain implements Serializable {
         samplePerPixel(nullable: true)
         extractedMetadata(nullable: true)
         tileSize(nullable: true)
+        extrinsicChannels(nullable: true)
     }
 
     /**
@@ -172,6 +178,7 @@ class AbstractImage extends CytomineDomain implements Serializable {
         domain.depth = JSONUtils.getJSONAttrInteger(json, "depth", 1)
         domain.duration = JSONUtils.getJSONAttrInteger(json, "duration", 1)
         domain.channels = JSONUtils.getJSONAttrInteger(json, "channels", 1)
+        domain.extrinsicChannels = JSONUtils.getJSONAttrInteger(json, "extrinsicChannels", 1)
         domain.physicalSizeX = JSONUtils.getJSONAttrDouble(json, "physicalSizeX", null)
         domain.physicalSizeY = JSONUtils.getJSONAttrDouble(json, "physicalSizeY", null)
         domain.physicalSizeZ = JSONUtils.getJSONAttrDouble(json, "physicalSizeZ", null)
@@ -193,7 +200,7 @@ class AbstractImage extends CytomineDomain implements Serializable {
      * @param domain Domain source for json value
      * @return Map with fields (keys) and their values
      */
-    static def getDataFromDomain(def image) {
+    static def getDataFromDomain(AbstractImage image) {
         def returnArray = CytomineDomain.getDataFromDomain(image)
         returnArray['filename'] = image?.filename
         returnArray['originalFilename'] = image?.originalFilename
@@ -208,6 +215,7 @@ class AbstractImage extends CytomineDomain implements Serializable {
         returnArray['duration'] = image?.duration
         returnArray['channels'] = image?.channels
         returnArray['dimensions'] = image?.dimensions
+        returnArray['extrinsicChannels'] = image?.extrinsicChannels
 
         returnArray['physicalSizeX'] = image?.physicalSizeX
         returnArray['physicalSizeY'] = image?.physicalSizeY

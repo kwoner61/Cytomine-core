@@ -72,6 +72,7 @@ class ImagePropertiesService implements Serializable {
             image.depth = properties?.image?.depth
             image.duration = properties?.image?.duration
             image.channels = properties?.image?.n_intrinsic_channels
+            image.extrinsicChannels = properties?.image?.n_channels
             image.physicalSizeX = properties?.image?.physical_size_x
             image.physicalSizeY = properties?.image?.physical_size_y
             image.physicalSizeZ = properties?.image?.physical_size_z
@@ -89,7 +90,7 @@ class ImagePropertiesService implements Serializable {
 
 
             image.resolution = properties?.image?.physical_size_x // TODO: remove
-            // TODO: colorspace, tileSize
+            image.tileSize = 256 // [PIMS] At this stage, we only support normalized-tiles.
 
             image.extractedMetadata = new Date()
             image.save(flush: true, failOnError: true)
