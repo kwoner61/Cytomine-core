@@ -101,7 +101,10 @@ class ImagePropertiesService implements Serializable {
                         eq 'image', image
                         eq 'channel', channel.index as Integer
                     }
-                    query.updateAll(channelName: channel.suggested_name as String)
+                    query.updateAll(
+                            channelName: channel.suggested_name as String,
+                            channelColor: channel.color as String
+                    )
                 }
             }
         } catch(Exception e) {

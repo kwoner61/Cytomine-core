@@ -83,6 +83,7 @@ class SliceInstance extends CytomineDomain implements Serializable {
         returnArray['time'] = domain?.baseSlice?.time
         returnArray['rank'] = domain?.baseSlice?.rank
         returnArray['channelName'] = domain?.baseSlice?.channelName
+        returnArray['channelColor'] = domain?.baseSlice?.channelColor
 
         returnArray
     }

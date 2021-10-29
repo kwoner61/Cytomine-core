@@ -46,6 +46,8 @@ class AbstractSlice extends CytomineDomain implements Serializable {
 
     String channelName
 
+    String channelColor
+
     @RestApiObjectFields(params = [
             @RestApiObjectField(apiFieldName = "rank", description = "The rank of the slice computed as ['channel' + 'image.channels' * ('zStack' + 'image.depth' * 'time')]", allowedType = "int", useForCreation = false),
             @RestApiObjectField(apiFieldName = "path", description = "The internal path of the file", allowedType = "string", useForCreation = false),
@@ -65,6 +67,7 @@ class AbstractSlice extends CytomineDomain implements Serializable {
 
     static constraints = {
         channelName nullable: true, blank: true
+        channelColor nullable: true, blank: true
         mime nullable: true
     }
 
@@ -90,6 +93,7 @@ class AbstractSlice extends CytomineDomain implements Serializable {
         domain.zStack = JSONUtils.getJSONAttrInteger(json, "zStack", 0)
         domain.time = JSONUtils.getJSONAttrInteger(json, "time", 0)
         domain.channelName = JSONUtils.getJSONAttrStr(json, "channelName", false)
+        domain.channelColor = JSONUtils.getJSONAttrStr(json, "channelColor", false)
 
         domain
     }
@@ -106,6 +110,7 @@ class AbstractSlice extends CytomineDomain implements Serializable {
         returnArray['zStack'] = domain?.zStack
         returnArray['time'] = domain?.time
         returnArray['channelName'] = domain?.channelName
+        returnArray['channelColor'] = domain?.channelColor
 
         returnArray['rank'] = domain?.rank
 
