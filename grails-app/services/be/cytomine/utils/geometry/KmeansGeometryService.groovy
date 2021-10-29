@@ -1,5 +1,7 @@
 package be.cytomine.utils.geometry
 
+import be.cytomine.Exception.WrongArgumentException
+
 /*
 * Copyright (c) 2009-2019. Authors: see NOTICE file.
 *
@@ -92,17 +94,24 @@ class KmeansGeometryService {
         data
     }
 
-    public int mustBeReduce(Long slice, Long user, String bbox) {
-        mustBeReduce(SliceInstance.read(slice),SecUser.read(user),new WKTReader().read(bbox))
+    public int mustBeReduce(List<Long> slices, Long user, String bbox) {
+        slices = SliceInstance.findAllByIdInList(slices)
+        mustBeReduce(slices,SecUser.read(user),new WKTReader().read(bbox))
     }
 
 
-    public int mustBeReduce(SliceInstance slice, SecUser user, Geometry bbox) {
-        if (slice.image.baseImage.width==null) {
+    public int mustBeReduce(List<SliceInstance> slices, SecUser user, Geometry bbox) {
+        def images = slices.collect { it.image }.unique {a, b -> a.id <=> b.id}
+        if (images.size() != 1) {
+            throw new WrongArgumentException("To use kmeans, all slices must belong to the same image.")
+        }
+        def image = images[0]
+
+        if (image.baseImage.width==null) {
             return  FULL
         }
 
-        double imageWidth = slice.image.baseImage.width
+        double imageWidth = image.baseImage.width
         double bboxWidth = bbox.getEnvelopeInternal().width
 
         double ratio = bboxWidth/imageWidth
@@ -115,7 +124,7 @@ class KmeansGeometryService {
 
         def ruleLine = rules.get(Math.min(ratio25,100))
 
-        int numberOfAnnotation = annotationIndexService.count(slice,user)
+        int numberOfAnnotation = annotationIndexService.count(slices,user)
 
         def rule = getRuleForNumberOfAnnotations(numberOfAnnotation, ruleLine)
 

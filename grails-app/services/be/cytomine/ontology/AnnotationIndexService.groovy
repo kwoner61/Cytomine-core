@@ -70,4 +70,29 @@ class AnnotationIndexService {
         return value
     }
 
+    def count(List<SliceInstance> slices, SecUser user) {
+        String request
+        String sliceIds = slices.collect { it.id }.join(',')
+        if (user) {
+            request = "SELECT count_annotation  \n" +
+                    " FROM annotation_index \n" +
+                    " WHERE slice_id IN (" + sliceIds + ") AND user_id = "+ user.id
+        } else {
+            request = "SELECT sum(count_reviewed_annotation)  \n" +
+                    " FROM annotation_index \n" +
+                    " WHERE slice_id IN (" + sliceIds + ") "
+        }
+
+        long value = 0
+        def sql = new Sql(dataSource)
+        sql.eachRow(request) {
+            def val = it[0]
+            val? value = val : 0
+        }
+        try {
+            sql.close()
+        }catch (Exception e) {}
+        return value
+    }
+
 }
