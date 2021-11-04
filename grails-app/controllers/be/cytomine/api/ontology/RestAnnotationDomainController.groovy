@@ -241,7 +241,7 @@ class RestAnnotationDomainController extends RestController {
         def annotation = AnnotationDomain.getAnnotationDomain(params.long("id"))
         if (annotation) {
             params.location = annotation.location
-            def result = imageServerService.crop(annotation.image.baseImage, params, false, true)
+            def result = imageServerService.crop(annotation, params, false, true)
             result.parameters.location = result.parameters.location.toString()
             responseSuccess(result)
         }

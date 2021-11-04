@@ -264,28 +264,43 @@ class ImageServerService extends ModelService {
     }
 
     def thumb(ImageInstance image, def params, String etag = null) {
-        thumb(image.referenceSlice, params, etag)
+        thumb(image.baseImage, params, etag)
+    }
+
+    def thumb(AbstractImage image, def params, String etag = null) {
+        def (server, path) = imsParametersFromAbstractImage(image)
+        //TODO: fallback to reference slice if n_channels > X ?
+        thumb(server, path, params, etag)
     }
 
     def thumb(SliceInstance slice, def params, String etag = null) {
         thumb(slice.baseSlice, params, etag)
     }
 
-    def thumb(AbstractImage image, def params, String etag = null) {
-        thumb(image.referenceSlice, params, etag)
-    }
-
     def thumb(AbstractSlice slice, def params, String etag = null) {
         def (server, path) = imsParametersFromAbstractSlice(slice)
+        if (slice.image.channels > 1) {
+            params.put('c', slice.channel)
+            // Ensure that if the slice is RGB, the 3 intrinsic channels are used
+        }
+        params.put('z', slice.zStack)
+        params.put('t', slice.time)
+        thumb(server, path, params, etag)
+    }
+
+    def thumb(String server, String path, def params, String etag = null) {
         def format = checkFormat(params.format, ['jpg', 'png', 'webp'])
         def uri = "/image/${path}/thumb"
         def parameters = [
                 length: params.maxSize,
-                gammas: params.gamma
+                gammas: params.gamma,
+                channels: params.c,
+                z_slices: params.z,
+                timepoints: params.t
         ]
 
         if (params.bits) {
-            parameters.bits = (params.bits == "max") ? "AUTO" : params.int('bits')
+            parameters.bits = (params.bits == "max") ? "AUTO" : Integer.parseInt(params.bits)
             uri = "/image/${path}/resized"
         }
 //        parameters.colormap = params.colormap
@@ -300,23 +315,42 @@ class ImageServerService extends ModelService {
         return makeRequest(uri, server, parameters, format, null, headers)
     }
 
-    def crop(AnnotationDomain annotation, GrailsParameterMap params, def urlOnly = false, def parametersOnly = false, String etag = null) {
+    def crop(ImageInstance image, GrailsParameterMap params, boolean urlOnly = false,
+             boolean parametersOnly = false, String etag = null) {
+        crop(image.baseImage, params, urlOnly, parametersOnly, etag)
+    }
+
+    def crop(AbstractImage image, GrailsParameterMap params, boolean urlOnly = false,
+             boolean parametersOnly = false, String etag = null) {
+        def (server, path) = imsParametersFromAbstractImage(image)
+        crop(server, path, params, urlOnly, parametersOnly, etag)
+    }
+
+    def crop(AnnotationDomain annotation, GrailsParameterMap params, boolean urlOnly = false,
+             boolean parametersOnly = false, String etag = null) {
         params.geometry = annotation.location
         crop(annotation.slice, params, urlOnly, parametersOnly, etag)
     }
 
-    def crop(ImageInstance image, GrailsParameterMap params, def urlOnly = false, def parametersOnly = false, String etag = null) {
-        crop(image.baseImage.referenceSlice, params, urlOnly, parametersOnly, etag)
-    }
-
-    def crop(SliceInstance slice, GrailsParameterMap params, def urlOnly = false, def parametersOnly = false, String etag = null) {
+    def crop(SliceInstance slice, GrailsParameterMap params, boolean urlOnly = false,
+             boolean parametersOnly = false, String etag = null) {
         crop(slice.baseSlice, params, urlOnly, parametersOnly, etag)
     }
 
-    def crop(AbstractSlice slice, GrailsParameterMap params, def urlOnly = false, def parametersOnly = false, String etag = null) {
-        log.debug params
+    def crop(AbstractSlice slice, GrailsParameterMap params, boolean urlOnly = false,
+             boolean parametersOnly = false, String etag = null) {
         def (server, path) = imsParametersFromAbstractSlice(slice)
+        if (slice.image.channels > 1) {
+            params.put('c', slice.channel)
+            // Ensure that if the slice is RGB, the 3 intrinsic channels are used
+        }
+        params.put('z', slice.zStack)
+        params.put('t', slice.time)
+        crop(server, path, params, urlOnly, parametersOnly, etag)
+    }
 
+    def crop(String server, String path, GrailsParameterMap params, boolean urlOnly = false,
+             boolean parametersOnly = false, String etag = null) {
         def geometry = params.geometry
         if (!geometry && params.location) {
             geometry = new WKTReader().read(params.location as String)
@@ -332,7 +366,10 @@ class ImageServerService extends ModelService {
                 length: params.int('maxSize'),
                 context_factor: params.double('increaseArea'),
                 gammas: params.double('gamma'),
-                annotations: [geometry: wkt]
+                annotations: [geometry: wkt],
+                channels: params.int('c'),
+                z_slices: params.int('z'),
+                timepoints: params.int('t')
         ]
 
         if (!params.int('maxSize')) {
@@ -388,22 +425,37 @@ class ImageServerService extends ModelService {
         return makeRequest(uri, server, parameters, format, "POST", headers)
     }
 
-    def window(ImageInstance image, GrailsParameterMap params, def urlOnly = false, String etag = null) {
-        window(image.baseImage.referenceSlice, params, urlOnly, etag)
+    def window(ImageInstance image, GrailsParameterMap params,
+               boolean urlOnly = false, String etag = null) {
+        window(image.baseImage, params, urlOnly, etag)
     }
 
-    def window(AbstractImage image, GrailsParameterMap params, def urlOnly = false, String etag = null) {
-        window(image.referenceSlice, params, urlOnly, etag)
+    def window(AbstractImage image, GrailsParameterMap params,
+               boolean urlOnly = false, String etag = null) {
+        def (server, path) = imsParametersFromAbstractImage(image)
+        window(server, path, params, urlOnly, etag)
     }
 
-    def window(SliceInstance slice, GrailsParameterMap params, def urlOnly = false, String etag = null) {
+    def window(SliceInstance slice, GrailsParameterMap params,
+               boolean urlOnly = false, String etag = null) {
         window(slice.baseSlice, params, urlOnly, etag)
     }
 
-    def window(AbstractSlice slice, GrailsParameterMap params, def urlOnly = false, String etag = null) {
-        log.debug params
+    def window(AbstractSlice slice, GrailsParameterMap params,
+               boolean urlOnly = false, String etag = null) {
         def (server, path) = imsParametersFromAbstractSlice(slice)
+        if (slice.image.channels > 1) {
+            params.put('c', slice.channel)
+            // Ensure that if the slice is RGB, the 3 intrinsic channels are used
+        }
+        params.put('z', slice.zStack)
+        params.put('t', slice.time)
+        window(server, path, params, urlOnly, etag)
+    }
 
+    def window(String server, String path, GrailsParameterMap params,
+               boolean urlOnly = false, String etag = null) {
+        log.debug params
         def parameters = [
                 region: [
                         left: params.int('x', 0),
@@ -413,10 +465,13 @@ class ImageServerService extends ModelService {
                 ],
                 length: params.int('maxSize'),
                 gammas: params.double('gamma'),
+                channels: params.int('c'),
+                z_slices: params.int('z'),
+                timepoints: params.int('t')
         ]
 
         if (!params.int('maxSize')) {
-            // Zoom parameter is in fact normalized level
+            // Cytomine API window zoom parameter is in fact normalized level in PIMS
             parameters.level = params.int('zoom', 0)
         }
 
@@ -453,24 +508,25 @@ class ImageServerService extends ModelService {
                 return annot
             }
 
-            parameters.annotation_style = [:]
+            def annotationStyle = [:]
             switch (annotationType) {
                 case 'draw':
-                    parameters.annotation_style.mode = "DRAWING"
+                    annotationStyle.mode = "DRAWING"
                     break
                 case 'mask':
-                    parameters.annotation_style.mode = "MASK"
+                    annotationStyle.mode = "MASK"
                     break
                 case 'alphaMask':
                 case 'alphamask':
-                    parameters.annotation_style.mode = "CROP"
-                    parameters.annotation_style.background_transparency = params.int('alpha', 100)
+                    annotationStyle.mode = "CROP"
+                    annotationStyle.background_transparency = params.int('alpha', 100)
                     format = checkFormat(params.format, ['png', 'webp'])
                     break
                 default:
-                    parameters.annotation_style.mode = "CROP"
-                    parameters.annotation_style.background_transparency = 0
+                    annotationStyle.mode = "CROP"
+                    annotationStyle.background_transparency = 0
             }
+            parameters.annotation_style = annotationStyle
         }
 
         def headers = ['X-Annotation-Origin': 'LEFT_BOTTOM']
@@ -507,7 +563,7 @@ class ImageServerService extends ModelService {
 //        params.boundaries = boundaries
 //        crop(slice, params, urlOnly)
 
-        //        parameters.drawScaleBar = params.boolean('drawScaleBar')
+//        parameters.drawScaleBar = params.boolean('drawScaleBar')
 //        parameters.resolution = (params.boolean('drawScaleBar')) ? params.double('resolution') : null
 //        parameters.magnification = (params.boolean('drawScaleBar')) ? params.double('magnification') : null
     }
@@ -646,14 +702,14 @@ class ImageServerService extends ModelService {
         return "$server$uri?$query"
     }
 
-    private static def checkFormat(def format, def accepted) {
+    private static String checkFormat(String format, ArrayList<String> accepted) {
         if (!accepted)
             accepted = ['jpg']
 
         return (!accepted.contains(format)) ? accepted[0] : format
     }
 
-    private static def formatToContentType(def format) {
+    private static String formatToContentType(String format) {
         switch (format) {
             case 'png':
                 return 'image/png'
@@ -666,12 +722,13 @@ class ImageServerService extends ModelService {
         }
     }
 
-    def checkType(def params) {
+    String checkType(GrailsParameterMap params) {
         if (params.draw || params.type == 'draw')
             return 'draw'
         else if (params.mask || params.type == 'mask')
             return 'mask'
-        else if (params.alphaMask || params.alphamask || params.type?.toLowerCase() == 'alphamask')
+        else if (params.alphaMask || params.alphamask ||
+                params.type?.toLowerCase() == 'alphamask')
             return 'alphaMask'
         else
             return 'crop'
