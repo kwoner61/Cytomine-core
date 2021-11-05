@@ -532,7 +532,7 @@ class RestImageInstanceController extends RestController {
                 params.geometries = getWKTGeometry(imageInstance, params)
             }
             String etag = request.getHeader("If-None-Match") ?: request.getHeader("if-none-match")
-            responseImage(imageServerService.window(imageInstance.baseImage, params, false, etag))
+            responseImage(imageServerService.window(imageInstance, params, false, etag))
         } else {
             responseNotFound("Image", params.id)
         }

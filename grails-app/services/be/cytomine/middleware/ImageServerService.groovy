@@ -296,15 +296,23 @@ class ImageServerService extends ModelService {
                 gammas: params.gamma,
                 channels: params.c,
                 z_slices: params.z,
-                timepoints: params.t
+                timepoints: params.t,
+                colormaps: (params.colormap) ? (List) params.colormap.split(',') : null
         ]
 
         if (params.bits) {
             parameters.bits = (params.bits == "max") ? "AUTO" : Integer.parseInt(params.bits)
             uri = "/image/${path}/resized"
         }
-//        parameters.colormap = params.colormap
-//        parameters.inverse = params.inverse
+
+        if (params.inverse) {
+            if (parameters.colormaps) {
+                parameters.colormaps = parameters.colormaps.collect { invertColormap(it) }
+            }
+            else {
+                parameters.colormaps = "!DEFAULT"
+            }
+        }
 //        parameters.contrast = params.contrast
 
         def headers = [:]
@@ -369,7 +377,8 @@ class ImageServerService extends ModelService {
                 annotations: [geometry: wkt],
                 channels: params.int('c'),
                 z_slices: params.int('z'),
-                timepoints: params.int('t')
+                timepoints: params.int('t'),
+                colormaps: (params.colormap) ? (List) params.colormap.split(',') : null
         ]
 
         if (!params.int('maxSize')) {
@@ -412,8 +421,14 @@ class ImageServerService extends ModelService {
             headers << ['If-None-Match': etag]
         }
 
-//        parameters.colormap = params.colormap
-//        parameters.inverse = params.boolean('inverse')
+        if (params.inverse) {
+            if (parameters.colormaps) {
+                parameters.colormaps = parameters.colormaps.collect { invertColormap(it) }
+            }
+            else {
+                parameters.colormaps = "!DEFAULT"
+            }
+        }
 //        parameters.contrast = params.double('contrast')
 //        parameters.bits = (params.bits == "max") ? (slice.image.bitPerSample ?: 8) : params.int('bits')
 //        parameters.jpegQuality = params.int('jpegQuality')
@@ -467,7 +482,8 @@ class ImageServerService extends ModelService {
                 gammas: params.double('gamma'),
                 channels: params.int('c'),
                 z_slices: params.int('z'),
-                timepoints: params.int('t')
+                timepoints: params.int('t'),
+                colormaps: (params.colormap) ? (List) params.colormap.split(',') : null
         ]
 
         if (!params.int('maxSize')) {
@@ -477,6 +493,15 @@ class ImageServerService extends ModelService {
 
         if (params.bits) {
             parameters.bits = (params.bits == "max") ? "AUTO" : params.int('bits')
+        }
+
+        if (params.inverse) {
+            if (parameters.colormaps) {
+                parameters.colormaps = parameters.colormaps.collect { invertColormap(it) }
+            }
+            else {
+                parameters.colormaps = "!DEFAULT"
+            }
         }
 
         def format = checkFormat(params.format, ['jpg', 'png', 'webp'])
@@ -691,6 +716,9 @@ class ImageServerService extends ModelService {
     private static def makeGetUrl(def uri, def server, def parameters) {
         parameters = filterParameters(parameters)
         String query = parameters.collect { key, value ->
+            if (value instanceof List)
+                value = value.join(',')
+
             if (value instanceof Geometry)
                 value = value.toText()
 
@@ -732,5 +760,12 @@ class ImageServerService extends ModelService {
             return 'alphaMask'
         else
             return 'crop'
+    }
+
+    private static String invertColormap(String colormap) {
+        if (colormap[0] == '!') {
+            return colormap.substring(1)
+        }
+        return '!' + colormap
     }
 }

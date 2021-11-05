@@ -160,7 +160,7 @@ class RestAbstractImageController extends RestController {
             parameters.gamma = params.double('gamma')
             parameters.bits = (params.bits == "max") ? "max" : params.int('bits')
             String etag = request.getHeader("If-None-Match") ?: request.getHeader("if-none-match")
-            responseImage(imageServerService.thumb(abstractImage.referenceSlice, parameters, etag))
+            responseImage(imageServerService.thumb(abstractImage, parameters, etag))
         } else {
             responseNotFound("Image", params.id)
         }
@@ -189,7 +189,7 @@ class RestAbstractImageController extends RestController {
             parameters.gamma = params.double('gamma')
             parameters.bits = (params.bits == "max") ? "max" : params.int('bits')
             String etag = request.getHeader("If-None-Match") ?: request.getHeader("if-none-match")
-            responseImage(imageServerService.thumb(abstractImage.referenceSlice, parameters, etag))
+            responseImage(imageServerService.thumb(abstractImage, parameters, etag))
         } else {
             responseNotFound("Image", params.id)
         }
@@ -236,7 +236,7 @@ class RestAbstractImageController extends RestController {
         AbstractImage abstractImage = abstractImageService.read(params.long("id"))
         if (abstractImage && abstractImage.referenceSlice) {
             String etag = request.getHeader("If-None-Match") ?: request.getHeader("if-none-match")
-            responseImage(imageServerService.crop(abstractImage.referenceSlice, params, false, false, etag))
+            responseImage(imageServerService.crop(abstractImage, params, false, false, etag))
         } else {
             responseNotFound("Image", params.id)
         }
@@ -256,7 +256,7 @@ class RestAbstractImageController extends RestController {
         AbstractImage abstractImage = abstractImageService.read(params.long("id"))
         if (abstractImage && abstractImage.referenceSlice) {
             String etag = request.getHeader("If-None-Match") ?: request.getHeader("if-none-match")
-            responseImage(imageServerService.window(abstractImage.referenceSlice, params, false, etag))
+            responseImage(imageServerService.window(abstractImage, params, false, etag))
         } else {
             responseNotFound("Image", params.id)
         }
