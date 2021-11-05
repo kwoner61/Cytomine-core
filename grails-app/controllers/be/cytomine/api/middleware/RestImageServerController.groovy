@@ -46,4 +46,20 @@ class RestImageServerController extends RestController {
             responseNotFound("ImageServer", params.id)
         }
     }
+
+    def formats() {
+        ImageServer imageServer = imageServerService.read(params.long('id'))
+        if (imageServer) {
+            responseSuccess(imageServerService.formats(imageServer))
+        } else {
+            responseNotFound("ImageServer", params.id)
+        }
+    }
+
+    def allFormats() {
+        def imageServers = imageServerService.list()
+        def data = []
+        imageServers.each { data += imageServerService.formats(it) }
+        responseSuccess(data.flatten())
+    }
 }

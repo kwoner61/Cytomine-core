@@ -23,6 +23,12 @@ class ImageServerUrlMappings {
         "/api/imageserver/$id.$format"(controller: "restImageServer") {
             action = [GET: "show"]
         }
+        "/api/imageserver/$id/format.$format"(controller: "restImageServer") {
+            action = [GET: "formats"]
+        }
+        "/api/imageserver/format.$format"(controller: "restImageServer") {
+            action = [GET: "allFormats"]
+        }
     }
 
 }

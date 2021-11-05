@@ -58,6 +58,11 @@ class ImageServerService extends ModelService {
         return makeRequest("/storage/size.json", is.internalUrl, [:], "GET")
     }
 
+    def formats(ImageServer is) {
+        def response = makeRequest("/formats", is.internalUrl, [:],"json", "GET")
+        return response?.items?.collect { it -> StringUtils.keysToCamelCase(it) }
+    }
+
     def downloadUri(UploadedFile uploadedFile) {
         if (uploadedFile.isVirtual()) {
             throw new InvalidRequestException("Uploaded file is virtual, it has no valid path.")
