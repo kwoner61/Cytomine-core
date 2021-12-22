@@ -49,16 +49,21 @@ class SliceInstanceService extends ModelService {
         slice
     }
 
-    def list(ImageInstance image) {
+    def list(ImageInstance image, String sortedProperty = null, String sortDirection = null, Long max  = 0, Long offset = 0, searchParameters = []) {
         securityACLService.check(image, READ)
-        SliceInstance.createCriteria().list {
-            createAlias("baseSlice", "as")
-            eq("image", image)
+        def validSearchParameters = getDomainAssociatedSearchParameters(SliceInstance, searchParameters)
+
+        Closure sorting = {
             order("as.time", "asc")
             order("as.zStack", "asc")
             order("as.channel", "asc")
-            fetchMode("baseSlice", FetchMode.JOIN)
         }
+
+        criteriaRequestWithPagination(SliceInstance, max, offset, {
+                createAlias("baseSlice", "as")
+                eq("image", image)
+                fetchMode("baseSlice", FetchMode.JOIN)
+            }, validSearchParameters, sortedProperty, sortDirection, sorting)
     }
 
     def add(def json) {

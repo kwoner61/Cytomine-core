@@ -586,13 +586,16 @@ abstract class ModelService {
         return parameters
     }
 
-    protected def criteriaRequestWithPagination(Class<? extends CytomineDomain> domain, Long max, Long offset, Closure preselection, def searchParameters, String sortedProperty = null, String sortDirection = null){
-        sortedProperty = (sortedProperty != null && ReflectionUtils.findField(domain, sortedProperty)) ? sortedProperty : "created"
-        if(!sortDirection.equals("asc") && !sortDirection.equals("desc")) sortDirection = "asc"
+    protected def criteriaRequestWithPagination(Class<? extends CytomineDomain> domain, Long max, Long offset, Closure preselection, def searchParameters, String sortedProperty = null, String sortDirection = null, Closure sorting = null){
+        if (sorting == null) {
+            sortedProperty = (sortedProperty != null && ReflectionUtils.findField(domain, sortedProperty)) ? sortedProperty : "created"
+            if(!sortDirection.equals("asc") && !sortDirection.equals("desc")) sortDirection = "asc"
 
-        Closure sorting = {
-            order(sortedProperty, sortDirection)
+            sorting = {
+                order(sortedProperty, sortDirection)
+            }
         }
+
 
         return criteriaRequestWithPagination(domain, max, offset, preselection, searchParameters, sorting)
     }
