@@ -251,11 +251,10 @@ class AbstractImage extends CytomineDomain implements Serializable {
     }
 
     def getReferenceSliceCoordinate() {
-        def coordinates = getSliceCoordinates()
         return [
-                channel: coordinates.channels[(int) Math.floor(coordinates.channels.size() / 2)],
-                zStack: coordinates.zStacks[(int) Math.floor(coordinates.zStacks.size() / 2)],
-                time: coordinates.times[(int) Math.floor(coordinates.times.size() / 2)],
+                channel: (int) Math.floor(this.channels / 2),
+                zStack: (int) Math.floor(this.depth / 2),
+                time: (int) Math.floor(this.duration / 2),
         ]
     }
 
