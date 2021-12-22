@@ -31,53 +31,55 @@ class ExtractImageMetadataJob {
     }
 
     def execute() {
-        Version v = Version.getLastVersion()
-        if (v?.major >= 2) {
-            Date yesterday = new DateTime().minusDays(1).toDate()
-            Collection<AbstractImage> abstractImages = AbstractImage.createCriteria().list(max: 10) {
-                createAlias("uploadedFile", "uf")
-                and {
-                    ne("uf.contentType", "virtual/stack")
-                    ne("uf.contentType", "application/zip")
-                    or {
-                        isNull("bitPerSample")
-                        isNull("width")
-                        eq("width", -1)
-                    }
-                    isNull("deleted")
-                    isNull("extractedMetadata")
-                    lt("created", yesterday) //to avoid conflict with running image conversions
-                }
-                order("created", "desc")
-            }
-
-            abstractImages.each { image ->
-                try {
-                    ImageServer.withNewSession {
-                        UploadedFile.withNewSession {
-                            AbstractImage.withNewSession {
-                                image.attach()
-                                image.uploadedFile.attach()
-                                image.uploadedFile.imageServer.attach()
-
-                                log.info "Regenerate properties for image $image - ${image.originalFilename}"
-                                try {
-                                    imagePropertiesService.regenerate(image)
-                                }
-                                catch (Exception e) {
-                                    log.error "Error during metadata extraction for image $image: ${e.printStackTrace()}"
-                                    image.extractedMetadata = new Date()
-                                    image.save(flush: true)
-                                }
-                            }
-                        }
-                    }
-                }
-                catch (Exception e) {
-                    log.error "Error during metadata extraction for image $image: ${e.printStackTrace()}"
-                }
-            }
-        }
+//        Version v = Version.getLastVersion()
+//        if (v?.major >= 2) {
+//            Date yesterday = new DateTime().minusDays(1).toDate()
+//            Collection<AbstractImage> abstractImages = AbstractImage.createCriteria().list(max: 10) {
+//                createAlias("uploadedFile", "uf")
+//                and {
+//                    ne("uf.contentType", "virtual/stack")
+//                    ne("uf.contentType", "application/zip")
+//                    ne("uf.contentType", "CZI")
+//                    or {
+//                        isNull("bitPerSample")
+//                        isNull("width")
+//                        eq("width", -1)
+//                        ne("channels", 1)
+//                    }
+//                    isNull("deleted")
+//                    isNull("extractedMetadata")
+//                    lt("created", yesterday) //to avoid conflict with running image conversions
+//                }
+//                order("created", "desc")
+//            }
+//
+//            abstractImages.each { image ->
+//                try {
+//                    ImageServer.withNewSession {
+//                        UploadedFile.withNewSession {
+//                            AbstractImage.withNewSession {
+//                                image.attach()
+//                                image.uploadedFile.attach()
+//                                image.uploadedFile.imageServer.attach()
+//
+//                                log.info "Regenerate properties for image $image - ${image.originalFilename}"
+//                                try {
+//                                    imagePropertiesService.regenerate(image,true)
+//                                }
+//                                catch (Exception e) {
+//                                    log.error "Error during metadata extraction for image $image: ${e.printStackTrace()}"
+//                                    image.extractedMetadata = new Date()
+//                                    image.save(flush: true)
+//                                }
+//                            }
+//                        }
+//                    }
+//                }
+//                catch (Exception e) {
+//                    log.error "Error during metadata extraction for image $image: ${e.printStackTrace()}"
+//                }
+//            }
+//        }
 
 
     }
