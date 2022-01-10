@@ -306,7 +306,7 @@ class ImageServerService extends ModelService {
         ]
 
         if (params.bits) {
-            parameters.bits = (params.bits == "max") ? "AUTO" : Integer.parseInt(params.bits)
+            parameters.bits = (params.bits == "max") ? "AUTO" : params.bits as Integer
             uri = "/image/${path}/resized"
         }
 
@@ -391,6 +391,10 @@ class ImageServerService extends ModelService {
             parameters.level = params.int('zoom', 0)
         }
 
+        if (params.bits) {
+            parameters.bits = (params.bits == "max") ? "AUTO" : params.int('bits')
+        }
+
         def uri
         def format
         switch (checkType(params)) {
@@ -435,7 +439,6 @@ class ImageServerService extends ModelService {
             }
         }
 //        parameters.contrast = params.double('contrast')
-//        parameters.bits = (params.bits == "max") ? (slice.image.bitPerSample ?: 8) : params.int('bits')
 //        parameters.jpegQuality = params.int('jpegQuality')
 
         if (parametersOnly)
