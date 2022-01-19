@@ -10,6 +10,7 @@ import be.cytomine.security.SecUser
 import be.cytomine.utils.ModelService
 import be.cytomine.utils.Task
 
+import java.nio.file.Path
 import java.nio.file.Paths
 
 import static org.springframework.security.acls.domain.BasePermission.READ
@@ -88,17 +89,25 @@ class CompanionFileService extends ModelService {
             throw new InvalidRequestException("Image $image is not a 3D image")
         }
 
-        def filename = "profile.hdf5"
+        def filename = "spectral.HDF5"
         def extension = "hdf5"
-        def contentType = "application/x-hdf5"
-        def destinationPath = Paths.get(new Date().getTime().toString(), filename).toString()
+        def contentType = "HDF5"
+
 
         UploadedFile parent = image.uploadedFile
-        UploadedFile uf = new UploadedFile(parent: parent, imageServer: parent.imageServer, contentType: contentType,
-                storage: parent.storage, user: cytomineService.currentUser, originalFilename: filename,
-                ext: extension, size: 0, status: UploadedFile.Status.UPLOADED.code, filename: destinationPath).save(flush: true, failOnError: true)
-        CompanionFile cf = new CompanionFile(uploadedFile: uf, image: image, originalFilename: filename,
-                filename: filename, type: "HDF5").save(flush: true, failOnError: true)
+        Path parentPath = Paths.get(parent.filename).parent
+        def destinationPath = parentPath.resolve(filename).toString()
+        UploadedFile uf = new UploadedFile(
+                parent: parent, imageServer: parent.imageServer, contentType: contentType,
+                storage: parent.storage, user: cytomineService.currentUser,
+                originalFilename: filename, ext: extension, size: 0,
+                status: UploadedFile.Status.UPLOADED.code,
+                filename: destinationPath
+        ).save(flush: true, failOnError: true)
+        CompanionFile cf = new CompanionFile(
+                uploadedFile: uf, image: image, originalFilename: filename,
+                filename: filename, type: "HDF5"
+        ).save(flush: true, failOnError: true)
 
         try {
             imageServerService.makeHDF5(image.id, cf.id, uf.id)
