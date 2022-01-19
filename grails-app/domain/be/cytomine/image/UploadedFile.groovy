@@ -225,6 +225,6 @@ class UploadedFile extends CytomineDomain implements Serializable {
     }
 
     boolean isVirtual() {
-        return contentType == "virtual/stack"; //TODO
+        return contentType.toLowerCase() == "virtual/stack"; //TODO
     }
 }
