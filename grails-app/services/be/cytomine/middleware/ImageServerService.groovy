@@ -82,7 +82,6 @@ class ImageServerService extends ModelService {
         makeGetUrl(uri, uf.imageServer.url, [:])
     }
 
-    //TODO
     def downloadUri(CompanionFile file) {
         downloadUri(file.uploadedFile)
     }
@@ -188,7 +187,9 @@ class ImageServerService extends ModelService {
         parameters.uploadedFile = uploadedFileId
         parameters.companionFile = companionFileId
         parameters.core = UrlApi.serverUrl()
-        return JSON.parse(new String(makeRequest("/hdf5.json", server, parameters, "POST")))
+        return JSON.parse(new String(
+                makeRequest("/hdf5.json", server, parameters, "json", "POST")
+        ))
     }
 
     //TODO
@@ -202,7 +203,7 @@ class ImageServerService extends ModelService {
         parameters.location = geometry.toString()
         parameters.minSlice = params.minSlice
         parameters.maxSlice = params.maxSlice
-        return JSON.parse(new String(makeRequest("/profile.json", server, parameters)))
+        return JSON.parse(new String(makeRequest("/profile.json", server, parameters, "json")))
     }
 
     //TODO
@@ -218,7 +219,7 @@ class ImageServerService extends ModelService {
         parameters.maxSlice = params.maxSlice
         parameters.axis = params.axis
         parameters.dimension = params.dimension
-        return JSON.parse(new String(makeRequest("/profile/projections.json", server, parameters)))
+        return JSON.parse(new String(makeRequest("/profile/projections.json", server, parameters, "json")))
     }
 
     //TODO
@@ -234,7 +235,7 @@ class ImageServerService extends ModelService {
         parameters.minSlice = params.minSlice
         parameters.maxSlice = params.maxSlice
 
-        return makeRequest("/profile/${params.projection}-projection.$format", server, parameters)
+        return makeRequest("/profile/${params.projection}-projection.$format", server, parameters, format)
     }
 
     def associated(ImageInstance image) {
