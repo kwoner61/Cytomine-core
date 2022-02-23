@@ -131,7 +131,7 @@ class AbstractImage extends CytomineDomain implements Serializable {
     }
 
     static constraints = {
-        uploadedFile(nullable: true) // An abstract without uploaded file is a virtual hyper stack.
+        uploadedFile(nullable: true) // shouldn't be nullable
         originalFilename(nullable: true, blank: false, unique: false)
         scanner(nullable: true)
         sample(nullable: true)
@@ -224,6 +224,7 @@ class AbstractImage extends CytomineDomain implements Serializable {
 
         returnArray['zoom'] = image?.getZoomLevels()
         returnArray['tileSize'] = image?.tileSize
+        returnArray['isVirtual'] = image?.isVirtual()
 
         returnArray['resolution'] = image?.resolution
         returnArray['magnification'] = image?.magnification
@@ -238,6 +239,10 @@ class AbstractImage extends CytomineDomain implements Serializable {
 
     def getPath() {
         return uploadedFile?.path
+    }
+
+    def isVirtual() {
+        return uploadedFile?.isVirtual()
     }
 
     def getSliceCoordinates() {
