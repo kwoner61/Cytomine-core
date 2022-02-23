@@ -188,7 +188,7 @@ class ImageServerService extends ModelService {
         parameters.companionFile = companionFileId
         parameters.core = UrlApi.serverUrl()
         return JSON.parse(new String(
-                makeRequest("/hdf5.json", server, parameters, "json", "POST")
+                makeRequest("/hdf5.json", server, parameters, "json", "POST", [:], true)
         ))
     }
 
@@ -203,7 +203,7 @@ class ImageServerService extends ModelService {
         parameters.location = geometry.toString()
         parameters.minSlice = params.minSlice
         parameters.maxSlice = params.maxSlice
-        return JSON.parse(new String(makeRequest("/profile.json", server, parameters, "json")))
+        return JSON.parse(new String(makeRequest("/profile.json", server, parameters, "json", null, [:], true)))
     }
 
     //TODO
@@ -219,7 +219,7 @@ class ImageServerService extends ModelService {
         parameters.maxSlice = params.maxSlice
         parameters.axis = params.axis
         parameters.dimension = params.dimension
-        return JSON.parse(new String(makeRequest("/profile/projections.json", server, parameters, "json")))
+        return JSON.parse(new String(makeRequest("/profile/projections.json", server, parameters, "json", null, [:], true)))
     }
 
     //TODO
@@ -234,8 +234,7 @@ class ImageServerService extends ModelService {
         parameters.location = geometry.toString()
         parameters.minSlice = params.minSlice
         parameters.maxSlice = params.maxSlice
-
-        return makeRequest("/profile/${params.projection}-projection.$format", server, parameters, format)
+        return makeRequest("/profile/${params.projection}-projection.$format", server, parameters, format, null, [:], true)
     }
 
     def associated(ImageInstance image) {
@@ -633,7 +632,9 @@ class ImageServerService extends ModelService {
         }
 
         def server = hmsInternalUrl()
-        def parameters = [fif: cf.path]
+        def parameters = [
+                fif: "${Holders.config.storage_path}/${cf.path}"
+        ]
         return [server, parameters]
     }
 
@@ -656,7 +657,7 @@ class ImageServerService extends ModelService {
     }
 
     private static def makeRequest(def path, def server, def parameters,
-                                      def format, def httpMethod=null, def customHeaders=[:]) {
+                                      def format, def httpMethod=null, def customHeaders=[:], def hms= false) {
         def final GET_URL_MAX_LENGTH = 512
         parameters = filterParameters(parameters)
         def url = makeGetUrl(path, server, parameters)
@@ -690,11 +691,16 @@ class ImageServerService extends ModelService {
             parserRegistry.putAt("image/webp", parserRegistry.getDefaultParser())
         }
 
+        def reqContentType = ContentType.JSON
+        if (hms) {
+            reqContentType = ContentType.URLENC
+        }
+
         if ((url.size() < GET_URL_MAX_LENGTH && httpMethod == null) || httpMethod == "GET") {
             http.request(Method.GET, responseContentType) {
                 uri.path = path
                 uri.query = parameters
-                requestContentType = ContentType.JSON
+                requestContentType = reqContentType
                 headers = customHeaders
 
                 response.'200' = okClosure
@@ -708,8 +714,8 @@ class ImageServerService extends ModelService {
         else {
             http.request(Method.POST, responseContentType) {
                 uri.path = path
-                requestContentType = ContentType.JSON
-                body = JsonOutput.toJson(parameters)
+                requestContentType = reqContentType
+                body = (hms) ? parameters : JsonOutput.toJson(parameters)
                 headers = customHeaders
 
                 response.'200' = okClosure
